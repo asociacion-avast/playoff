@@ -4,8 +4,9 @@
 import configparser
 import os
 
-import common
 import requests
+
+import common
 
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))

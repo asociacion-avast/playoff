@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 
-import common
 import requests
+
+import common
 
 token = common.gettoken()
 
