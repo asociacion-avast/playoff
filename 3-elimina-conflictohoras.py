@@ -90,9 +90,19 @@ for usuario in usuariosyhorarios:
                 print(usuariosyhorariosinscripciones[usuario][horario])
 
                 for inscripcion in usuariosyhorariosinscripciones[usuario][horario]:
+                    print("Anulando")
+                    url = common.apiurl + "/inscripcions/%s/anular" % inscripcion
+                    response = requests.patch(
+                        url, headers=common.headers, auth=common.BearerAuth(token)
+                    )
+                    print(response)
 
-                    url = common.apiurl + "/inscripcions?idInscripcio=%s" % inscripcion
-                    response = requests.delete(
+                    print("Comunicando")
+                    url = (
+                        common.apiurl
+                        + "/inscripcions/%s/comunicar_anulacio" % inscripcion
+                    )
+                    response = requests.post(
                         url, headers=common.headers, auth=common.BearerAuth(token)
                     )
                     print(response)
