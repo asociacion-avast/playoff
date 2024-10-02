@@ -112,7 +112,9 @@ for usuario in usuariosyhorarios:
                     )
                     print(response)
 
-print("\nInscripciones anuladas en los siguientes talleres:")
+print(
+    "\nInscripciones anuladas en los siguientes talleres por inscripciones a la misma hora:"
+)
 
 for actividad in actividades:
 
