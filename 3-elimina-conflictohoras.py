@@ -69,6 +69,8 @@ token = common.gettoken(
     user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
 )
 
+inscripcionesanuladas = []
+
 for usuario in usuariosyhorarios:
     # El usuaro tiene horarios duplicados
     if len(usuariosyhorarios[usuario]) != len(sorted(set(usuariosyhorarios[usuario]))):
@@ -90,6 +92,9 @@ for usuario in usuariosyhorarios:
                 print(usuariosyhorariosinscripciones[usuario][horario])
 
                 for inscripcion in usuariosyhorariosinscripciones[usuario][horario]:
+                    # Rellena variable para luego sacar el nombre
+                    inscripcionesanuladas.append(inscripcion)
+
                     print("Anulando")
                     url = common.apiurl + "/inscripcions/%s/anular" % inscripcion
                     response = requests.patch(
@@ -106,3 +111,18 @@ for usuario in usuariosyhorarios:
                         url, headers=common.headers, auth=common.BearerAuth(token)
                     )
                     print(response)
+
+print("\nInscripciones anuladas en los siguientes talleres:")
+
+for actividad in actividades:
+
+    myid = actividad["idActivitat"]
+    nombre = actividad["nom"]
+    horario = actividad["idNivell"]
+
+    inscritos = common.rewadjson(filename="%s" % myid)
+
+    for inscrito in inscritos:
+        inscripcion = inscrito["idInscripcio"]
+        if inscripcion in inscripcionesanuladas:
+            print(nombre)
