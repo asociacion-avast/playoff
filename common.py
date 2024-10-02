@@ -19,7 +19,7 @@ class BearerAuth(requests.auth.AuthBase):
         self.token = token
 
     def __call__(self, r):
-        r.headers["authorization"] = "Bearer " + self.token
+        r.headers["authorization"] = f"Bearer {self.token}"
         return r
 
 
@@ -29,15 +29,13 @@ def gettoken(user=config["auth"]["username"], password=config["auth"]["password"
 
     # get token
 
-    loginurl = apiurl + "/login/colegi"
+    loginurl = f"{apiurl}/login/colegi"
 
     data = {"username": user, "password": password}
 
     result = requests.post(loginurl, data=json.dumps(data), headers=headers)
 
-    token = result.json()["access_token"]
-
-    return token
+    return result.json()["access_token"]
 
 
 def writejson(filename, data):
