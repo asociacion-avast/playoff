@@ -27,7 +27,6 @@ anuladas = []
 
 print("Procesando inscripciones")
 for actividad in actividades:
-
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
 
@@ -37,7 +36,6 @@ for actividad in actividades:
     actividadyusuarios[myid] = []
 
     for inscrito in inscritos:
-
         colegiat = inscrito["colegiat"]["idColegiat"]
         actividadyusuarios[myid].append(colegiat)
 

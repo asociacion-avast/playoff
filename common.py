@@ -24,7 +24,6 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 def gettoken(user=config["auth"]["username"], password=config["auth"]["password"]):
-
     apiurl = "https://asociacionavast.playoffinformatica.com/api.php/api/v1.0"
 
     # get token

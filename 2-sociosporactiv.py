@@ -15,7 +15,6 @@ actividades = common.rewadjson(filename="actividades")
 print("Procesando actividades...")
 
 for actividad in actividades:
-
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
 

@@ -15,7 +15,6 @@ actividadyusuarios = {}
 usuariosyhorarios = {}
 
 for actividad in actividades:
-
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
     horario = actividad["idNivell"]
@@ -26,12 +25,10 @@ for actividad in actividades:
     actividadyusuarios[myid] = []
 
     for inscrito in inscritos:
-
         colegiat = inscrito["colegiat"]["idColegiat"]
         actividadyusuarios[myid].append(colegiat)
 
         if inscrito["estat"] != "INSCRESTANULADA":
-
             if colegiat not in usuariosyactividad:
                 usuariosyactividad[colegiat] = []
 

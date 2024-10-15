@@ -37,7 +37,6 @@ for socio in socios:
                     and "estatColegiat" in socio
                     and socio["estatColegiat"]["nom"] == "ESTALTA"
                 ):
-
                     validids.append("%s" % socio["campsDinamics"][field])
                 else:
                     invalidids.append("%s" % socio["campsDinamics"][field])
