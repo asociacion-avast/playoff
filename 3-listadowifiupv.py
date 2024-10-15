@@ -62,7 +62,6 @@ for actividad in actividades:
         users = common.rewadjson(filename="%s" % myid)
 
         for user in users:
-
             usersconclave.append(user["colegiat"]["idColegiat"])
 
 
@@ -73,4 +72,9 @@ for user in sorted(set(usersconclave)):
             nom = soci["persona"]["nom"]
             cognom = soci["persona"]["cognoms"]
             nif = soci["persona"]["nif"]
-            print("%s,%s,%s" % (nif, cognom, nom))
+            autoriza = 0
+            if isinstance(soci["campsDinamics"], dict):
+                if "1_3_20210707032324pm" in soci["campsDinamics"]:
+                    if soci["campsDinamics"]["1_3_20210707032324pm"] == 1:
+                        autoriza = 1
+            print("%s,%s,%s,%s" % (nif, cognom, nom, autoriza))
