@@ -17,26 +17,27 @@ usuariosyhorarios = {}
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    horario = actividad["idNivell"]
+    horario = int(actividad["idNivell"])
 
-    users = common.rewadjson(filename="%s" % myid)
-    inscritos = common.rewadjson(filename="%s" % myid)
+    if horario in [7, 8, 9, 10]:
+        users = common.rewadjson(filename="%s" % myid)
+        inscritos = common.rewadjson(filename="%s" % myid)
 
-    actividadyusuarios[myid] = []
+        actividadyusuarios[myid] = []
 
-    for inscrito in inscritos:
-        colegiat = inscrito["colegiat"]["idColegiat"]
-        actividadyusuarios[myid].append(colegiat)
+        for inscrito in inscritos:
+            colegiat = inscrito["colegiat"]["idColegiat"]
+            actividadyusuarios[myid].append(colegiat)
 
-        if inscrito["estat"] != "INSCRESTANULADA":
-            if colegiat not in usuariosyactividad:
-                usuariosyactividad[colegiat] = []
+            if inscrito["estat"] != "INSCRESTANULADA":
+                if colegiat not in usuariosyactividad:
+                    usuariosyactividad[colegiat] = []
 
-            if colegiat not in usuariosyhorarios:
-                usuariosyhorarios[colegiat] = []
+                if colegiat not in usuariosyhorarios:
+                    usuariosyhorarios[colegiat] = []
 
-            usuariosyactividad[colegiat].append(myid)
-            usuariosyhorarios[colegiat].append(horario)
+                usuariosyactividad[colegiat].append(myid)
+                usuariosyhorarios[colegiat].append(horario)
 
 
 for usuario in usuariosyhorarios:

@@ -28,38 +28,39 @@ usuariosyhorariosinscripciones = {}
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    horario = actividad["idNivell"]
+    horario = int(actividad["idNivell"])
 
-    users = common.rewadjson(filename="%s" % myid)
-    inscritos = common.rewadjson(filename="%s" % myid)
+    if horario in [7, 8, 9, 10]:
+        users = common.rewadjson(filename="%s" % myid)
+        inscritos = common.rewadjson(filename="%s" % myid)
 
-    actividadyusuarios[myid] = []
+        actividadyusuarios[myid] = []
 
-    for inscrito in inscritos:
-        colegiat = inscrito["colegiat"]["idColegiat"]
-        actividadyusuarios[myid].append(colegiat)
-        inscripcion = inscrito["idInscripcio"]
+        for inscrito in inscritos:
+            colegiat = inscrito["colegiat"]["idColegiat"]
+            actividadyusuarios[myid].append(colegiat)
+            inscripcion = inscrito["idInscripcio"]
 
-        if inscrito["estat"] != "INSCRESTANULADA":
-            if colegiat not in usuariosyactividad:
-                usuariosyactividad[colegiat] = []
+            if inscrito["estat"] != "INSCRESTANULADA":
+                if colegiat not in usuariosyactividad:
+                    usuariosyactividad[colegiat] = []
 
-            if colegiat not in usuariosyhorarios:
-                usuariosyhorarios[colegiat] = []
+                if colegiat not in usuariosyhorarios:
+                    usuariosyhorarios[colegiat] = []
 
-            if colegiat not in usuariosyhorariosinscripciones:
-                usuariosyhorariosinscripciones[colegiat] = {}
+                if colegiat not in usuariosyhorariosinscripciones:
+                    usuariosyhorariosinscripciones[colegiat] = {}
 
-            if horario not in usuariosyhorariosinscripciones[colegiat]:
-                usuariosyhorariosinscripciones[colegiat][horario] = []
+                if horario not in usuariosyhorariosinscripciones[colegiat]:
+                    usuariosyhorariosinscripciones[colegiat][horario] = []
 
-            if colegiat not in usuarioseinscripciones:
-                usuarioseinscripciones[colegiat] = []
+                if colegiat not in usuarioseinscripciones:
+                    usuarioseinscripciones[colegiat] = []
 
-            usuariosyactividad[colegiat].append(myid)
-            usuariosyhorarios[colegiat].append(horario)
-            usuariosyhorariosinscripciones[colegiat][horario].append(inscripcion)
-            usuarioseinscripciones[colegiat].append(inscripcion)
+                usuariosyactividad[colegiat].append(myid)
+                usuariosyhorarios[colegiat].append(horario)
+                usuariosyhorariosinscripciones[colegiat][horario].append(inscripcion)
+                usuarioseinscripciones[colegiat].append(inscripcion)
 
 
 token = common.gettoken(
