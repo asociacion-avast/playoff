@@ -77,4 +77,5 @@ for user in sorted(set(usersconclave)):
                 if "1_3_20210707032324pm" in soci["campsDinamics"]:
                     if soci["campsDinamics"]["1_3_20210707032324pm"] == 1:
                         autoriza = 1
-            print("%s,%s,%s,%s" % (nif, cognom, nom, autoriza))
+            # print("%s,%s,%s,%s" % (nif, cognom, nom, autoriza))
+            print("%s,%s,%s" % (nif, cognom, nom))
