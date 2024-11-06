@@ -6,7 +6,7 @@ repos:
         stages:
           - commit-msg
     repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.29.1
+    rev: v3.30.0
   - hooks:
       - id: check-useless-excludes
     repo: meta
@@ -55,7 +55,7 @@ repos:
     rev: v5.0.0
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.7.0
+    rev: v0.7.2
     hooks:
       # Run the linter.
       - id: ruff
@@ -80,7 +80,7 @@ repos:
   - hooks:
       - id: blacken-docs
     repo: https://github.com/asottile/blacken-docs
-    rev: 1.19.0
+    rev: 1.19.1
 
   # - repo: https://github.com/asottile/pyupgrade
   #   rev: v2.38.0
