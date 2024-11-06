@@ -47,3 +47,9 @@ def rewadjson(filename):
     with open("data/%s.json" % filename, "r", encoding="utf-8") as f:
         mydata = json.load(f)
         return mydata
+
+
+# Telegramfields
+tutor1 = "0_13_20231012041710"
+tutor2 = "0_14_20231012045321"
+telegramfields = [tutor1, tutor2]
