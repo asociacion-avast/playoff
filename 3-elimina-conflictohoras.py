@@ -30,9 +30,9 @@ for actividad in actividades:
     nombre = actividad["nom"]
     horario = int(actividad["idNivell"])
 
-    if horario in [7, 8, 9, 10]:
-        users = common.readjson(filename="%s" % myid)
-        inscritos = common.readjson(filename="%s" % myid)
+    if horario in {7, 8, 9, 10}:
+        users = common.readjson(filename=f"{myid}")
+        inscritos = common.readjson(filename=f"{myid}")
 
         actividadyusuarios[myid] = []
 
@@ -69,19 +69,15 @@ token = common.gettoken(
 
 inscripcionesanuladas = []
 
-for usuario in usuariosyhorarios:
+for usuario, value in usuariosyhorarios.items():
     # El usuaro tiene horarios duplicados
-    if len(usuariosyhorarios[usuario]) != len(sorted(set(usuariosyhorarios[usuario]))):
+    if len(value) != len(sorted(set(usuariosyhorarios[usuario]))):
         # calcular horarios a borrar y verlos en las inscripciones
 
-        url = (
-            "https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s#tab=ACTIVITATS"
-            % usuario
-        )
+        url = f"https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat={usuario}#tab=ACTIVITATS"
         print("\nUsuario: %s" % url)
         print(
-            "Inscripciones usuario y horarios: %s"
-            % usuariosyhorariosinscripciones[usuario]
+            f"Inscripciones usuario y horarios: {usuariosyhorariosinscripciones[usuario]}"
         )
 
         for horario in usuariosyhorariosinscripciones[usuario]:
@@ -94,7 +90,7 @@ for usuario in usuariosyhorarios:
                     inscripcionesanuladas.append(inscripcion)
 
                     print("Anulando")
-                    url = common.apiurl + "/inscripcions/%s/anular" % inscripcion
+                    url = f"{common.apiurl}/inscripcions/{inscripcion}/anular"
                     response = requests.patch(
                         url, headers=common.headers, auth=common.BearerAuth(token)
                     )
@@ -102,8 +98,7 @@ for usuario in usuariosyhorarios:
 
                     print("Comunicando")
                     url = (
-                        common.apiurl
-                        + "/inscripcions/%s/comunicar_anulacio" % inscripcion
+                        f"{common.apiurl}/inscripcions/{inscripcion}/comunicar_anulacio"
                     )
                     response = requests.post(
                         url, headers=common.headers, auth=common.BearerAuth(token)
@@ -119,7 +114,7 @@ for actividad in actividades:
     nombre = actividad["nom"]
     horario = actividad["idNivell"]
 
-    inscritos = common.readjson(filename="%s" % myid)
+    inscritos = common.readjson(filename=f"{myid}")
 
     for inscrito in inscritos:
         inscripcion = inscrito["idInscripcio"]

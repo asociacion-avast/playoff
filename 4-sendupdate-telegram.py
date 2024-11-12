@@ -20,7 +20,7 @@ token = common.gettoken(
 
 
 comurl = f"{common.apiurl}/comunicats/emails_notificacions"
-headers = {"Authorization": "Bearer %s" % token}
+headers = {"Authorization": f"Bearer {token}"}
 
 
 true = True
@@ -58,7 +58,7 @@ data = {
     ),
     "configExtra": json.dumps(
         {
-            "idsColegiats": ["%s" % associat],
+            "idsColegiats": [f"{associat}"],
             "idsPatrocinadors": [],
             "idsRebuts": [],
             "idsInscripcions": [],
@@ -89,7 +89,7 @@ data = {
             "emailsExtra": [],
         }
     ),
-    "destinataris": json.dumps(["%s" % associat]),
+    "destinataris": json.dumps([f"{associat}"]),
     "destinatarisPatrocinador": "[]",
     "destinatarisContacte": "[]",
 }

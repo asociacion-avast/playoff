@@ -90,7 +90,7 @@ for user in users:
     ):
         try:
             cp = int(user["persona"]["adreces"][0]["municipi"]["codipostal"])
-        except:
+        except Exception:
             cp = 0
 
         if cp in codigos_postales:
@@ -101,19 +101,16 @@ for user in users:
                     if field in user["campsDinamics"]:
                         try:
                             userid = user["campsDinamics"][field]
-                        except:
+                        except Exception:
                             userid = False
 
-                        if userid:
-                            if (
-                                "estat" in user
-                                and user["estat"] == "COLESTVAL"
-                                and "estatColegiat" in user
-                                and user["estatColegiat"]["nom"] == "ESTALTA"
-                            ):
-                                # Always store if ID is valid or not
-
-                                telegramids.append(userid)
+                        if userid and (
+                            "estat" in user
+                            and user["estat"] == "COLESTVAL"
+                            and "estatColegiat" in user
+                            and user["estatColegiat"]["nom"] == "ESTALTA"
+                        ):
+                            telegramids.append(userid)
 
 
 affected = sorted(set(affected))

@@ -15,8 +15,8 @@ config.read(os.path.expanduser("~/.avast.ini"))
 token = common.gettoken()
 print(token)
 
-sociosurl = common.apiurl + "/colegiats?page=0&pageSize=4000"
-data = {"Authorization": "Bearer %s" % token}
+sociosurl = f"{common.apiurl}/colegiats?page=0&pageSize=4000"
+data = {"Authorization": f"Bearer {token}"}
 
 print("Obteniendo listado de socios")
 result = requests.get(sociosurl, auth=common.BearerAuth(token), headers=common.headers)
@@ -37,9 +37,9 @@ for socio in socios:
                     and "estatColegiat" in socio
                     and socio["estatColegiat"]["nom"] == "ESTALTA"
                 ):
-                    validids.append("%s" % socio["campsDinamics"][field])
+                    validids.append(f'{socio["campsDinamics"][field]}')
                 else:
-                    invalidids.append("%s" % socio["campsDinamics"][field])
+                    invalidids.append(f'{socio["campsDinamics"][field]}')
 
 
 print("Saving file to disk")

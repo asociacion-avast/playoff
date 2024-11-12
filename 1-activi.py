@@ -7,11 +7,11 @@ import common
 
 token = common.gettoken()
 
-activurl = common.apiurl + "/activitats/totes"
-data = {"Authorization": "Bearer %s" % token}
+activar = common.apiurl + "/activitats/totes"
+data = {"Authorization": f"Bearer {token}"}
 
 print("Obteniendo listado de actividades")
-result = requests.get(activurl, auth=common.BearerAuth(token), headers=common.headers)
+result = requests.get(activar, auth=common.BearerAuth(token), headers=common.headers)
 
 actividades = result.json()
 

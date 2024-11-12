@@ -21,14 +21,11 @@ for actividad in actividades:
     print(myid, nombre)
 
     # get users
-    usersurl = (
-        "https://asociacionavast.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat=%s"
-        % myid
-    )
+    usersurl = f"https://asociacionavast.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={myid}"
 
     # result = requests.get(sociosurl, auth=BearerAuth(token), headers=headers)
     users = requests.get(
         usersurl, auth=common.BearerAuth(token), headers=common.headers
     ).json()
 
-    common.writejson(filename="%s" % myid, data=users)
+    common.writejson(filename=f"{myid}", data=users)

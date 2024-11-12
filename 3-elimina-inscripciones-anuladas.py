@@ -30,8 +30,8 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
 
-    users = common.readjson(filename="%s" % myid)
-    inscritos = common.readjson(filename="%s" % myid)
+    users = common.readjson(filename=f"{myid}")
+    inscritos = common.readjson(filename=f"{myid}")
 
     actividadyusuarios[myid] = []
 
@@ -54,7 +54,7 @@ token = common.gettoken(
 )
 
 for anulada in anuladas:
-    url = common.apiurl + "/inscripcions?idInscripcio=%s" % anulada
+    url = f"{common.apiurl}/inscripcions?idInscripcio={anulada}"
     response = requests.delete(
         url, headers=common.headers, auth=common.BearerAuth(token)
     )
