@@ -16,7 +16,6 @@ codigos_postales = [
     46680,
     46230,
     46440,
-    46910,
     46450,
     46469,
     46689,
@@ -26,7 +25,6 @@ codigos_postales = [
     46330,
     46240,
     46196,
-    46470,
     46315,
     46612,
     46400,
@@ -34,18 +32,15 @@ codigos_postales = [
     46380,
     46370,
     46614,
-    46687,
     46314,
     46388,
     46610,
     46160,
     46393,
     46613,
-    46910,
     46195,
     46368,
     46940,
-    46470,
     46920,
     46192,
     46193,
@@ -60,7 +55,6 @@ codigos_postales = [
     46340,
     46190,
     46417,
-    46910,
     46392,
     46460,
     46320,
@@ -74,9 +68,6 @@ codigos_postales = [
     46017,
     46026,
     46012,
-    46012,
-    46012,
-    46012,
     46950,
     46367,
 ]
@@ -84,7 +75,7 @@ codigos_postales = [
 
 print("Loading file from disk")
 
-users = common.rewadjson(filename="socios")
+users = common.readjson(filename="socios")
 
 
 affected = []

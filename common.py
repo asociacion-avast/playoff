@@ -43,7 +43,7 @@ def writejson(filename, data):
         return True
 
 
-def rewadjson(filename):
+def readjson(filename):
     with open("data/%s.json" % filename, "r", encoding="utf-8") as f:
         mydata = json.load(f)
         return mydata

@@ -5,7 +5,7 @@ import common
 
 print("Loading file from disk")
 
-actividades = common.rewadjson(filename="actividades")
+actividades = common.readjson(filename="actividades")
 
 
 print("Procesando actividades...")
@@ -20,8 +20,8 @@ for actividad in actividades:
     horario = int(actividad["idNivell"])
 
     if horario in [7, 8, 9, 10]:
-        users = common.rewadjson(filename="%s" % myid)
-        inscritos = common.rewadjson(filename="%s" % myid)
+        users = common.readjson(filename="%s" % myid)
+        inscritos = common.readjson(filename="%s" % myid)
 
         actividadyusuarios[myid] = []
 

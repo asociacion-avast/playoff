@@ -14,7 +14,7 @@ config.read(os.path.expanduser("~/.avast.ini"))
 
 print("Loading file from disk")
 
-actividades = common.rewadjson(filename="actividades")
+actividades = common.readjson(filename="actividades")
 
 
 print("Procesando actividades...")
@@ -30,8 +30,8 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
 
-    users = common.rewadjson(filename="%s" % myid)
-    inscritos = common.rewadjson(filename="%s" % myid)
+    users = common.readjson(filename="%s" % myid)
+    inscritos = common.readjson(filename="%s" % myid)
 
     actividadyusuarios[myid] = []
 

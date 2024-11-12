@@ -9,7 +9,7 @@ token = common.gettoken()
 print("Loading file from disk")
 
 
-actividades = common.rewadjson(filename="actividades")
+actividades = common.readjson(filename="actividades")
 
 
 print("Procesando actividades...")

@@ -4,8 +4,8 @@ import common
 
 print("Loading file from disk")
 
-actividades = common.rewadjson(filename="actividades")
-socis = common.rewadjson(filename="socios")
+actividades = common.readjson(filename="actividades")
+socis = common.readjson(filename="socios")
 
 
 conclavewifi = [
@@ -59,7 +59,7 @@ for actividad in actividades:
     if myid in conclavewifi:
         print(myid, nombre)
 
-        users = common.rewadjson(filename="%s" % myid)
+        users = common.readjson(filename="%s" % myid)
 
         for user in users:
             usersconclave.append(user["colegiat"]["idColegiat"])
