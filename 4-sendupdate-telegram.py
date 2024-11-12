@@ -95,7 +95,6 @@ data = {
 }
 
 files = []
-headers = headers
 response = requests.request("POST", comurl, headers=headers, data=data, files=files)
 
 print(response)
