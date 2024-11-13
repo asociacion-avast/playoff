@@ -44,28 +44,6 @@ for socio in sociosjson:
 for id_socio in id_socios:
     filename = f"sorteo/{id_socio}.txt"
     with open(filename, "w") as f:
-        for _ in [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
-        ]:
+        for _ in range(0, 1000):
             inscripcion = random.choice(ids_actividad)
             f.write("%s\n" % inscripcion)

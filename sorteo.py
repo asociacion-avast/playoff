@@ -21,40 +21,50 @@ def durstenfeld_shuffle(arr):
     return arr
 
 
-# Read the data from disk for socios and actividades (it's an array)
-actividadesjson = common.readjson(filename="actividades")
-sociosjson = common.readjson(filename="socios")
+# Build array of actividades either from previous run or from original list
+try:
+    actividades = common.readjson(filename="sorteo-actividades")
+except:
+    actividadesjson = common.readjson(filename="actividades")
 
-# Store the ID's and build the dictionary for the data we want from actividdes
+    actividades = {}
+    for actividad in actividadesjson:
+        idactividad = "%s" % int(actividad["idActivitat"])
+        horario = int(actividad["idNivell"])
+
+        if horario in {7, 8, 9, 10}:
+            try:
+                edatMax = int(actividad["edatMax"])
+            except Exception:
+                edatMax = 9000
+
+            try:
+                edatMin = int(actividad["edatMin"])
+            except Exception:
+                edatMin = 0000
+
+            # Rellenar diccionario
+            actividades[idactividad] = {
+                "maxplazas": int(actividad["maxPlaces"]),
+                "inscritos": [],
+                "edatMax": edatMax,
+                "edatMin": edatMin,
+                "horario": horario,
+            }
+
+# Store the ID's and build the dictionary for the data we want from actividades
 idsactividad = []
-actividades = {}
-for actividad in actividadesjson:
-    idactividad = int(actividad["idActivitat"])
 
-    idsactividad.append(idactividad)
-
-    try:
-        edatMax = int(actividad["edatMax"])
-    except Exception:
-        edatMax = 9000
-
-    try:
-        edatMin = int(actividad["edatMin"])
-    except:
-        edatMin = 0000
-
-    # Rellenar diccionario
-    actividades[idactividad] = {
-        "maxplazas": int(actividad["maxPlaces"]),
-        "inscritos": [],
-        "edatMax": edatMax,
-        "edatMin": edatMin,
-        "horario": int(actividad["idNivell"]),
-    }
+# Prefll in case it's empty
+for actividad in actividades:
+    idsactividad.append(actividad)
 
 # Sort Actividades
 idsactividad = sorted(set(idsactividad))
-# pprint.pprint(actividades)
+
+
+# Read the data from disk for socios
+sociosjson = common.readjson(filename="socios")
 
 
 # Prefill socios con actividades y de alta
@@ -62,7 +72,7 @@ id_socios = []
 mis_socios = {}
 
 for socio in sociosjson:
-    id_socio = int(socio["idColegiat"])
+    id_socio = "%s" % int(socio["idColegiat"])
 
     if (
         "estat" in socio
@@ -88,14 +98,11 @@ for socio in sociosjson:
                         mis_socios[id_socio]["nacim"] = fecha.year
 
 
-# Store list of socios
-
-
 id_socios = sorted(set(id_socios))
 print("Total socios a asignar: ", len(id_socios))
 
 socios = {}
-for socio in id_socios:
+for socio in mis_socios:
     # Fill dictionary of interests for each socio
 
     filename = f"sorteo/{socio}.txt"
@@ -107,7 +114,7 @@ for socio in id_socios:
         with open(filename) as f:
             lineas = f.readlines()
             for linea in lineas:
-                interes = int(linea.strip())
+                interes = "%s" % int(linea.strip())
                 socios[socio].append(interes)
 
 
@@ -120,89 +127,108 @@ for socio in socios:
 for socio in socios_a_borrar:
     del socios[socio]
 
-print("Socios e intereses")
-pprint.pprint(socios)
-
-
-# TODO Use sorting method for this iteration
+# Use sorting method for this iteration
 sortedsocios = durstenfeld_shuffle(id_socios)
 
 # Procesar inscripciones
 
-inscripciones = {}
-inscripciones_por_socio = {}
-horarios_por_socio = {}
+# Leer inscripciones desde disco
+try:
+    inscripciones_por_actividad = common.readjson(
+        filename="sorteo-inscripciones_por_actividad"
+    )
+except:
+    print("Fallo leyendo inscripciones por actividad")
+    inscripciones_por_actividad = {}
 
-for ronda in [0, 1, 2, 3]:
-    print("Ronda %s" % ronda)
-    # Assign spots in activities to socios
+try:
+    inscripciones_por_socio = common.readjson(filename="sorteo-inscripciones_por_socio")
 
-    for socio in sortedsocios:
-        # Validate that socio is in the shortlist of the ones who expressed
-        if socio in socios:
-            # print("Procesando socio: %s" % socio)
-            # Socio ha expresado intereses
-            keeprunning = True
-            if socio not in inscripciones_por_socio:
-                inscripciones_por_socio[socio] = []
+except:
+    print("Fallo leyendo inscripciones por socio")
+    inscripciones_por_socio = {}
 
-            if socio not in horarios_por_socio:
-                horarios_por_socio[socio] = []
+try:
+    horarios_por_socio = common.readjson(filename="sorteo-horarios_por_socio")
+except:
+    print("Fallo leyendo horarios por socio")
+    horarios_por_socio = {}
 
-            for interes in socios[socio]:
-                if interes not in inscripciones:
-                    inscripciones[interes] = []
-                if (
-                    keeprunning is True
-                    and interes in actividades
-                    and (
-                        len(actividades[interes]["inscritos"])
-                        < actividades[interes]["maxplazas"]
-                    )
-                ):
-                    if socio not in actividades[interes]["inscritos"]:
-                        anyo = mis_socios[socio]["nacim"]
+
+# Assign spots in activities to socios
+
+for socio in sortedsocios:
+    # Validate that socio is in the shortlist of the ones who expressed
+    if socio in socios:
+        # print("Procesando socio: %s" % socio)
+        # Socio ha expresado intereses
+        keep_running = True
+        if socio not in inscripciones_por_socio:
+            inscripciones_por_socio[socio] = []
+
+        if socio not in horarios_por_socio:
+            horarios_por_socio[socio] = []
+
+        for interes in socios[socio]:
+            if interes not in inscripciones_por_actividad:
+                inscripciones_por_actividad[interes] = []
+            if (
+                keep_running
+                and interes in actividades
+                and (
+                    len(actividades[interes]["inscritos"])
+                    < actividades[interes]["maxplazas"]
+                )
+            ):
+                if socio not in actividades[interes]["inscritos"]:
+                    anyo = mis_socios[socio]["nacim"]
+
+                    if (
+                        anyo >= actividades[interes]["edatMin"]
+                        and anyo <= actividades[interes]["edatMax"]
+                    ):
+                        # Se puede inscribir (está en rango de edad y hay plazas)
 
                         if (
-                            anyo >= actividades[interes]["edatMin"]
-                            and anyo <= actividades[interes]["edatMax"]
+                            actividades[interes]["horario"]
+                            not in horarios_por_socio[socio]
                         ):
-                            # Se puede inscribir (está en rango de edad y hay plazas)
+                            actividades[interes]["inscritos"].append(socio)
+                            inscripciones_por_actividad[interes].append(socio)
 
-                            if (
+                            inscripciones_por_socio[socio].append(interes)
+                            horarios_por_socio[socio].append(
                                 actividades[interes]["horario"]
-                                not in horarios_por_socio[socio]
-                            ):
-                                actividades[interes]["inscritos"].append(socio)
-                                inscripciones[interes].append(socio)
-
-                                inscripciones_por_socio[socio].append(interes)
-                                horarios_por_socio[socio].append(
-                                    actividades[interes]["horario"]
-                                )
-                                keeprunning = False
+                            )
+                            keep_running = False
 
 
-for actividad in actividades:
+# Salvar datos
+common.writejson(
+    filename="sorteo-inscripciones_por_actividad", data=inscripciones_por_actividad
+)
+common.writejson(
+    filename="sorteo-inscripciones_por_socio", data=inscripciones_por_socio
+)
+common.writejson(filename="sorteo-horarios_por_socio", data=horarios_por_socio)
+common.writejson(filename="sorteo-actividades", data=actividades)
+
+
+# Resultados de inscripciones por actividad e inscripcones por socio
+print("Inscripciones por actividad")
+pprint.pprint(inscripciones_por_actividad)
+print("Inscripciones por socio")
+pprint.pprint(inscripciones_por_socio)
+
+
+for interes in actividades:
     if len(actividades[interes]["inscritos"]) < actividades[interes]["maxplazas"]:
         print(
-            "Actividad %s tiene %s vacantes"
+            "Quedan %s plazas en la actividad %s con horario %s"
             % (
-                actividad,
                 actividades[interes]["maxplazas"]
                 - len(actividades[interes]["inscritos"]),
+                interes,
+                actividades[interes]["horario"],
             )
         )
-    else:
-        print(
-            "Actividad %s está llena %s vacantes"
-            % (
-                actividad,
-                actividades[interes]["maxplazas"]
-                - len(actividades[interes]["inscritos"]),
-            )
-        )
-
-
-pprint.pprint(inscripciones)
-pprint.pprint(inscripciones_por_socio)
