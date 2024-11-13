@@ -13,14 +13,14 @@ random.seed(85535)
 actividadesjson = common.readjson(filename="actividades")
 sociosjson = common.readjson(filename="socios")
 
-idsactividad = []
+ids_actividad = []
 for actividad in actividadesjson:
     idactividad = int(actividad["idActivitat"])
-    idsactividad.append(idactividad)
+    ids_actividad.append(idactividad)
 
-idsocios = []
+id_socios = []
 for socio in sociosjson:
-    idsocio = int(socio["idColegiat"])
+    id_socio = int(socio["idColegiat"])
     if (
         "estat" in socio
         and socio["estat"] == "COLESTVAL"
@@ -39,10 +39,10 @@ for socio in sociosjson:
                         or "deudor".lower() in modalitatnom
                         or "hermano de socio".lower() in modalitatnom
                     ):
-                        idsocios.append(idsocio)
+                        id_socios.append(id_socio)
 
-for idsocio in idsocios:
-    filename = f"sorteo/{idsocio}.txt"
+for id_socio in id_socios:
+    filename = f"sorteo/{id_socio}.txt"
     with open(filename, "w") as f:
         for _ in [
             0,
@@ -67,5 +67,5 @@ for idsocio in idsocios:
             19,
             20,
         ]:
-            inscripcion = random.choice(idsactividad)
+            inscripcion = random.choice(ids_actividad)
             f.write("%s\n" % inscripcion)

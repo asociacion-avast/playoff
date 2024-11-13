@@ -8,12 +8,24 @@ import dateutil.parser
 import common
 
 # Initialize random seed with ONCE number
-random.seed(85535)
+random.seed(32768)
 
 
+def durstenfeld_shuffle(arr):
+    # Loop from the end of the array to the start
+    for i in range(len(arr) - 1, 0, -1):
+        # Pick a random index from 0 to i
+        j = random.randint(0, i)
+        # Swap the elements at i and j
+        arr[i], arr[j] = arr[j], arr[i]
+    return arr
+
+
+# Read the data from disk for socios and actividades (it's an array)
 actividadesjson = common.readjson(filename="actividades")
 sociosjson = common.readjson(filename="socios")
 
+# Store the ID's and build the dictionary for the data we want from actividdes
 idsactividad = []
 actividades = {}
 for actividad in actividadesjson:
@@ -23,7 +35,7 @@ for actividad in actividadesjson:
 
     try:
         edatMax = int(actividad["edatMax"])
-    except:
+    except Exception:
         edatMax = 9000
 
     try:
@@ -38,15 +50,18 @@ for actividad in actividadesjson:
         "edatMax": edatMax,
         "edatMin": edatMin,
     }
+
+# Sort Actividades
 idsactividad = sorted(set(idsactividad))
 # pprint.pprint(actividades)
 
 
 # Prefill socios con actividades y de alta
-idsocios = []
-mysocios = {}
+id_socios = []
+mis_socios = {}
+
 for socio in sociosjson:
-    idsocio = int(socio["idColegiat"])
+    id_socio = int(socio["idColegiat"])
 
     if (
         "estat" in socio
@@ -59,47 +74,49 @@ for socio in sociosjson:
             for modalitat in socio["colegiatHasModalitats"]:
                 if "modalitat" in modalitat:
                     # Save name for comparing the ones we target
-                    modalitatnom = modalitat["modalitat"]["nom"].lower()
+                    modalitat_nombre = modalitat["modalitat"]["nom"].lower()
 
                     if (
-                        "socio principal".lower() in modalitatnom
-                        or "deudor".lower() in modalitatnom
-                        or "hermano de socio".lower() in modalitatnom
+                        "socio principal".lower() in modalitat_nombre
+                        or "deudor".lower() in modalitat_nombre
+                        or "hermano de socio".lower() in modalitat_nombre
                     ):
-                        idsocios.append(idsocio)
-                        mysocios[idsocio] = {}
+                        id_socios.append(id_socio)
+                        mis_socios[id_socio] = {}
                         fecha = dateutil.parser.parse(socio["persona"]["dataNaixement"])
-                        mysocios[idsocio]["nacim"] = fecha.year
+                        mis_socios[id_socio]["nacim"] = fecha.year
 
 
 # Store list of socios
 
 
-idsocios = sorted(set(idsocios))
-print("Total socos a asignar: ", len(idsocios))
+id_socios = sorted(set(id_socios))
+print("Total socios a asignar: ", len(id_socios))
 
 socios = {}
-for socio in idsocios:
-    idsocio = socio
+for socio in id_socios:
+    # Fill dictionary of interests for each socio
 
-    filename = f"sorteo/{idsocio}.txt"
+    filename = f"sorteo/{socio}.txt"
 
     # Validar que el socio ha expresado intereses
     if os.access(filename, os.R_OK):
-        if idsocio not in socios:
-            socios[idsocio] = []
+        if socio not in socios:
+            socios[socio] = []
         with open(filename) as f:
             lineas = f.readlines()
             for linea in lineas:
                 interes = int(linea.strip())
-                socios[idsocio].append(interes)
+                socios[socio].append(interes)
 
-sociosborrar = []
+
+# Remove socios without interests defined
+socios_a_borrar = []
 for socio in socios:
     if socios[socio] == []:
-        sociosborrar.append(socio)
+        socios_a_borrar.append(socio)
 
-for socio in sociosborrar:
+for socio in socios_a_borrar:
     del socios[socio]
 
 print("Socios e intereses")
@@ -107,29 +124,25 @@ pprint.pprint(socios)
 
 
 # TODO Use sorting method for this iteration
-sortedsocios = list(reversed(sorted(set(idsocios))))
-
-
-# TEST CODE TO REMOVE
-
-actividades[588]["maxplazas"] = 2
+sortedsocios = durstenfeld_shuffle(id_socios)
 
 # Procesar inscripciones
 
 inscripciones = {}
-socioinscripciones = {}
+inscripciones_por_socio = {}
 
 for ronda in [0, 1, 2, 3]:
     print("Ronda %s" % ronda)
     # Assign spots in activities to socios
 
     for socio in sortedsocios:
+        # Validate that socio is in the shortlist of the ones who expressed
         if socio in socios:
             # print("Procesando socio: %s" % socio)
             # Socio ha expresado intereses
             keeprunning = True
-            if socio not in socioinscripciones:
-                socioinscripciones[socio] = []
+            if socio not in inscripciones_por_socio:
+                inscripciones_por_socio[socio] = []
 
             for interes in socios[socio]:
                 if interes not in inscripciones:
@@ -143,7 +156,7 @@ for ronda in [0, 1, 2, 3]:
                     )
                 ):
                     if socio not in actividades[interes]["inscritos"]:
-                        anyo = mysocios[socio]["nacim"]
+                        anyo = mis_socios[socio]["nacim"]
 
                         if (
                             anyo >= actividades[interes]["edatMin"]
@@ -159,7 +172,7 @@ for ronda in [0, 1, 2, 3]:
                             #         - len(actividades[interes]["inscritos"])
                             #     )
                             # )
-                            socioinscripciones[socio].append(interes)
+                            inscripciones_por_socio[socio].append(interes)
                             keeprunning = False
     # var=input("Press enter to continue")
 
@@ -186,4 +199,4 @@ for actividad in actividades:
 
 
 pprint.pprint(inscripciones)
-pprint.pprint(socioinscripciones)
+pprint.pprint(inscripciones_por_socio)
