@@ -49,6 +49,7 @@ for actividad in actividadesjson:
         "inscritos": [],
         "edatMax": edatMax,
         "edatMin": edatMin,
+        "horario": int(actividad["idNivell"]),
     }
 
 # Sort Actividades
@@ -130,6 +131,7 @@ sortedsocios = durstenfeld_shuffle(id_socios)
 
 inscripciones = {}
 inscripciones_por_socio = {}
+horarios_por_socio = {}
 
 for ronda in [0, 1, 2, 3]:
     print("Ronda %s" % ronda)
@@ -143,6 +145,9 @@ for ronda in [0, 1, 2, 3]:
             keeprunning = True
             if socio not in inscripciones_por_socio:
                 inscripciones_por_socio[socio] = []
+
+            if socio not in horarios_por_socio:
+                horarios_por_socio[socio] = []
 
             for interes in socios[socio]:
                 if interes not in inscripciones:
@@ -163,18 +168,19 @@ for ronda in [0, 1, 2, 3]:
                             and anyo <= actividades[interes]["edatMax"]
                         ):
                             # Se puede inscribir (está en rango de edad y hay plazas)
-                            actividades[interes]["inscritos"].append(socio)
-                            inscripciones[interes].append(socio)
-                            # print(
-                            #     "Plazas restantes: %s"
-                            #     % (
-                            #         actividades[interes]["maxplazas"]
-                            #         - len(actividades[interes]["inscritos"])
-                            #     )
-                            # )
-                            inscripciones_por_socio[socio].append(interes)
-                            keeprunning = False
-    # var=input("Press enter to continue")
+
+                            if (
+                                actividades[interes]["horario"]
+                                not in horarios_por_socio[socio]
+                            ):
+                                actividades[interes]["inscritos"].append(socio)
+                                inscripciones[interes].append(socio)
+
+                                inscripciones_por_socio[socio].append(interes)
+                                horarios_por_socio[socio].append(
+                                    actividades[interes]["horario"]
+                                )
+                                keeprunning = False
 
 
 for actividad in actividades:
