@@ -20,8 +20,11 @@ for actividad in actividades:
     horario = int(actividad["idNivell"])
 
     if horario in {7, 8, 9, 10}:
-        users = common.readjson(filename=f"{myid}")
         inscritos = common.readjson(filename=f"{myid}")
-        libres = int(actividad["maxPlaces"]) - len(inscritos)
+        usadas = 0
+        for inscrito in inscritos:
+            if inscrito["estat"] == "INSCRESTNOVA":
+                usadas = usadas + 1
+        libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
-            print(f'{nombre},{int(actividad["maxPlaces"])},{len(inscritos)},{libres}')
+            print(f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres}')

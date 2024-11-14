@@ -41,7 +41,7 @@ for actividad in actividades:
             actividadyusuarios[myid].append(colegiat)
             inscripcion = inscrito["idInscripcio"]
 
-            if inscrito["estat"] != "INSCRESTANULADA":
+            if inscrito["estat"] == "INSCRESTNOVA":
                 if colegiat not in usuariosyactividad:
                     usuariosyactividad[colegiat] = []
 

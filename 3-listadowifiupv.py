@@ -62,7 +62,8 @@ for actividad in actividades:
         users = common.readjson(filename=f"{myid}")
 
         for user in users:
-            usersconclave.append(user["colegiat"]["idColegiat"])
+            if user["estat"] == "INSCRESTNOVA":
+                usersconclave.append(user["colegiat"]["idColegiat"])
 
 
 print("Listado para politécnica")
