@@ -30,7 +30,6 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
 
-    users = common.readjson(filename=f"{myid}")
     inscritos = common.readjson(filename=f"{myid}")
 
     actividadyusuarios[myid] = []

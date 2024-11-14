@@ -31,7 +31,6 @@ for actividad in actividades:
     horario = int(actividad["idNivell"])
 
     if horario in {7, 8, 9, 10}:
-        users = common.readjson(filename=f"{myid}")
         inscritos = common.readjson(filename=f"{myid}")
 
         actividadyusuarios[myid] = []
