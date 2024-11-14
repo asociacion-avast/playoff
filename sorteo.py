@@ -8,7 +8,7 @@ import dateutil.parser
 import common
 
 # Initialize random seed with ONCE number
-random.seed(32768)
+random.seed(12768)
 
 
 def durstenfeld_shuffle(arr):
