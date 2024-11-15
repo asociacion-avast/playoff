@@ -29,18 +29,19 @@ print("Procesando inscripciones")
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
+    horario = int(actividad["idNivell"])
+    if horario in [7, 8, 9, 10]:
+        inscritos = common.readjson(filename=f"{myid}")
 
-    inscritos = common.readjson(filename=f"{myid}")
+        actividadyusuarios[myid] = []
 
-    actividadyusuarios[myid] = []
+        for inscrito in inscritos:
+            colegiat = inscrito["colegiat"]["idColegiat"]
+            actividadyusuarios[myid].append(colegiat)
 
-    for inscrito in inscritos:
-        colegiat = inscrito["colegiat"]["idColegiat"]
-        actividadyusuarios[myid].append(colegiat)
-
-        if inscrito["estat"] == "INSCRESTANULADA":
-            ID = inscrito["idInscripcio"]
-            anuladas.append(ID)
+            if inscrito["estat"] == "INSCRESTANULADA":
+                ID = inscrito["idInscripcio"]
+                anuladas.append(ID)
 
 
 anuladas = sorted(set(anuladas))
