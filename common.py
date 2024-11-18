@@ -52,3 +52,43 @@ def readjson(filename):
 tutor1 = "0_13_20231012041710"
 tutor2 = "0_14_20231012045321"
 telegramfields = [tutor1, tutor2]
+
+
+def addcategoria(token, socio, categoria):
+    """Adds categoria to socio
+
+    Args:
+        token (str): token for accessing API (RW)
+        socio (int): Socio identifier
+        categoria (int): ID for category to modify
+    """
+
+    headers = {"Authorization": f"Bearer {token}"}
+    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats"
+
+    data = {"idModalitat": categoria}
+    files = []
+
+    return requests.request(
+        "POST", categoriaurl, headers=headers, data=data, files=files
+    )
+
+
+def delcategoria(token, socio, categoria):
+    """Removes categoria from socio
+
+    Args:
+        token (str): token for accessing API (RW)
+        socio (int): Socio identifier
+        categoria (int): ID for category to modify
+    """
+
+    headers = {"Authorization": f"Bearer {token}"}
+    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats/{categoria}"
+
+    data = {}
+    files = []
+
+    return requests.request(
+        "DELETE", categoriaurl, headers=headers, data=data, files=files
+    )
