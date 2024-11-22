@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 
 import common
 
@@ -53,10 +52,7 @@ for user in socios:
                 try:
                     userid = user["campsDinamics"][field]
                 except:
-                    print(user)
-                    print(field)
                     userid = False
-                    sys.exit(0)
 
                 if userid:
                     if not (
