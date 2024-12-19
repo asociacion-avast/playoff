@@ -68,14 +68,14 @@ for actividad in actividades:
 
 print("Listado para politécnica")
 for user in sorted(set(usersconclave)):
-    for soci in socios:
-        if user == soci["idColegiat"]:
-            nom = soci["persona"]["nom"]
-            cognom = soci["persona"]["cognoms"]
-            nif = soci["persona"]["nif"]
+    for socio in socios:
+        if user == socio["idColegiat"]:
+            nombre = socio["persona"]["nom"]
+            apellidos = socio["persona"]["cognoms"]
+            nif = socio["persona"]["nif"]
             # autoriza = 0
             # if isinstance(soci["campsDinamics"], dict) and "1_3_20210707032324pm" in soci["campsDinamics"]:
             #     if soci["campsDinamics"]["1_3_20210707032324pm"] == 1:
             #         autoriza = 1
             # print("%s,%s,%s,%s" % (nif, cognom, nom, autoriza))
-            print(f"{nif},{cognom},{nom}")
+            print(f"{nif},{apellidos},{nombre}")
