@@ -5,7 +5,7 @@ import common
 print("Loading file from disk")
 
 actividades = common.readjson(filename="actividades")
-socis = common.readjson(filename="socios")
+socios = common.readjson(filename="socios")
 
 
 conclavewifi = [
@@ -68,7 +68,7 @@ for actividad in actividades:
 
 print("Listado para politécnica")
 for user in sorted(set(usersconclave)):
-    for soci in socis:
+    for soci in socios:
         if user == soci["idColegiat"]:
             nom = soci["persona"]["nom"]
             cognom = soci["persona"]["cognoms"]
