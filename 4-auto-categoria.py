@@ -78,7 +78,13 @@ for socio in socios:
                     # Our member had a match with the born year
                     targetcategorias.append(int(categoria["idModalitat"]))
 
-            edad = today.year - year - ((today.month, today.day) < (month, day))
+            fechadia = today.day
+
+            if today.month == 12:
+                # Los que cumplen a final de diciembre... se les suma el año antes
+                fechadia = 31
+
+            edad = today.year - year - ((today.month, fechadia) < (month, day))
 
             # Add target category for +13/+15
             if edad in range(13, 15):
