@@ -1,2 +1,10 @@
+calendar
+
+configparser
+datetime
+dateutil.parser
+json
+os
 python-dateutil
 requests
+sys
