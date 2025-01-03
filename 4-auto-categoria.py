@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import calendar
 import configparser
 import datetime
 import os
@@ -78,11 +79,7 @@ for socio in socios:
                     # Our member had a match with the born year
                     targetcategorias.append(int(categoria["idModalitat"]))
 
-            fechadia = today.day
-
-            if today.month == 12:
-                # Los que cumplen a final de diciembre... se les suma el año antes
-                fechadia = 31
+            fechadia = calendar.monthrange(today.year, today.month)[1]
 
             edad = today.year - year - ((today.month, fechadia) < (month, day))
 
