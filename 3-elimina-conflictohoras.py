@@ -111,11 +111,12 @@ print(
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    horario = actividad["idNivell"]
+    horario = int(actividad["idNivell"])
 
-    inscritos = common.readjson(filename=f"{myid}")
+    if horario in {7, 8, 9, 10}:
+        inscritos = common.readjson(filename=f"{myid}")
 
-    for inscrito in inscritos:
-        inscripcion = inscrito["idInscripcio"]
-        if inscripcion in inscripcionesanuladas:
-            print(nombre)
+        for inscrito in inscritos:
+            inscripcion = inscrito["idInscripcio"]
+            if inscripcion in inscripcionesanuladas:
+                print(nombre)
