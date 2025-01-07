@@ -20,15 +20,16 @@ for actividad in actividades:
     horario = int(actividad["idNivell"])
 
     if horario in [7, 8, 9, 10]:
-        inscritos = common.readjson(filename="%s" % myid)
-
         actividadyusuarios[myid] = []
+
+        inscritos = common.readjson(filename="%s" % myid)
 
         for inscrito in inscritos:
             colegiat = inscrito["colegiat"]["idColegiat"]
-            actividadyusuarios[myid].append(colegiat)
 
             if inscrito["estat"] == "INSCRESTNOVA":
+                actividadyusuarios[myid].append(colegiat)
+
                 if colegiat not in usuariosyactividad:
                     usuariosyactividad[colegiat] = []
 
