@@ -14,18 +14,21 @@ actividades = common.readjson(filename="actividades")
 
 print("Procesando actividades...")
 
+
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
+    horario = int(actividad["idNivell"])
 
-    print(myid, nombre)
+    if horario in [7, 8, 9, 10]:
+        print(myid, nombre)
 
-    # get users
-    usersurl = f"https://asociacionavast.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={myid}"
+        # get users
+        usersurl = f"https://asociacionavast.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={myid}"
 
-    # result = requests.get(sociosurl, auth=BearerAuth(token), headers=headers)
-    users = requests.get(
-        usersurl, auth=common.BearerAuth(token), headers=common.headers
-    ).json()
+        # result = requests.get(sociosurl, auth=BearerAuth(token), headers=headers)
+        users = requests.get(
+            usersurl, auth=common.BearerAuth(token), headers=common.headers
+        ).json()
 
-    common.writejson(filename=f"{myid}", data=users)
+        common.writejson(filename=f"{myid}", data=users)
