@@ -9,7 +9,8 @@ socios = common.readjson(filename="socios")
 
 print("Procesando socios...")
 
-idsociosconocidos = []
+idpasaportesociosconocidos = []
+idsocioconocidos = []
 
 
 # For each user check the custom fields that store the telegram ID for each tutor
@@ -20,16 +21,32 @@ for user in socios:
         and "estatColegiat" in user
         and user["estatColegiat"]["nom"] == "ESTALTA"
     ):
-        idsocio = user["persona"]["residencia"]
         idcolegiat = user["idColegiat"]
+        idsocio = user["numColegiat"].lower()
+        idpasaporte = user["persona"]["residencia"].lower()
+
+        if idpasaporte == "":
+            idpasaporte = False
 
         if idsocio == "":
             idsocio = False
 
-        if idsocio and idsocio not in idsociosconocidos and idsocio != "":
-            idsociosconocidos.append(idsocio)
+        if (
+            idpasaporte
+            and idpasaporte not in idpasaportesociosconocidos
+            and idpasaporte != ""
+        ):
+            idpasaportesociosconocidos.append(idpasaporte)
+        elif idpasaporte and idpasaporte != "-":
+            print(
+                "Socio Pasaporte ID: %s duplicado: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
+                % (idpasaporte, idcolegiat)
+            )
+
+        if idsocio and idsocio not in idsocioconocidos and idsocio != "":
+            idsocioconocidos.append(idsocio)
         elif idsocio and idsocio != "-":
             print(
-                "Socio ID: %s duplicado: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
+                "nº Socio ID: %s duplicado: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
                 % (idsocio, idcolegiat)
             )
