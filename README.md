@@ -24,9 +24,9 @@ Trabajo con los datos:
 | Script                                  | Función                                                                   |
 | --------------------------------------- | ------------------------------------------------------------------------- |
 | `3-actividades-con-huecos.py`           | Muestra las plazas libres en actividades                                  |
-| `3-elimina-conflictohoras.py`           | Elimina inscripciones con conflicto de horas                              |
 | `3-elimina-inscripciones-anuladas.py`   | Elimina las inscripciones anuladas por socios                             |
 | `3-elimina-inscripciones-bajas.py`      | Elimina inscripciones de socios de baja en actividades o en la asociación |
+| `3-elimina-inscripciones-conlicto.py`   | Elimina inscripciones con conflicto de horas                              |
 | `3-elimina-tutor-en-campo-socio.py`     | Elimina ID's telegram de tutor en campo de socio                          |
 | `3-listado-socios-categoria.py`         | Muestra los socios en cada categoria                                      |
 | `3-listado-socios-conflicto-horas.py`   | Lista socios con conflicto de horas                                       |
