@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-
-
 import configparser
+import datetime
 import os
 
+import dateutil.parser
 import requests
 
 import common
@@ -25,6 +25,9 @@ usuariosyhorarios = {}
 usuarioseinscripciones = {}
 usuariosyhorariosinscripciones = {}
 
+
+ahora = datetime.datetime.now()
+
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
@@ -37,30 +40,39 @@ for actividad in actividades:
 
         for inscrito in inscritos:
             colegiat = inscrito["colegiat"]["idColegiat"]
+            fecha = inscrito["dataIntroduccio"]
+            try:
+                fecha = dateutil.parser.parse(fecha)
 
-            if inscrito["estat"] == "INSCRESTNOVA":
-                actividadyusuarios[myid].append(colegiat)
-                inscripcion = inscrito["idInscripcio"]
+            except Exception:
+                fecha = False
 
-                if colegiat not in usuariosyactividad:
-                    usuariosyactividad[colegiat] = []
+            if ahora - fecha > datetime.timedelta(hours=1, minutes=30):
+                if inscrito["estat"] == "INSCRESTNOVA":
+                    actividadyusuarios[myid].append(colegiat)
+                    inscripcion = inscrito["idInscripcio"]
 
-                if colegiat not in usuariosyhorarios:
-                    usuariosyhorarios[colegiat] = []
+                    if colegiat not in usuariosyactividad:
+                        usuariosyactividad[colegiat] = []
 
-                if colegiat not in usuariosyhorariosinscripciones:
-                    usuariosyhorariosinscripciones[colegiat] = {}
+                    if colegiat not in usuariosyhorarios:
+                        usuariosyhorarios[colegiat] = []
 
-                if horario not in usuariosyhorariosinscripciones[colegiat]:
-                    usuariosyhorariosinscripciones[colegiat][horario] = []
+                    if colegiat not in usuariosyhorariosinscripciones:
+                        usuariosyhorariosinscripciones[colegiat] = {}
 
-                if colegiat not in usuarioseinscripciones:
-                    usuarioseinscripciones[colegiat] = []
+                    if horario not in usuariosyhorariosinscripciones[colegiat]:
+                        usuariosyhorariosinscripciones[colegiat][horario] = []
 
-                usuariosyactividad[colegiat].append(myid)
-                usuariosyhorarios[colegiat].append(horario)
-                usuariosyhorariosinscripciones[colegiat][horario].append(inscripcion)
-                usuarioseinscripciones[colegiat].append(inscripcion)
+                    if colegiat not in usuarioseinscripciones:
+                        usuarioseinscripciones[colegiat] = []
+
+                    usuariosyactividad[colegiat].append(myid)
+                    usuariosyhorarios[colegiat].append(horario)
+                    usuariosyhorariosinscripciones[colegiat][horario].append(
+                        inscripcion
+                    )
+                    usuarioseinscripciones[colegiat].append(inscripcion)
 
 
 token = common.gettoken(
