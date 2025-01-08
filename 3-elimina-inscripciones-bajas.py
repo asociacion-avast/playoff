@@ -140,9 +140,6 @@ for actividad in actividades:
         for inscrito in inscritos:
             colegiat = inscrito["colegiat"]["idColegiat"]
 
-            if colegiat == "594":
-                print("hola")
-
             if colegiat in sociosbaja:
                 actividadyusuarios[myid].append(colegiat)
                 inscripcion = inscrito["idInscripcio"]
