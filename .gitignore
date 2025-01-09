@@ -1,4 +1,5 @@
 *.json
 sorteo/*.txt
-
+*.csv
 .codegpt
+__pycache__/
