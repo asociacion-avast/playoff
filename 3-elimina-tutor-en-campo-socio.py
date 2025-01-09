@@ -12,11 +12,6 @@ config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
 
 
-idtutor1 = "0_13_20231012041710"
-idtutor2 = "0_14_20231012045321"
-idsocios = "0_16_20241120130245"
-
-
 socios = common.readjson("socios")
 
 
@@ -33,9 +28,9 @@ idsociotoclean = []
 
 for socio in socios:
     if isinstance(socio["campsDinamics"], dict):
-        if idsocios in socio["campsDinamics"]:
-            mysocio = socio["campsDinamics"][idsocios]
-            for field in [idtutor1, idtutor2]:
+        if common.socioid in socio["campsDinamics"]:
+            mysocio = socio["campsDinamics"][common.socioid]
+            for field in [common.tutor1, common.tutor2]:
                 if field in socio["campsDinamics"]:
                     if mysocio == socio["campsDinamics"][field]:
                         idsociotoclean.append(socio["idColegiat"])
@@ -49,7 +44,7 @@ for idcolegiat in sorted(set(idsociotoclean)):
 
     comurl = f"{common.apiurl}/colegiats/{idcolegiat}/campsdinamics"
 
-    data = {f"{idsocios}": ""}
+    data = {f"{common.socioid}": ""}
 
     files = []
     response = requests.request("PUT", comurl, headers=headers, data=data, files=files)

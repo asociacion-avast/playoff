@@ -9,6 +9,12 @@ import requests
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
 
+# Telegramfields
+tutor1 = "0_13_20231012041710"
+tutor2 = "0_14_20231012045321"
+socioid = "0_16_20241120130245"
+telegramfields = [tutor1, tutor2, socioid]
+
 
 apiurl = "https://asociacionavast.playoffinformatica.com/api.php/api/v1.0"
 headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
@@ -46,12 +52,6 @@ def writejson(filename, data):
 def readjson(filename):
     with open(f"data/{filename}.json", "r", encoding="utf-8") as f:
         return json.load(f)
-
-
-# Telegramfields
-tutor1 = "0_13_20231012041710"
-tutor2 = "0_14_20231012045321"
-telegramfields = [tutor1, tutor2]
 
 
 def addcategoria(token, socio, categoria):

@@ -3,13 +3,6 @@
 
 import common
 
-# name of the field in PlayOff
-tutor1 = "0_13_20231012041710"
-tutor2 = "0_14_20231012045321"
-socioid = "0_16_20241120130245"
-
-fields = [tutor1, tutor2, socioid]
-
 print("Loading file from disk")
 socios = common.readjson(filename="socios")
 
@@ -47,7 +40,7 @@ def classifymembers(socios):
         #     fecha = False
 
         if isinstance(user["campsDinamics"], dict):
-            for field in fields:
+            for field in common.telegramfields:
                 if field in user["campsDinamics"]:
                     try:
                         userid = user["campsDinamics"][field]
@@ -142,7 +135,7 @@ def classifymembers(socios):
                                             resultids["tutor"].append(userid)
 
                                         if "Socio Actividades".lower() in agrupacionom:
-                                            if field == socioid:
+                                            if field == common.socioid:
                                                 resultids["kids"].append(userid)
                                                 resultids["kidsactiv"].append(userid)
                                             resultids["activ"].append(userid)
@@ -154,7 +147,7 @@ def classifymembers(socios):
                                             "Socio SIN Actividades".lower()
                                             in agrupacionom
                                         ):
-                                            if field == socioid:
+                                            if field == common.socioid:
                                                 resultids["kids"].append(userid)
                                                 resultids["kidsinactiv"].append(userid)
                                             resultids["kids-and-parents"].append(userid)
@@ -163,14 +156,14 @@ def classifymembers(socios):
                                             )
 
                                         if "avast15".lower() in modalitatnom:
-                                            if field == socioid:
+                                            if field == common.socioid:
                                                 resultids["teen15"].append(userid)
                                             resultids["teen15-and-parents"].append(
                                                 userid
                                             )
 
                                         if "avast13".lower() in modalitatnom:
-                                            if field == socioid:
+                                            if field == common.socioid:
                                                 resultids["teen13"].append(userid)
 
                                             resultids["teen13-and-parents"].append(

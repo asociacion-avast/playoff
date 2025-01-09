@@ -18,14 +18,6 @@ sociosurl = f"{common.apiurl}/colegiats?page=0&pageSize=4000"
 data = {"Authorization": f"Bearer {token}"}
 
 
-# name of the field in PlayOff
-tutor1 = "0_13_20231012041710"
-tutor2 = "0_14_20231012045321"
-socioid = "0_16_20241120130245"
-
-fields = [tutor1, tutor2, socioid]
-
-
 print("Obteniendo listado de socios")
 result = requests.get(sociosurl, auth=common.BearerAuth(token), headers=common.headers)
 
@@ -37,7 +29,7 @@ invalidids = []
 print("Procesando socios")
 for socio in socios:
     if isinstance(socio["campsDinamics"], dict):
-        for field in fields:
+        for field in common.telegramfields:
             if field in socio["campsDinamics"]:
                 if (
                     "estat" in socio
