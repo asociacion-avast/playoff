@@ -39,6 +39,8 @@ for socio in socios:
         # ID Socio
         socioid = socio["idColegiat"]
         alta = socio["dataAlta"]
+        numsocio = int(socio["numColegiat"])
+
         # Find our born year
         try:
             alta = dateutil.parser.parse(alta)
@@ -51,18 +53,35 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        targetcategorias = [nuevos]
+        if alta.year >= 2024 and alta.month >= 9:
+            targetcategorias = [nuevos]
+        else:
+            targetcategorias = []
+
+        if numsocio > 60000:
+            targetcategorias = []
+
         for categoria in targetcategorias:
-            if alta.year >= 2024 and alta.month >= 9:
-                if categoria not in categoriassocio:
-                    print(
-                        "IFF",
-                        socioid,
-                        categoria,
-                        categoriassocio,
-                        categoria in categoriassocio,
-                    )
-                    response = common.addcategoria(token, socioid, categoria)
-            elif categoria in categoriassocio:
-                # Remove Temporal if not in range
-                response = common.delcategoria(token, socioid, categoria)
+            if categoria not in categoriassocio:
+                print(
+                    "IFF",
+                    socioid,
+                    categoria,
+                    categoriassocio,
+                    categoria in categoriassocio,
+                )
+                response = common.addcategoria(token, socioid, categoria)
+
+        categoria = nuevos
+        if categoria in categoriassocio and (
+            targetcategorias == [] or targetcategorias is None
+        ):
+            # Remove Temporal if not in range
+            print(
+                "RFF",
+                socioid,
+                categoria,
+                categoriassocio,
+                categoria in categoriassocio,
+            )
+            response = common.delcategoria(token, socioid, categoria)
