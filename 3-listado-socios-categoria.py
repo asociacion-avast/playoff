@@ -61,8 +61,18 @@ def classifymembers(socios):
                             and "estatColegiat" in user
                             and user["estatColegiat"]["nom"] == "ESTALTA"
                         ):
-                            # We've ID but it's not in good status
-                            resultids["invalid"].append(userid)
+                            if (
+                                "estat" in user
+                                and user["estat"] == "COLESTVAL"
+                                and "estatColegiat" in user
+                                and user["estatColegiat"]["nom"] == "ESTPERLAB"
+                            ):
+                                # We've ID but it's not in good status
+                                resultids["profesores"].append(userid)
+                            else:
+                                # We've ID but it's not in good status
+
+                                resultids["invalid"].append(userid)
 
                         else:
                             resultids["valid"].append(userid)
