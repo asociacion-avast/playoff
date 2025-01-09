@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 
 
+import sys
+
 import common
 
-print("Loading file from disk")
+anyo = False
+if len(sys.argv) > 1:
+    try:
+        anyo = int(sys.argv[1])
+    except Exception:
+        anyo = False
 
+print("Loading file from disk")
 actividades = common.readjson(filename="actividades")
 
 
@@ -26,8 +34,8 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
     horario = int(actividad["idNivell"])
-    anyoinicio = actividad["edatMin"]
-    anyofin = actividad["edatMax"]
+    anyoinicio = int(actividad["edatMin"])
+    anyofin = int(actividad["edatMax"])
 
     if horario in {7, 8, 9, 10}:
         inscritos = common.readjson(filename=f"{myid}")
@@ -37,6 +45,11 @@ for actividad in actividades:
                 usadas = usadas + 1
         libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
-            print(
-                f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
-            )
+            if anyo and anyo >= anyoinicio and anyo <= anyofin:
+                print(
+                    f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
+                )
+            elif not anyo:
+                print(
+                    f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
+                )
