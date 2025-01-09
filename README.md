@@ -41,3 +41,4 @@ Trabajo con los datos:
 | `4-nueva-hornada.py`                    | Añade socios a categoría de Acogida por reciente incorporación            |
 | `4-sendupdate-telegram-socio.py`        | Manda actualización de datos para ID de telegram del SOCIO                |
 | `4-sendupdate-telegram-tutor.py`        | Manda actualización de datos para ID de telegram de TUTORES               |
+| `4-socio-por-idtelegram.py`             | Localiza el socio en base a la ID de Telegram                             |
