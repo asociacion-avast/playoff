@@ -17,9 +17,9 @@ print("Procesando socios")
 count = 0
 for socio in socios:
     if isinstance(socio["campsDinamics"], dict):
-        if common.idsocios in socio["campsDinamics"]:
-            mysocio = socio["campsDinamics"][common.idsocios]
-            for field in [common.idtutor1, common.idtutor2]:
+        if common.socioid in socio["campsDinamics"]:
+            mysocio = socio["campsDinamics"][common.socioid]
+            for field in [common.tutor1, common.tutor2]:
                 if field in socio["campsDinamics"]:
                     if mysocio == socio["campsDinamics"][field]:
                         count = count + 1
