@@ -34,8 +34,12 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
     horario = int(actividad["idNivell"])
-    anyoinicio = int(actividad["edatMin"])
-    anyofin = int(actividad["edatMax"])
+    try:
+        anyoinicio = int(actividad["edatMin"])
+        anyofin = int(actividad["edatMax"])
+    except:
+        anyoinicio = 0
+        anyofin = 0
 
     if horario in {7, 8, 9, 10}:
         inscritos = common.readjson(filename=f"{myid}")
