@@ -28,6 +28,8 @@ def classifymembers(socios):
         "teen13": [],  # Niños [13-15)
         "teen15-and-parents": [],  # Niños y tutores [15-24]
         "teen15": [],  # Niños [15-24]
+        "teen18-and-parents": [],  # Niños y tutores [18-29]
+        "teen18": [],  # Niños [18-29]
         "tutor": [],  # Tutores
         "valid": [],  # Cualquiera con relación avast
     }
@@ -91,25 +93,6 @@ def classifymembers(socios):
                                             "nom"
                                         ].lower()
 
-                                        # "activ": [], # Con actividades
-                                        # "adult": [], # Adultos
-                                        # "adultactiv": [], # Adultos con actividades
-                                        # "adultsinactiv": [], # Adultos sin actividades
-                                        # "invalid": [], # Socios sin ALTA activa
-                                        # "kid-and-parents": [], # Niños y tutores
-                                        # "kid": [], # Niños (CON y SIN)
-                                        # "kidactiv-and-parents": [], # Niños CON Actividades y tutores
-                                        # "kidactiv": [], # Niños CON Actividades
-                                        # "kidsinactiv-and-parents": [], # Niños SIN Actividades y tutores
-                                        # "kidsinactiv": [], # Niños SIN actividades
-                                        # "profesores": [], # Profesores
-                                        # "teen13-and-parents": [], # Niños y tutores [13-15)
-                                        # "teen13": [], # Niños [13-15)
-                                        # "teen15-and-parents": [], # Niños y tutores [15-24]
-                                        # "teen15": [], # Niños [15-24]
-                                        # "tutor": [], # Tutores
-                                        # "valid": [], # Cualquiera con relación avast
-
                                         if "profesores".lower() in agrupacionom:
                                             resultids["profesores"].append(userid)
 
@@ -167,6 +150,13 @@ def classifymembers(socios):
                                                 resultids["teen13"].append(userid)
 
                                             resultids["teen13-and-parents"].append(
+                                                userid
+                                            )
+
+                                        if "avast18".lower() in modalitatnom:
+                                            if field == common.socioid:
+                                                resultids["teen18"].append(userid)
+                                            resultids["teen18-and-parents"].append(
                                                 userid
                                             )
 
