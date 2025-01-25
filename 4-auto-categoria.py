@@ -22,6 +22,7 @@ headers = {"Authorization": f"Bearer {token}"}
 # Definiciones
 avast13 = 66
 avast15 = 65
+avast18 = 77
 
 # Leer datos
 socios = common.readjson("socios")
@@ -92,8 +93,12 @@ for socio in socios:
                 # AVAST+15
                 targetcategorias.append(avast15)
 
+            # elif edad in range(18, 29):
+            #     # AVAST+18
+            #     targetcategorias.append(avast18)
+
             # El socio no debe estar en grupos A+13 o A+15
-            for i in [avast13, avast15]:
+            for i in [avast13, avast15, avast18]:
                 if i in categoriassocio and i not in targetcategorias:
                     print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                     common.delcategoria(token, socioid, i)
