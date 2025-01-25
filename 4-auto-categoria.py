@@ -97,7 +97,7 @@ for socio in socios:
             #     # AVAST+18
             #     targetcategorias.append(avast18)
 
-            # El socio no debe estar en grupos A+13 o A+15
+            # El socio no debe estar en grupos A+13 o A+15 o A+18
             for i in [avast13, avast15, avast18]:
                 if i in categoriassocio and i not in targetcategorias:
                     print(f"ERROR: Borrando categoria {i} del socio {socioid}")
