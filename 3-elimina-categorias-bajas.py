@@ -32,7 +32,6 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
 
             print(
-                "Borrando: %s del socio https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s#tab=CATEGORIES"
-                % (idcategoria, id_socio)
+                f"Borrando: {idcategoria} del socio https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={id_socio}#tab=CATEGORIES"
             )
             common.delcategoria(token, id_socio, idcategoria)

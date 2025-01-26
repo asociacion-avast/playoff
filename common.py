@@ -15,9 +15,10 @@ tutor2 = "0_14_20231012045321"
 socioid = "0_16_20241120130245"
 telegramfields = [tutor1, tutor2, socioid]
 
-
-apiurl = "https://asociacionavast.playoffinformatica.com/api.php/api/v1.0"
+apiurl = f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
 headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
+
+endpoint = config["auth"]["endpoint"]
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -30,7 +31,9 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 def gettoken(user=config["auth"]["username"], password=config["auth"]["password"]):
-    apiurl = "https://asociacionavast.playoffinformatica.com/api.php/api/v1.0"
+    apiurl = (
+        f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
+    )
 
     # get token
 

@@ -45,6 +45,5 @@ for usuario in usuariosyhorarios:
         print(
             usuario,
             usuariosyhorarios[usuario],
-            "https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s#tab=ACTIVITATS"
-            % usuario,
+            f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={usuario}#tab=ACTIVITATS",
         )

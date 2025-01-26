@@ -180,7 +180,7 @@ for usuario, value in usuariosyhorarios.items():
 
     # calcular horarios a borrar y verlos en las inscripciones
 
-    url = f"https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat={usuario}#tab=ACTIVITATS"
+    url = f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={usuario}#tab=ACTIVITATS"
     print("\nUsuario: %s" % url)
     print(
         f"Inscripciones usuario y horarios: {usuariosyhorariosinscripciones[usuario]}"

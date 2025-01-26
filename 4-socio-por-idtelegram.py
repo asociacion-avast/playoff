@@ -41,6 +41,5 @@ for socio in socios:
 
                     if idbb and idbb == id:
                         print(
-                            "Socio: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
-                            % socio["idColegiat"]
+                            f"Socio: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socio["idColegiat"]}"
                         )

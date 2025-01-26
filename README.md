@@ -2,6 +2,7 @@ Create a file in `~/.avast.ini` with the following structure:
 
 ```ini
 [auth]
+endpoint=asociacionavast
 username=myusername
 password=mypass
 RWusername=myRWusername

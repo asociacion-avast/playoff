@@ -49,7 +49,7 @@ for user in socios:
             idpasaportesociosconocidos.append(idpasaporte)
         elif idpasaporte and idpasaporte != "-":
             print(
-                "Socio Pasaporte ID: %s duplicado: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
+                "Socio Pasaporte ID: %s duplicado: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
                 % (idpasaporte, idcolegiat)
             )
             print("Conflictos: %s" % sociospasaportes[idpasaporte])
@@ -62,7 +62,6 @@ for user in socios:
             idsocioconocidos.append(idsocio)
         elif idsocio and idsocio != "-":
             print(
-                "nº Socio ID: %s duplicado: https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
-                % (idsocio, idcolegiat)
+                f"nº Socio ID: {idsocio} duplicado: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
             )
             print("Conflictos: %s" % sociosnosocio[idsocio])

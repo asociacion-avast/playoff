@@ -38,8 +38,7 @@ for socio in socios:
 for idcolegiat in sorted(set(idsociotoclean)):
     count = count + 1
     print(
-        "%s https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
-        % (f"{count:04}", idcolegiat)
+        f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
     )
 
     comurl = f"{common.apiurl}/colegiats/{idcolegiat}/campsdinamics"

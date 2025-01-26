@@ -24,7 +24,7 @@ for actividad in actividades:
         print(myid, nombre)
 
         # get users
-        usersurl = f"https://asociacionavast.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={myid}"
+        usersurl = f"https://{common.endpoint}.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={myid}"
 
         # result = requests.get(sociosurl, auth=BearerAuth(token), headers=headers)
         users = requests.get(

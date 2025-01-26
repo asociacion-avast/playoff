@@ -24,6 +24,5 @@ for socio in socios:
                     if mysocio == socio["campsDinamics"][field]:
                         count = count + 1
                         print(
-                            "%s https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=%s"
-                            % (f"{count:04}", socio["idColegiat"])
+                            f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socio["idColegiat"]}"
                         )
