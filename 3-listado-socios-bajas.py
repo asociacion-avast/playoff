@@ -61,9 +61,9 @@ for socio in socios:
 
     if (
         "estat" in socio
-        and socio["estat"] == "COLESTVAL"
         and "estatColegiat" in socio
         and socio["estatColegiat"]["nom"] == "ESTALTA"
+        and (socio["estat"] == "COLESTVAL" or socio["estat"] == "COLESTPRE")
     ):
         if "colegiatHasModalitats" in socio:
             # Iterate over all categories for the user
