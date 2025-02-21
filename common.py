@@ -57,7 +57,7 @@ def readjson(filename):
         return json.load(f)
 
 
-def addcategoria(token, socio, categoria):
+def addcategoria(token, socio, categoria, extra=False):
     """Adds categoria to socio
 
     Args:
@@ -70,6 +70,9 @@ def addcategoria(token, socio, categoria):
     categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats"
 
     data = {"idModalitat": categoria}
+
+    if extra:
+        data.update(extra)
     files = []
 
     return requests.request(
