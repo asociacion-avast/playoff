@@ -14,6 +14,8 @@ tutor1 = "0_13_20231012041710"
 tutor2 = "0_14_20231012045321"
 socioid = "0_16_20241120130245"
 telegramfields = [tutor1, tutor2, socioid]
+fechacambio = "0_17_20250221121130"
+
 
 apiurl = f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
 headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
@@ -98,3 +100,25 @@ def delcategoria(token, socio, categoria):
     return requests.request(
         "DELETE", categoriaurl, headers=headers, data=data, files=files
     )
+
+
+def escribecampo(token, socioid, campo, valor=""):
+    """Escribe campo personalizado de socio
+
+    Args:
+        token (_type_): Token para operaciones
+        socioid (_type_): idAssociat
+        campo (_type_): Campo personalizado
+        valor (_type_): Valor a establecer o vacío para borrar
+
+    Returns:
+        _type_: _description_
+    """
+
+    comurl = f"{apiurl}/colegiats/{socioid}/campsdinamics"
+
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {f"{campo}": "{valor}"}
+
+    files = []
+    return requests.request("PUT", comurl, headers=headers, data=data, files=files)

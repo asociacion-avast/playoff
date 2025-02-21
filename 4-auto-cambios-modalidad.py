@@ -6,7 +6,6 @@ import datetime
 import os
 
 import dateutil.parser
-import requests
 
 import common
 
@@ -21,7 +20,6 @@ token = common.gettoken(
 headers = {"Authorization": f"Bearer {token}"}
 
 # Campo con la fecha de cambio
-fechacambio = "0_17_20250221121130"
 
 # Definiciones
 # 78: Cambio a Adulto sin actividades
@@ -42,25 +40,24 @@ extras = {53: False, 60: 5, 12: 5, 1: False}
 
 # Leer datos
 socios = common.readjson("socios")
-categorias = common.readjson("categorias")
-today = datetime.date.today()
 # Convert today to datetime.date
+today = datetime.date.today()
 today = datetime.date(today.year, today.month, today.day)
 
 
 # Locate our member in the list of members
 for socio in socios:
+    # ID Socio
+    socioid = socio["idColegiat"]
+
     if (
         "estat" in socio
         and socio["estat"] == "COLESTVAL"
         and "estatColegiat" in socio
         and socio["estatColegiat"]["nom"] == "ESTALTA"
     ):
-        # ID Socio
-        socioid = socio["idColegiat"]
-
         if isinstance(socio["campsDinamics"], dict):
-            for field in [fechacambio]:
+            for field in [common.fechacambio]:
                 if field in socio["campsDinamics"]:
                     fechacambiosocio = f'{socio["campsDinamics"][field]}'
                     # Fecha cambio
@@ -90,23 +87,23 @@ for socio in socios:
                                 modalitatid = int(categoria["modalitat"]["idModalitat"])
                                 modalitatsocio.append(modalitatid)
 
-                        print("Socio en categorias: %s" % modalitatsocio)
+                        print(f"Socio en categorias: {modalitatsocio}")
                         targetadd = []
                         targetremove = []
                         for categoria in modalitatsocio:
                             if categoria in cambios:
                                 print(
-                                    "Categoria : %s cambia a %s"
-                                    % (categoria, cambios[categoria])
+                                    f"Categoria : {categoria} cambia a {cambios[categoria]}"
                                 )
                                 targetadd.append(cambios[categoria])
                                 targetremove.append(categoria)
 
                         # Eliminar categorias en conflicto
-                        for categoria in [1, 12, 53, 60]:
-                            if categoria not in targetadd:
-                                targetremove.append(categoria)
-
+                        targetremove.extend(
+                            categoria
+                            for categoria in [1, 12, 53, 60]
+                            if categoria not in targetadd
+                        )
                         for categoria in targetremove:
                             if categoria in modalitatsocio:
                                 print(
@@ -138,14 +135,9 @@ for socio in socios:
                             print(response.text)
 
                             print("Vaciando fecha cambio")
-                            comurl = (
-                                f"{common.apiurl}/colegiats/{socioid}/campsdinamics"
-                            )
-
-                            data = {f"{fechacambio}": ""}
-
-                            files = []
-                            response = requests.request(
-                                "PUT", comurl, headers=headers, data=data, files=files
+                            print(
+                                common.escribecampo(
+                                    token, socioid, common.fechacambio, valor=""
+                                )
                             )
                             print(response)

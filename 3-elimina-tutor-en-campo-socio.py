@@ -4,8 +4,6 @@
 import configparser
 import os
 
-import requests
-
 import common
 
 config = configparser.ConfigParser()
@@ -41,11 +39,6 @@ for idcolegiat in sorted(set(idsociotoclean)):
         f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
     )
 
-    comurl = f"{common.apiurl}/colegiats/{idcolegiat}/campsdinamics"
-
-    data = {f"{common.socioid}": ""}
-
-    files = []
-    response = requests.request("PUT", comurl, headers=headers, data=data, files=files)
+    response = common.escribecampo(token, idcolegiat, common.socioid, "")
 
     print(response)
