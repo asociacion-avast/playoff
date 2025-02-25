@@ -39,7 +39,7 @@ for socio in socios:
         and socio["estatColegiat"]["nom"] == "ESTALTA"
     ):
         # ID Socio
-        socioid = socio["idColegiat"]
+        socioid = int(socio["idColegiat"])
 
         # Find our born year
         try:
