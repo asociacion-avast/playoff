@@ -23,6 +23,18 @@ headers = {"Authorization": f"Bearer {token}"}
 avast13 = 66
 avast15 = 65
 avast18 = 77
+socioactivo = 82
+# Periodicidad (bimensual: 5, anual: 3)
+extras = {82: 3}
+
+
+today = datetime.date.today()
+
+# La cuota anual es el 20 de Febrero
+if today.month < 2 or (today.month == 2 and today.day < 20):
+    fechacambiosocio = f"20/02/{today.year}"
+else:
+    fechacambiosocio = f"20/02/{today.year+1}"
 
 # Leer datos
 socios = common.readjson("socios")
@@ -66,7 +78,7 @@ for socio in socios:
                         print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
                         common.delcategoria(token, socioid, idcategoria)
 
-            targetcategorias = []
+            targetcategorias = [socioactivo]
             for categoria in categorias:
                 nombre = categoria["nom"]
 
@@ -98,7 +110,10 @@ for socio in socios:
             #     targetcategorias.append(avast18)
 
             # El socio no debe estar en grupos A+13 o A+15 o A+18
-            for i in [avast13, avast15, avast18]:
+            for i in [
+                avast13,
+                avast15,
+            ]:  # , avast18 #TODO Remove comment once avast18 is enabled
                 if i in categoriassocio and i not in targetcategorias:
                     print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                     common.delcategoria(token, socioid, i)
@@ -112,4 +127,15 @@ for socio in socios:
                         categoriassocio,
                         categoria in categoriassocio,
                     )
-                    response = common.addcategoria(token, socioid, categoria)
+                    if categoria != socioactivo:
+                        response = common.addcategoria(token, socioid, categoria)
+                    else:
+                        response = common.addcategoria(
+                            token,
+                            socioid,
+                            categoria,
+                            extra={
+                                "tipusperiodicitat": extras[categoria],
+                                "dataProperaGeneracio": fechacambiosocio,
+                            },
+                        )
