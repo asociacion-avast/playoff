@@ -19,6 +19,43 @@ token = common.gettoken(
 
 headers = {"Authorization": f"Bearer {token}"}
 
+
+def calcular_proximo_recibo(fecha):
+    """_summary_
+
+    Args:
+        fecha (datetime): Fecha for today
+
+    Returns:
+        str: fecha
+    """
+    meses_cobro = sorted(
+        set([9, 11, 1, 3, 5])
+    )  # Meses de cobro (septiembre, noviembre, enero, marzo, mayo)
+
+    fecha = dateutil.parser.parse(fecha)
+    dia = fecha.day
+    mes = fecha.month
+    año = fecha.year
+
+    if dia < 5:
+        dia_cobro = "05"
+        if mes in meses_cobro:
+            return f"{dia_cobro}/{mes}/{año}"
+        else:
+            mes_cobro = next((m for m in meses_cobro if m > mes), None)
+            if mes_cobro is None:
+                mes_cobro = meses_cobro[0]
+                año += 1
+            return f"{dia_cobro}/{mes_cobro}/{año}"
+    else:
+        mes_cobro = next((m for m in meses_cobro if m > mes), None)
+        if mes_cobro is None:
+            mes_cobro = meses_cobro[0]
+            año += 1
+        return f"05/{mes_cobro}/{año}"
+
+
 # Campo con la fecha de cambio
 
 # Definiciones
@@ -119,13 +156,20 @@ for socio in socios:
                                 f"INFO: Añadiendo categoria {categoria} del socio {socioid}"
                             )
                             if categoria in extras and extras[categoria]:
+                                # La cuota de actividades es el dia 5 del bimestre
+                                # septiembre, noviembre, enero, marzo, mayo
+
+                                targetrecibo = calcular_proximo_recibo(
+                                    f"{today.year}/{today.month}/{today.day}"
+                                )
+
                                 response = common.addcategoria(
                                     token,
                                     socioid,
                                     categoria,
                                     extra={
                                         "tipusperiodicitat": extras[categoria],
-                                        "dataProperaGeneracio": fechacambiosocio,
+                                        "dataProperaGeneracio": targetrecibo,
                                     },
                                 )
                             else:
