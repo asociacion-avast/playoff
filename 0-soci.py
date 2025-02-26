@@ -23,6 +23,10 @@ result = requests.get(sociosurl, auth=common.BearerAuth(token), headers=common.h
 
 socios = result.json()
 
+print("Saving file to disk")
+common.writejson(filename="socios", data=socios)
+
+
 validids = []
 invalidids = []
 
@@ -42,10 +46,6 @@ for socio in socios:
                 else:
                     invalidids.append(f'{socio["campsDinamics"][field]}')
 
-
-print("Saving file to disk")
-
-common.writejson(filename="socios", data=socios)
 
 print("Valid ID's")
 print(sorted(set(validids)))
