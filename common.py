@@ -159,3 +159,69 @@ def calcular_proximo_recibo(fecha):
             mes_cobro = meses_cobro[0]
             año += 1
         return f"05/{mes_cobro:02d}/{año}"
+
+
+def validasocio(
+    socio,
+    estado="COLESTVAL",
+    estatcolegiat="ESTALTA",
+    agrupaciones=[],
+    subcategorias=[],
+    reverseagrupaciones=False,
+    reversesubcategorias=False,
+):
+    """Validates if socio is active
+
+    Args:
+        socio (dict): Dictionary representing a socio
+
+    Returns:
+        bool: True or False is an active socio
+    """
+    if (
+        "estat" in socio
+        and socio["estat"] == estado
+        and "estatColegiat" in socio
+        and socio["estatColegiat"]["nom"] == estatcolegiat
+    ):
+        if not agrupaciones and not subcategorias:
+            return True
+        else:
+            if "colegiatHasModalitats" in socio:
+                # Iterate over all categories for the user
+                for modalitat in socio["colegiatHasModalitats"]:
+                    if "modalitat" in modalitat:
+                        # Save name for comparing the ones we target
+                        agrupacionom = modalitat["modalitat"]["agrupacio"][
+                            "nom"
+                        ].lower()
+                        modalitatnom = modalitat["modalitat"]["nom"].lower()
+
+                        if agrupaciones:
+                            if not reverseagrupaciones:
+                                rc = False
+                                for agrupacion in agrupaciones:
+                                    if agrupacionom == agrupacion.lower():
+                                        rc = True
+                                return rc
+                            else:
+                                rc = True
+                                for agrupacion in agrupaciones:
+                                    if agrupacionom == agrupacion.lower():
+                                        rc = False
+                                return rc
+                        if subcategorias:
+                            if not reversesubcategorias:
+                                rc = False
+                                for categoria in subcategorias:
+                                    if modalitatnom == categoria.lower():
+                                        rc = True
+                                return rc
+                            else:
+                                rc = True
+                                for categoria in subcategorias:
+                                    if modalitatnom == categoria.lower():
+                                        rc = False
+                                return rc
+
+    return False

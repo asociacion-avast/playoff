@@ -28,11 +28,10 @@ for socio in socios:
     if isinstance(socio["campsDinamics"], dict):
         for field in common.telegramfields:
             if field in socio["campsDinamics"]:
-                if (
-                    "estat" in socio
-                    and socio["estat"] == "COLESTVAL"
-                    and "estatColegiat" in socio
-                    and socio["estatColegiat"]["nom"] == "ESTALTA"
+                if common.validasocio(
+                    socio,
+                    estado="COLESTVAL",
+                    estatcolegiat="ESTALTA",
                 ):
                     try:
                         idbb = int(socio["campsDinamics"][field])

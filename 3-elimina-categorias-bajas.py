@@ -22,11 +22,12 @@ token = common.gettoken(
 
 for socio in socios:
     id_socio = socio["idColegiat"]
-    if (
-        "estat" in socio
-        and socio["estat"] == "COLESTVAL"
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTBAIXA"
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTBAIXA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         for categoria in socio["colegiatHasModalitats"]:
             idcategoria = int(categoria["idModalitat"])

@@ -51,19 +51,23 @@ resultids = {
 
 for socio in socios:
     id_socio = socio["idColegiat"]
-    if (
-        "estat" in socio
-        and socio["estat"] == "COLESTVAL"
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTBAIXA"
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTBAIXA",
     ):
         sociosbaja.append(id_socio)
 
-    if (
-        "estat" in socio
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTALTA"
-        and (socio["estat"] == "COLESTVAL" or socio["estat"] == "COLESTPRE")
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
+    ) or common.validasocio(
+        socio,
+        estado="COLESTPRE",
+        estatcolegiat="ESTALTA",
     ):
         if "colegiatHasModalitats" in socio:
             # Iterate over all categories for the user

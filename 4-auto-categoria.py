@@ -44,11 +44,12 @@ today = datetime.date.today()
 
 # Locate our member in the list of members
 for socio in socios:
-    if (
-        "estat" in socio
-        and socio["estat"] == "COLESTVAL"
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTALTA"
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         # ID Socio
         socioid = int(socio["idColegiat"])

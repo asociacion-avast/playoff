@@ -51,11 +51,12 @@ for socio in socios:
     # ID Socio
     socioid = socio["idColegiat"]
 
-    if (
-        "estat" in socio
-        and socio["estat"] == "COLESTVAL"
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTALTA"
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         if isinstance(socio["campsDinamics"], dict):
             for field in [common.fechacambio]:
