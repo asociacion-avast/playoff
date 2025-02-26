@@ -16,16 +16,17 @@ sociosnosocio = {}
 
 
 # For each user check the custom fields that store the telegram ID for each tutor
-for user in socios:
-    if (
-        "estat" in user
-        and user["estat"] == "COLESTVAL"
-        and "estatColegiat" in user
-        and user["estatColegiat"]["nom"] == "ESTALTA"
+for socio in socios:
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
-        idcolegiat = user["idColegiat"]
-        idsocio = user["numColegiat"].lower()
-        idpasaporte = user["persona"]["residencia"].lower()
+        idcolegiat = socio["idColegiat"]
+        idsocio = socio["numColegiat"].lower()
+        idpasaporte = socio["persona"]["residencia"].lower()
 
         if idpasaporte == "":
             idpasaporte = False

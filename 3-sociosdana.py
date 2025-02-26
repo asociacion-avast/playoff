@@ -73,40 +73,42 @@ codigos_postales = [
 
 print("Loading file from disk")
 
-users = common.readjson(filename="socios")
+socios = common.readjson(filename="socios")
 
 
 affected = []
 telegramids = []
 
-for user in users:
-    if (
-        "estat" in user
-        and user["estat"] == "COLESTVAL"
-        and "estatColegiat" in user
-        and user["estatColegiat"]["nom"] == "ESTALTA"
+for socio in socios:
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         try:
-            cp = int(user["persona"]["adreces"][0]["municipi"]["codipostal"])
+            cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
         except Exception:
             cp = 0
 
         if cp in codigos_postales:
-            affected.append(user["idColegiat"])
+            affected.append(socio["idColegiat"])
 
-            if isinstance(user["campsDinamics"], dict):
+            if isinstance(socio["campsDinamics"], dict):
                 for field in common.telegramfields:
-                    if field in user["campsDinamics"]:
+                    if field in socio["campsDinamics"]:
                         try:
-                            userid = user["campsDinamics"][field]
+                            userid = socio["campsDinamics"][field]
                         except Exception:
                             userid = False
 
                         if userid and (
-                            "estat" in user
-                            and user["estat"] == "COLESTVAL"
-                            and "estatColegiat" in user
-                            and user["estatColegiat"]["nom"] == "ESTALTA"
+                            common.validasocio(
+                                socio,
+                                estado="COLESTVAL",
+                                estatcolegiat="ESTALTA",
+                            )
                         ):
                             telegramids.append(userid)
 

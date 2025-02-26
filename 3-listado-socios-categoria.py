@@ -35,32 +35,32 @@ def classifymembers(socios):
     }
 
     # For each user check the custom fields that store the telegram ID for each tutor
-    for user in socios:
+    for socio in socios:
         # try:
         #     fecha = dateutil.parser.parse(user["persona"]["dataNaixement"])
         # except Exception:
         #     fecha = False
 
-        if isinstance(user["campsDinamics"], dict):
+        if isinstance(socio["campsDinamics"], dict):
             for field in common.telegramfields:
-                if field in user["campsDinamics"]:
+                if field in socio["campsDinamics"]:
                     try:
-                        userid = user["campsDinamics"][field]
+                        userid = socio["campsDinamics"][field]
                     except:
                         userid = False
 
                     if userid:
                         if not (
-                            "estat" in user
-                            and user["estat"] == "COLESTVAL"
-                            and "estatColegiat" in user
-                            and user["estatColegiat"]["nom"] == "ESTALTA"
+                            common.validasocio(
+                                socio,
+                                estado="COLESTVAL",
+                                estatcolegiat="ESTALTA",
+                            )
                         ):
-                            if (
-                                "estat" in user
-                                and user["estat"] == "COLESTVAL"
-                                and "estatColegiat" in user
-                                and user["estatColegiat"]["nom"] == "ESTPERLAB"
+                            if common.validasocio(
+                                socio,
+                                estado="COLESTVAL",
+                                estatcolegiat="ESTPERLAB",
                             ):
                                 # We've ID but it's not in good status
                                 resultids["profesores"].append(userid)
@@ -81,9 +81,9 @@ def classifymembers(socios):
                             # else:
                             #     edad = False
 
-                            if "colegiatHasModalitats" in user:
+                            if "colegiatHasModalitats" in socio:
                                 # Iterate over all categories for the user
-                                for modalitat in user["colegiatHasModalitats"]:
+                                for modalitat in socio["colegiatHasModalitats"]:
                                     if "modalitat" in modalitat:
                                         # Save name for comparing the ones we target
                                         agrupacionom = modalitat["modalitat"][

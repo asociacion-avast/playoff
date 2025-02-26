@@ -29,11 +29,12 @@ recibocorrecto = common.calcular_proximo_recibo(
 for socio in socios:
     id_socio = socio["idColegiat"]
 
-    if (
-        "estat" in socio
-        and "estatColegiat" in socio
-        and socio["estatColegiat"]["nom"] == "ESTALTA"
-        and (socio["estat"] == "COLESTVAL")
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         if "colegiatHasModalitats" in socio:
             # Iterate over all categories for the user
