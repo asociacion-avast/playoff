@@ -4,6 +4,7 @@ import configparser
 import json
 import os
 
+import dateutil.parser
 import requests
 
 config = configparser.ConfigParser()
@@ -122,3 +123,39 @@ def escribecampo(token, socioid, campo, valor=""):
 
     files = []
     return requests.request("PUT", comurl, headers=headers, data=data, files=files)
+
+
+def calcular_proximo_recibo(fecha):
+    """_summary_
+
+    Args:
+        fecha (datetime): Fecha for today
+
+    Returns:
+        str: fecha
+    """
+    meses_cobro = sorted(
+        set([9, 11, 1, 3, 5])
+    )  # Meses de cobro (septiembre, noviembre, enero, marzo, mayo)
+
+    fecha = dateutil.parser.parse(fecha)
+    dia = fecha.day
+    mes = fecha.month
+    año = fecha.year
+
+    if dia < 5:
+        dia_cobro = 5
+        if mes in meses_cobro:
+            return f"{dia_cobro:0d2}/{mes:02d}/{año}"
+        else:
+            mes_cobro = next((m for m in meses_cobro if m > mes), None)
+            if mes_cobro is None:
+                mes_cobro = meses_cobro[0]
+                año += 1
+            return f"{dia_cobro:02d}/{mes_cobro:02d}/{año}"
+    else:
+        mes_cobro = next((m for m in meses_cobro if m > mes), None)
+        if mes_cobro is None:
+            mes_cobro = meses_cobro[0]
+            año += 1
+        return f"05/{mes_cobro:02d}/{año}"
