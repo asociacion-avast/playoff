@@ -22,12 +22,7 @@ usuariosyactividad = {}
 actividadyusuarios = {}
 usuariosyhorarios = {}
 
-horarios = {}
-horarios[7] = "11:30"
-horarios[8] = "09:00"
-horarios[9] = "10:00"
-horarios[10] = "12:30"
-
+horarios = {7: "11:30", 8: "09:00", 9: "10:00", 10: "12:30"}
 
 print("NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
 for actividad in actividades:
