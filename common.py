@@ -136,7 +136,7 @@ def calcular_proximo_recibo(fecha):
         str: fecha
     """
     meses_cobro = sorted(
-        set([9, 11, 1, 3, 5])
+        {9, 11, 1, 3, 5}
     )  # Meses de cobro (septiembre, noviembre, enero, marzo, mayo)
 
     fecha = dateutil.parser.parse(fecha)
