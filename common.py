@@ -34,10 +34,6 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 def gettoken(user=config["auth"]["username"], password=config["auth"]["password"]):
-    apiurl = (
-        f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
-    )
-
     # get token
 
     loginurl = f"{apiurl}/login/colegi"
