@@ -44,6 +44,24 @@ today = datetime.date.today()
 
 # Locate our member in the list of members
 for socio in socios:
+    # ID Socio
+    socioid = int(socio["idColegiat"])
+
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTBAIXA",
+        agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
+    ):
+        for categoria in socio["colegiatHasModalitats"]:
+            idcategoria = int(categoria["idModalitat"])
+
+            print(
+                f"Borrando: {idcategoria} del socio https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}#tab=CATEGORIES"
+            )
+            common.delcategoria(token, socioid, idcategoria)
+
     if common.validasocio(
         socio,
         estado="COLESTVAL",
@@ -51,9 +69,6 @@ for socio in socios:
         agrupaciones=["PREINSCRIPCIÓN"],
         reverseagrupaciones=True,
     ):
-        # ID Socio
-        socioid = int(socio["idColegiat"])
-
         # Find our born year
         try:
             fecha = dateutil.parser.parse(socio["persona"]["dataNaixement"])
