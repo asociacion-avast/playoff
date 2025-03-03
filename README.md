@@ -25,7 +25,6 @@ Trabajo con los datos:
 | Script                                  | Función                                                                                |
 | --------------------------------------- | -------------------------------------------------------------------------------------- |
 | `3-actividades-con-huecos.py`           | Muestra las plazas libres en actividades                                               |
-| `3-elimina-categorias-bajas.py`         | Elimina las categorías de los socios de baja                                           |
 | `3-elimina-inscripciones-anuladas.py`   | Elimina las inscripciones anuladas por socios                                          |
 | `3-elimina-inscripciones-bajas.py`      | Elimina inscripciones de socios de baja en actividades o en la asociación              |
 | `3-elimina-inscripciones-conflictos.py` | Elimina inscripciones con conflicto de horas                                           |
@@ -41,7 +40,7 @@ Trabajo con los datos:
 | `3-sociosconflictohoras.py`             | Muestra socios con conflicto de horas                                                  |
 | `3-sociosdana.py`                       | Muestra socios en Códigos postales afectados por dana                                  |
 | `4-auto-cambios-modalidad.py`           | Cambia socios de modalidad según campo personalizado fecha cambio y categoría objetivo |
-| `4-auto-categoria.py`                   | Asigna categoría +13/+15 según edad                                                    |
+| `4-auto-categoria.py`                   | Asigna categorías (año, +13/+15/+18) y borrar categorías no válidas                    |
 | `4-nueva-hornada.py`                    | Añade socios a categoría de Acogida por reciente incorporación                         |
 | `4-sendupdate-telegram-socio.py`        | Manda actualización de datos para ID de telegram del SOCIO                             |
 | `4-sendupdate-telegram-tutor.py`        | Manda actualización de datos para ID de telegram de TUTORES                            |
