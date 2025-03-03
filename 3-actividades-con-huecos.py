@@ -49,7 +49,7 @@ for actividad in actividades:
                 usadas = usadas + 1
         libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
-            if anyo and anyo >= anyoinicio and anyo <= anyofin:
+            if anyo and anyoinicio <= anyo <= anyofin:
                 print(
                     f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
                 )
