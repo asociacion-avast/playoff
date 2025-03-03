@@ -64,6 +64,7 @@ def addcategoria(token, socio, categoria, extra=False):
     """Adds categoria to socio
 
     Args:
+        extra:
         token (str): token for accessing API (RW)
         socio (int): Socio identifier
         categoria (int): ID for category to modify
@@ -119,7 +120,7 @@ def escribecampo(token, socioid, campo, valor=""):
     comurl = f"{apiurl}/colegiats/{socioid}/campsdinamics"
 
     headers = {"Authorization": f"Bearer {token}"}
-    data = {f"{campo}": "{valor}"}
+    data = {f"{campo}": f"{valor}"}
 
     files = []
     return requests.request("PUT", comurl, headers=headers, data=data, files=files)
@@ -173,6 +174,12 @@ def validasocio(
     """Validates if socio is active
 
     Args:
+        estatcolegiat:
+        agrupaciones:
+        subcategorias:
+        reverseagrupaciones:
+        reversesubcategorias:
+        estado:
         socio (dict): Dictionary representing a socio
 
     Returns:
