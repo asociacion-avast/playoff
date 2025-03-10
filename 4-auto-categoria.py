@@ -128,6 +128,10 @@ for socio in socios:
     socioid = int(socio["idColegiat"])
     categoriassocio = []
 
+    for categoria in socio["colegiatHasModalitats"]:
+        idcategoria = int(categoria["idModalitat"])
+        categoriassocio.append(idcategoria)
+
     if common.validasocio(
         socio,
         estado="COLESTVAL",
@@ -135,9 +139,7 @@ for socio in socios:
         agrupaciones=["PREINSCRIPCIÓN"],
         reverseagrupaciones=True,
     ):
-        for categoria in socio["colegiatHasModalitats"]:
-            idcategoria = int(categoria["idModalitat"])
-
+        for idcategoria in categoriassocio:
             print(
                 f"Borrando: {idcategoria} del socio https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}#tab=CATEGORIES"
             )
@@ -177,7 +179,6 @@ for socio in socios:
 
             for categoria in socio["colegiatHasModalitats"]:
                 idcategoria = int(categoria["idModalitat"])
-                categoriassocio.append(idcategoria)
 
                 try:
                     myyear = int(categoria["modalitat"]["nom"])
