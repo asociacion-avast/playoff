@@ -26,6 +26,85 @@ avast18 = 77
 socioactivo = 82
 # Periodicidad (bimensual: 5, anual: 3)
 extras = {82: 3}
+dana = 83
+
+codigos_postales_dana = {
+    46000,
+    46012,
+    46016,
+    46017,
+    46026,
+    46110,
+    46117,
+    46134,
+    46138,
+    46149,
+    46164,
+    46165,
+    46178,
+    46190,
+    46191,
+    46192,
+    46193,
+    46195,
+    46196,
+    46197,
+    46198,
+    46200,
+    46210,
+    46220,
+    46230,
+    46240,
+    46250,
+    46267,
+    46290,
+    46300,
+    46330,
+    46340,
+    46360,
+    46367,
+    46368,
+    46369,
+    46370,
+    46380,
+    46389,
+    46393,
+    46400,
+    46410,
+    46417,
+    46420,
+    46430,
+    46440,
+    46450,
+    46460,
+    46469,
+    46470,
+    46500,
+    46530,
+    46610,
+    46614,
+    46621,
+    46670,
+    46680,
+    46687,
+    46688,
+    46689,
+    46690,
+    46700,
+    46710,
+    46727,
+    46850,
+    46894,
+    46900,
+    46910,
+    46920,
+    46930,
+    46940,
+    46950,
+    46960,
+    46970,
+    46980,
+}
 
 
 today = datetime.date.today()
@@ -40,12 +119,14 @@ else:
 socios = common.readjson("socios")
 categorias = common.readjson("categorias")
 today = datetime.date.today()
+fechadia = calendar.monthrange(today.year, today.month)[1]
 
 
 # Locate our member in the list of members
 for socio in socios:
     # ID Socio
     socioid = int(socio["idColegiat"])
+    categoriassocio = []
 
     if common.validasocio(
         socio,
@@ -69,6 +150,21 @@ for socio in socios:
         agrupaciones=["PREINSCRIPCIÓN"],
         reverseagrupaciones=True,
     ):
+        # Default for each member
+        targetcategorias = [socioactivo]
+        removecategorias = []
+
+        # Probar código postal
+        try:
+            cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
+        except Exception:
+            cp = 0
+
+        if cp in codigos_postales_dana:
+            targetcategorias.append(dana)
+        else:
+            removecategorias.append(dana)
+
         # Find our born year
         try:
             fecha = dateutil.parser.parse(socio["persona"]["dataNaixement"])
@@ -79,7 +175,6 @@ for socio in socios:
         if fecha:
             year, month, day = fecha.year, fecha.month, fecha.day
 
-            categoriassocio = []
             for categoria in socio["colegiatHasModalitats"]:
                 idcategoria = int(categoria["idModalitat"])
                 categoriassocio.append(idcategoria)
@@ -94,7 +189,6 @@ for socio in socios:
                         print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
                         common.delcategoria(token, socioid, idcategoria)
 
-            targetcategorias = [socioactivo]
             for categoria in categorias:
                 nombre = categoria["nom"]
 
@@ -107,8 +201,6 @@ for socio in socios:
                 if mycat and mycat == year and year in range(2000, today.year):
                     # Our member had a match with the born year
                     targetcategorias.append(int(categoria["idModalitat"]))
-
-            fechadia = calendar.monthrange(today.year, today.month)[1]
 
             edad = today.year - year - ((today.month, fechadia) < (month, day))
 
@@ -134,24 +226,38 @@ for socio in socios:
                     print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                     common.delcategoria(token, socioid, i)
 
-            for categoria in targetcategorias:
-                if categoria not in categoriassocio:
-                    print(
-                        "IFF",
+        # Add or remove categories
+
+        for categoria in targetcategorias:
+            if categoria not in categoriassocio:
+                print(
+                    "IFF",
+                    socioid,
+                    categoria,
+                    categoriassocio,
+                    categoria in categoriassocio,
+                )
+                if categoria != socioactivo:
+                    response = common.addcategoria(token, socioid, categoria)
+                else:
+                    response = common.addcategoria(
+                        token,
                         socioid,
                         categoria,
-                        categoriassocio,
-                        categoria in categoriassocio,
+                        extra={
+                            "tipusperiodicitat": extras[categoria],
+                            "dataProperaGeneracio": fechacambiosocio,
+                        },
                     )
-                    if categoria != socioactivo:
-                        response = common.addcategoria(token, socioid, categoria)
-                    else:
-                        response = common.addcategoria(
-                            token,
-                            socioid,
-                            categoria,
-                            extra={
-                                "tipusperiodicitat": extras[categoria],
-                                "dataProperaGeneracio": fechacambiosocio,
-                            },
-                        )
+
+        for categoria in removecategorias:
+            if categoria in categoriassocio:
+                print(
+                    "RFF",
+                    socioid,
+                    categoria,
+                    categoriassocio,
+                    categoria in categoriassocio,
+                )
+
+                response = common.delcategoria(token, socioid, categoria)
