@@ -29,7 +29,12 @@ print("Procesando inscripciones")
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    horario = int(actividad["idNivell"])
+
+    if actividad["idNivell"] and actividad["idNivell"] != "null":
+        horario = int(actividad["idNivell"])
+    else:
+        horario = 0
+
     if horario in [7, 8, 9, 10]:
         inscritos = common.readjson(filename=f"{myid}")
 

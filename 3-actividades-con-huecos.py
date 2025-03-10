@@ -28,7 +28,11 @@ print("NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    horario = int(actividad["idNivell"])
+    if actividad["idNivell"] and actividad["idNivell"] != "null":
+        horario = int(actividad["idNivell"])
+    else:
+        horario = 0
+
     try:
         anyoinicio = int(actividad["edatMin"])
         anyofin = int(actividad["edatMax"])
