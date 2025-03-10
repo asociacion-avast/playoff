@@ -21,8 +21,10 @@ data = {"Authorization": f"Bearer {token}"}
 print("Loading file from disk")
 socios = common.readjson(filename="socios")
 
-
-familias = {"capfamilias": [], "miembros": {}}
+try:
+    familias = common.readjson(filename="familias")
+except Exception:
+    familias = {"capfamilias": [], "miembros": {}, "procesados": []}
 
 
 print("Procesando socios")
@@ -36,8 +38,13 @@ for socio in socios:
     ):
         socioid = int(socio["idColegiat"])
 
-        if socioid not in familias["miembros"]:
+        if (
+            socioid not in familias["miembros"]
+            and socioid not in familias["procesados"]
+        ):
             familias["miembros"][socioid] = []
+            familias["procesados"].append(socioid)
+
             print("Actualizando familia del socio %s" % socioid)
             url = f"{common.apiurl}/colegiats/{socioid}/familia"
             response = requests.get(
@@ -56,6 +63,12 @@ for socio in socios:
 
                             if miembro["isBancCapFamilia"] == "1":
                                 familias["capfamilias"].append(miembroid)
+    else:
+        # Socio no válido
+        if socioid in familias["miembros"]:
+            del familias["miembros"][socioid]
+        if socioid in familias["capfamilias"]:
+            familias["capfamilias"].remove(socioid)
 
 
 # Find empty elements
@@ -68,6 +81,8 @@ for familia in familias["miembros"]:
 for familia in toclean:
     del familias["miembros"][familia]
 
+familias["capfamilias"] = sorted(set(familias["capfamilias"]))
+familias["miembros"] = {k: list(set(v)) for k, v in familias["miembros"].items()}
 
 # Save to disk
 common.writejson(filename="familias", data=familias)
