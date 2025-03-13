@@ -227,3 +227,14 @@ def validasocio(
                                 return rc
 
     return False
+
+
+def updateactividad(token, idactividad):
+    "Update Users for actividad using token and actividadID"
+    # get users
+    usersurl = f"https://{endpoint}.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={idactividad}"
+
+    headers = {"Authorization": f"Bearer {token}"}
+    users = requests.get(usersurl, auth=BearerAuth(token), headers=headers).json()
+
+    writejson(filename=f"{idactividad}", data=users)

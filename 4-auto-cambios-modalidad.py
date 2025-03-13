@@ -27,16 +27,18 @@ headers = {"Authorization": f"Bearer {token}"}
 # 79: Cambio a Adulto con actividades
 # 80: Cambio a Niño sin actividades
 # 81: Cambio a Niño con actividades
+# 87: Cambio a Socio Hermano con Actividades
 
 # 53: Adulto sin actividades
 # 60: Adulto con actividades
 # 12: Socio principal con actividades
 # 1: Socio principal sin actividades
+# 13: Socio hermano con actividades
 
-cambios = {78: 53, 79: 60, 80: 1, 81: 12}
+cambios = {78: 53, 79: 60, 80: 1, 81: 12, 87: 13}
 
 # Periodicidad (bimensual: 5)
-extras = {53: False, 60: 5, 12: 5, 1: False}
+extras = {53: False, 60: 5, 12: 5, 1: False, 13: 5}
 
 
 # Leer datos
@@ -71,8 +73,14 @@ for socio in socios:
                         fecha = False
                         print(f"ERROR: Procesando fecha para socio ID: {socioid}")
 
-                    if fecha and fecha <= today:
-                        print(f"Fecha alcanzada: {socioid}")
+                    if not (fecha and fecha <= today):
+                        print(
+                            f"Fecha no alcanzada {fecha}: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}"
+                        )
+                    else:
+                        print(
+                            f"Fecha alcanzada {fecha}: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}"
+                        )
 
                         categoriassocio = []
                         modalitatsocio = []
@@ -103,7 +111,7 @@ for socio in socios:
                         # Eliminar categorias en conflicto
                         targetremove.extend(
                             categoria
-                            for categoria in [1, 12, 53, 60]
+                            for categoria in [1, 12, 53, 60, 13]
                             if categoria not in targetadd
                         )
                         for categoria in targetremove:
