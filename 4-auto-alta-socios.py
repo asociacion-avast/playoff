@@ -32,8 +32,8 @@ print("Actualizando actividades ALTA")
 # 733: Alta Hermano Actividades
 
 
-# for actividadid in [728,729,730,731,732,733]:
-#     common.updateactividad(token=token,idactividad=actividadid)
+for actividadid in [728, 729, 730, 731, 732, 733]:
+    common.updateactividad(token=token, idactividad=actividadid)
 
 
 # Definiciones
