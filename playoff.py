@@ -1,8 +1,8 @@
 import configparser
 import json
+import logging
 import os
 from urllib.request import HTTPBasicAuthHandler
-import logging
 
 import requests
 
