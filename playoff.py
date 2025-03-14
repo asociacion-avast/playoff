@@ -57,9 +57,6 @@ class PlayoffAPI:
     def get_categorias(self):
         return self.get("modalitats")
 
-    def get_colegiat_by_id(self, idColegiat: str):
-        return self.client_web.get_colegiat_by_id(idColegiat)
-
     def get_colegiat_by_nif(self, nif: str) -> dict:
         res = self.get(f"colegiats?nif={nif}")
         if len(res) > 0:
