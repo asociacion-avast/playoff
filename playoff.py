@@ -2,10 +2,8 @@ import configparser
 import json
 import logging
 import os
-from urllib.request import HTTPBasicAuthHandler
 
 import requests
-
 
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
 logging.getLogger("requests.packages.urllib3").setLevel(logging.DEBUG)
@@ -103,7 +101,7 @@ class PlayoffAPI:
                     "isAfegirAGrupFamiliar": False,
                     "isCapFamilia": False,
                     "signatura": {},
-                    "idColegiat": "3543",
+                    "idColegiat": colegiat.get("idColegiat"),
                     "idActivitat": idActivitat,
                     "colegiat": colegiat,
                 }
@@ -115,13 +113,22 @@ class PlayoffAPI:
             headers=self.get_headers(),
             allow_redirects=False,
         )
-        return res
+        if res.status_code == 201:
+            return self.get_inscripcio_by_idActivitat_passaport(
+                idActivitat, idColegiat
+            ).get("idInscripcio")
 
     def get_inscripcions_by_idActivitat(self, idActivitat):
         return self.get(f"inscripcions?idActivitat={idActivitat}")
 
-    def get_inscripcions_by_idActivitat_passaport(self, idActivitat, passaport):
+    def get_inscripcio_by_idActivitat_passaport(self, idActivitat, idColegiat):
         inscripcions = self.get_inscripcions_by_idActivitat(idActivitat)
+        return next(
+            filter(
+                lambda el: idColegiat == el.get("colegiat").get("idColegiat"),
+                inscripcions,
+            )
+        )
 
 
 class PlayoffWeb:
