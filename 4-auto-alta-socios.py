@@ -128,9 +128,11 @@ for socio in socios:
 
                         # Comprobamos que ha pagado la categoría que toca
                         if actividadid == 728:  # Alta sin actividades
+                            pagada = True
                             if 32 in categoriassocio:
                                 activasocio = True
                                 targetcategorias.append(1)
+
                             if 54 in categoriassocio:
                                 activasocio = True
                                 targetcategorias.append(53)
@@ -142,6 +144,10 @@ for socio in socios:
                                 # Programar cambio futuro a actividades
                                 cambiaactividades = True
                                 targetprogramada.append(60)
+                            else:
+                                print(
+                                    "Categoria pagada no corresponde con la candidata"
+                                )
                         if actividadid == 730:  # Alta niño actividades
                             if 33 in categoriassocio:
                                 activasocio = True
@@ -149,6 +155,10 @@ for socio in socios:
                                 targetcategorias.append(1)
                                 cambiaactividades = True
                                 targetprogramada.append(12)
+                            else:
+                                print(
+                                    "Categoria pagada no corresponde con la candidata"
+                                )
                         if actividadid == 731:  # Carnet adicional tutor
                             targetcategorias.append(84)  # Carnet
                         if actividadid == 732:  # Alta tutor actividades
