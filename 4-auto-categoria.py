@@ -210,19 +210,16 @@ for socio in socios:
                 # AVAST+13
                 targetcategorias.append(avast13)
 
-            elif edad in range(15, 24):
+            elif edad in range(15, 17):
                 # AVAST+15
                 targetcategorias.append(avast15)
 
-            # elif edad in range(18, 29):
-            #     # AVAST+18
-            #     targetcategorias.append(avast18)
+            elif edad in range(18, 29):
+                # AVAST+18
+                targetcategorias.append(avast18)
 
             # El socio no debe estar en grupos A+13 o A+15 o A+18
-            for i in [
-                avast13,
-                avast15,
-            ]:  # , avast18 #TODO Remove comment once avast18 is enabled
+            for i in [avast13, avast15, avast18]:
                 if i in categoriassocio and i not in targetcategorias:
                     print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                     common.delcategoria(token, socioid, i)
