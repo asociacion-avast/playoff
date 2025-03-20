@@ -206,15 +206,15 @@ for socio in socios:
             edad = today.year - year - ((today.month, fechadia) < (month, day))
 
             # Add target category for +13/+15
-            if edad in range(13, 15):
+            if edad in range(13, 16):
                 # AVAST+13
                 targetcategorias.append(avast13)
 
-            elif edad in range(15, 17):
+            elif edad in range(15, 18):
                 # AVAST+15
                 targetcategorias.append(avast15)
 
-            elif edad in range(18, 29):
+            elif edad in range(18, 30):
                 # AVAST+18
                 targetcategorias.append(avast18)
 
