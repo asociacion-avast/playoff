@@ -232,9 +232,140 @@ def validasocio(
 def updateactividad(token, idactividad):
     "Update Users for actividad using token and actividadID"
     # get users
-    usersurl = f"https://{endpoint}.playoffinformatica.com/api.php/api/v1.0/inscripcions?idActivitat={idactividad}"
+    usersurl = f"https://{apiurl}/inscripcions?idActivitat={idactividad}"
 
     headers = {"Authorization": f"Bearer {token}"}
     users = requests.get(usersurl, auth=BearerAuth(token), headers=headers).json()
 
     writejson(filename=f"{idactividad}", data=users)
+
+
+def create_inscripcio(token, idActivitat, idColegiat):
+    url = f"{apiurl}/inscripcions/public"
+
+    if idColegiat is not None:
+        colegiat = get_colegiat_data(idColegiat=idColegiat)
+
+    data = {
+        "inscripcions": [
+            {
+                "formatNouActivitat": True,  # Activa o desactivada llega el aviso de 'finalidad y funcionamiento'
+                "quotesObligatories": [],
+                "unitatsQuota": {},
+                "quotesOpcionals": [],
+                "descomptesGenerals": [],
+                "descompteCodi": None,
+                "campsPersonalitzats": {},
+                "observacions": None,
+                "isAutoritzaDretsImatge": False,
+                "isAfegirAGrupFamiliar": False,
+                "isCapFamilia": False,
+                "signatura": {},
+                "idColegiat": "%s" % idColegiat,
+                "idActivitat": idActivitat,
+                "colegiat": colegiat,
+            }
+        ]
+    }
+    res = requests.post(
+        url,
+        data=json.dumps(data),
+        auth=BearerAuth(token),
+        headers=headers,
+        allow_redirects=False,
+    )
+    return res
+
+
+def get_colegiat_data(idColegiat=False):
+    socios = readjson("socios")
+    mydata = False
+
+    for socio in socios:
+        if int(socio["idColegiat"]) == int(idColegiat):
+            mydata = socio
+
+    # Tenemos el socio
+    # Tenemos que prepararlo al formato que usa la inscripción
+
+    if mydata:
+        return {
+            "": None,
+            "idColegiat": mydata["idColegiat"],
+            "idModalitat": "33",
+            "fotoThumbnail": "",
+            "numColegiat": mydata["numColegiat"],
+            "nomEstat": "Alta",
+            "nom": mydata["persona"]["nom"],
+            "cognoms": mydata["persona"]["cognoms"],
+            "nif": "",
+            "residencia": "",
+            "tePassaport": "S",
+            "dataNaixement": "",
+            "edat": 44,
+            "sexe": "Otros / No binario",
+            "estatCivil": "",
+            "escola": "",
+            "telefonPrincipal": "",
+            "telefonSecundari": "",
+            "codipostal": "46017",
+            "domicili": "",
+            "municipi": "VALENCIA",
+            "nomProvincia": "VALENCIA",
+            "prefixPais": None,
+            "prefixNacionalitat": "España",
+            "emailOficial": "",
+            "web": "",
+            "dataAlta": "",
+            "dataBaixa": "",
+            "iban": "",
+            "titular": "",
+            "teApp": "Sí",
+            "observacionsColegiat": "",
+            "numeroRebutsRetornats": None,
+            "importRebutsRetornats": None,
+            "dataRebutRetornat": "",
+            "pendents": "1",
+            "importTotalPendent": "0.00",
+            "metodePagament": "Domiciliación bancaria",
+            "nomTutor1": "",
+            "cognomsTutor1": "",
+            "telefonFixTutor1": "",
+            "mobilTutor1": "",
+            "emailTutor1": "",
+            "nomTutor2": "",
+            "cognomsTutor2": "",
+            "telefonFixTutor2": "",
+            "mobilTutor2": "",
+            "emailTutor2": "",
+            "adjunts": [],
+            "1_0_20220126102039am": '["No tengo"]',
+            "1_1_20220908054836am": None,
+            "1_0_20190831085222am": None,
+            "1_1_20210606061659am": '["Fotos en Sitio Web AVAST "]',
+            "1_4_20210707032324pm": None,
+            "1_3_20210707032324pm": "NO",
+            "1_5_20210708123547pm": "NO",
+            "1_6_20210708123547pm": "SI",
+            "1_7_20210708124318pm": None,
+            "1_8_20220221034044pm": "Los abajo firmantes, reconocen haber leído las normas de uso del carnet durante la inscripción",
+            "0_13_20231012041710": "",
+            "0_14_20231012045321": "",
+            "0_16_20241120130245": None,
+            "1_9_20220308034849pm": '["No ceder mis datos"]',
+            "1_10_20220309040836pm": "NO",
+            "1_11_20220309113126pm": "NO",
+            "0_15_20241120112536": None,
+            "0_17_20250221121130": "22-06-2025",
+            "paramsExtraFila": {
+                "idColegiat": mydata["idColegiat"],
+                "idModalitat": "33",
+                "numColegiat": mydata["numColegiat"],
+                "nomEstat": "ESTALTA",
+                "nom": mydata["persona"]["nom"],
+                "cognoms": mydata["persona"]["cognoms"],
+                "nif": "",
+                "residencia": "",
+                "dataNaixement": "",
+            },
+        }
