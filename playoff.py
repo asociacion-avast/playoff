@@ -2,10 +2,8 @@ import configparser
 import json
 import logging
 import os
-from urllib.request import HTTPBasicAuthHandler
 
 import requests
-
 
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
 logging.getLogger("requests.packages.urllib3").setLevel(logging.DEBUG)
@@ -15,8 +13,9 @@ logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
 ENDPOINT = config["auth"]["endpoint"]
-USERNAME = config["auth"]["username"]
-PASSWORD = config["auth"]["password"]
+USERNAME = config["auth"]["RWusername"]
+PASSWORD = config["auth"]["RWpassword"]
+
 
 
 class PlayoffAPI:
@@ -91,7 +90,7 @@ class PlayoffAPI:
         data = {
             "inscripcions": [
                 {
-                    "formatNouActivitat": True,
+                    "formatNouActivitat": True,  # Activa o desactivada llega el aviso de 'finalidad y funcionamiento'
                     "quotesObligatories": [],
                     "unitatsQuota": {},
                     "quotesOpcionals": [],
