@@ -17,7 +17,6 @@ USERNAME = config["auth"]["RWusername"]
 PASSWORD = config["auth"]["RWpassword"]
 
 
-
 class PlayoffAPI:
     """Facilita el uso del API de Playoff"""
 
