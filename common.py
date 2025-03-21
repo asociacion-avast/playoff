@@ -265,7 +265,8 @@ def create_inscripcio(token, idActivitat, idColegiat):
                 "idActivitat": idActivitat,
                 "colegiat": colegiat,
             }
-        ]
+        ],
+        "isEnviarNotificacio": 0,
     }
     res = requests.post(
         url,
