@@ -29,6 +29,7 @@ extras = {82: 3}
 dana = 83
 actividades = 90
 sinactividades = 91
+revisar = 92
 
 codigos_postales_dana = {
     46000,
