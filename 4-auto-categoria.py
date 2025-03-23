@@ -27,6 +27,8 @@ socioactivo = 82
 # Periodicidad (bimensual: 5, anual: 3)
 extras = {82: 3}
 dana = 83
+actividades = 90
+sinactividades = 91
 
 codigos_postales_dana = {
     46000,
@@ -128,8 +130,8 @@ for socio in socios:
     socioid = int(socio["idColegiat"])
     categoriassocio = []
 
-    for categoria in socio["colegiatHasModalitats"]:
-        idcategoria = int(categoria["idModalitat"])
+    for modalitat in socio["colegiatHasModalitats"]:
+        idcategoria = int(modalitat["idModalitat"])
         categoriassocio.append(idcategoria)
 
     if common.validasocio(
@@ -177,11 +179,13 @@ for socio in socios:
         if fecha:
             year, month, day = fecha.year, fecha.month, fecha.day
 
-            for categoria in socio["colegiatHasModalitats"]:
-                idcategoria = int(categoria["idModalitat"])
+            for modalitat in socio["colegiatHasModalitats"]:
+                idcategoria = int(modalitat["idModalitat"])
+                agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
+                modalitatnom = modalitat["modalitat"]["nom"].lower()
 
                 try:
-                    myyear = int(categoria["modalitat"]["nom"])
+                    myyear = int(modalitatnom)
                 except Exception:
                     myyear = False
 
@@ -190,18 +194,41 @@ for socio in socios:
                         print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
                         common.delcategoria(token, socioid, idcategoria)
 
-            for categoria in categorias:
-                nombre = categoria["nom"]
-
                 # Attempt to find categories for a year
                 try:
-                    mycat = int(nombre)
+                    mycat = int(modalitatnom)
                 except Exception:
                     mycat = False
 
                 if mycat and mycat == year and year in range(2000, today.year):
                     # Our member had a match with the born year
-                    targetcategorias.append(int(categoria["idModalitat"]))
+                    targetcategorias.append(int(modalitat["idModalitat"]))
+
+                if "colegiatHasModalitats" in socio:
+                    # Iterate over all categories for the user
+                    for modalitat in socio["colegiatHasModalitats"]:
+                        if "modalitat" in modalitat:
+                            # Save name for comparing the ones we target
+                            agrupacionom = modalitat["modalitat"]["agrupacio"][
+                                "nom"
+                            ].lower()
+                            modalitatnom = modalitat["modalitat"]["nom"].lower()
+
+                            if "Socio Adulto Actividades".lower() in agrupacionom:
+                                targetcategorias.append(actividades)
+                                removecategorias.append(sinactividades)
+
+                            if "Socio Adulto SIN Actividades".lower() in agrupacionom:
+                                targetcategorias.append(sinactividades)
+                                removecategorias.append(actividades)
+
+                            if "Socio Actividades".lower() in agrupacionom:
+                                targetcategorias.append(actividades)
+                                removecategorias.append(sinactividades)
+
+                            if "Socio SIN Actividades".lower() in agrupacionom:
+                                targetcategorias.append(sinactividades)
+                                removecategorias.append(actividades)
 
             edad = today.year - year - ((today.month, fechadia) < (month, day))
 
@@ -226,36 +253,36 @@ for socio in socios:
 
         # Add or remove categories
 
-        for categoria in targetcategorias:
-            if categoria not in categoriassocio:
+        for modalitat in targetcategorias:
+            if modalitat not in categoriassocio:
                 print(
                     "IFF",
                     socioid,
-                    categoria,
+                    modalitat,
                     categoriassocio,
-                    categoria in categoriassocio,
+                    modalitat in categoriassocio,
                 )
-                if categoria != socioactivo:
-                    response = common.addcategoria(token, socioid, categoria)
+                if modalitat != socioactivo:
+                    response = common.addcategoria(token, socioid, modalitat)
                 else:
                     response = common.addcategoria(
                         token,
                         socioid,
-                        categoria,
+                        modalitat,
                         extra={
-                            "tipusperiodicitat": extras[categoria],
+                            "tipusperiodicitat": extras[modalitat],
                             "dataProperaGeneracio": fechacambiosocio,
                         },
                     )
 
-        for categoria in removecategorias:
-            if categoria in categoriassocio:
+        for modalitat in removecategorias:
+            if modalitat in categoriassocio:
                 print(
                     "RFF",
                     socioid,
-                    categoria,
+                    modalitat,
                     categoriassocio,
-                    categoria in categoriassocio,
+                    modalitat in categoriassocio,
                 )
 
-                response = common.delcategoria(token, socioid, categoria)
+                response = common.delcategoria(token, socioid, modalitat)

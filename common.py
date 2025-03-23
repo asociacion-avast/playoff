@@ -372,8 +372,19 @@ def get_colegiat_data(idColegiat=False):
         }
 
 
-def createactividad(token,nom,lloc,maxplaces,minplaces,dataHoraActivitat,dataHoraFiActivitat,dataInici,dataLimit,descripcio,horario):
-
+def createactividad(
+    token,
+    nom,
+    lloc,
+    maxplaces,
+    minplaces,
+    dataHoraActivitat,
+    dataHoraFiActivitat,
+    dataInici,
+    dataLimit,
+    descripcio,
+    horario,
+):
     url = f"{apiurl}/activitats"
     payload = {
         "consentimentsLegals": [],
@@ -494,10 +505,19 @@ def createactividad(token,nom,lloc,maxplaces,minplaces,dataHoraActivitat,dataHor
         "codisDescomptes": [],
     }
 
-
-    return requests.post(
+    output = requests.post(
         url,
         headers=headers,
         auth=BearerAuth(token),
         data=json.dumps(payload),
     )
+    try:
+        output = json.loads(output)
+    except:
+        pass
+
+    if isinstance(output, dict) and "idActivitat" in output:
+        updateactividad(token=token, idactividad=output["idActivitat"])
+        return output["idActivitat"]
+    else:
+        return output
