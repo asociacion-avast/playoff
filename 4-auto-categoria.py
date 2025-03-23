@@ -195,40 +195,35 @@ for socio in socios:
                         common.delcategoria(token, socioid, idcategoria)
 
                 # Attempt to find categories for a year
-                try:
-                    mycat = int(modalitatnom)
-                except Exception:
-                    mycat = False
 
-                if mycat and mycat == year and year in range(2000, today.year):
-                    # Our member had a match with the born year
-                    targetcategorias.append(int(modalitat["idModalitat"]))
+                for categoria in categorias:
+                    nombre = categoria["nom"]
 
-                if "colegiatHasModalitats" in socio:
-                    # Iterate over all categories for the user
-                    for modalitat in socio["colegiatHasModalitats"]:
-                        if "modalitat" in modalitat:
-                            # Save name for comparing the ones we target
-                            agrupacionom = modalitat["modalitat"]["agrupacio"][
-                                "nom"
-                            ].lower()
-                            modalitatnom = modalitat["modalitat"]["nom"].lower()
+                    # Attempt to find categories for a year
+                    try:
+                        mycat = int(nombre)
+                    except Exception:
+                        mycat = False
 
-                            if "Socio Adulto Actividades".lower() in agrupacionom:
-                                targetcategorias.append(actividades)
-                                removecategorias.append(sinactividades)
+                    if mycat and mycat == year and year in range(2000, today.year):
+                        # Our member had a match with the born year
+                        targetcategorias.append(int(categoria["idModalitat"]))
 
-                            if "Socio Adulto SIN Actividades".lower() in agrupacionom:
-                                targetcategorias.append(sinactividades)
-                                removecategorias.append(actividades)
+                if "Socio Adulto Actividades".lower() in agrupacionom:
+                    targetcategorias.append(actividades)
+                    removecategorias.append(sinactividades)
 
-                            if "Socio Actividades".lower() in agrupacionom:
-                                targetcategorias.append(actividades)
-                                removecategorias.append(sinactividades)
+                if "Socio Adulto SIN Actividades".lower() in agrupacionom:
+                    targetcategorias.append(sinactividades)
+                    removecategorias.append(actividades)
 
-                            if "Socio SIN Actividades".lower() in agrupacionom:
-                                targetcategorias.append(sinactividades)
-                                removecategorias.append(actividades)
+                if "Socio Actividades".lower() in agrupacionom:
+                    targetcategorias.append(actividades)
+                    removecategorias.append(sinactividades)
+
+                if "Socio SIN Actividades".lower() in agrupacionom:
+                    targetcategorias.append(sinactividades)
+                    removecategorias.append(actividades)
 
             edad = today.year - year - ((today.month, fechadia) < (month, day))
 
@@ -253,7 +248,7 @@ for socio in socios:
 
         # Add or remove categories
 
-        for modalitat in targetcategorias:
+        for modalitat in sorted(set(targetcategorias)):
             if modalitat not in categoriassocio:
                 print(
                     "IFF",
@@ -275,7 +270,7 @@ for socio in socios:
                         },
                     )
 
-        for modalitat in removecategorias:
+        for modalitat in sorted(set(removecategorias)):
             if modalitat in categoriassocio:
                 print(
                     "RFF",
