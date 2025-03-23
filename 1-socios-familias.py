@@ -14,9 +14,6 @@ config.read(os.path.expanduser("~/.avast.ini"))
 
 token = common.gettoken()
 
-sociosurl = f"{common.apiurl}/colegiats?page=0&pageSize=4000"
-data = {"Authorization": f"Bearer {token}"}
-
 
 print("Loading file from disk")
 socios = common.readjson(filename="socios")
