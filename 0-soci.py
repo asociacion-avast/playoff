@@ -13,15 +13,22 @@ config.read(os.path.expanduser("~/.avast.ini"))
 
 
 token = common.gettoken()
-
-sociosurl = f"{common.apiurl}/colegiats?page=0&pageSize=4000"
 data = {"Authorization": f"Bearer {token}"}
 
+socios = []
+tanda = -1
+page = -1
 
-print("Obteniendo listado de socios")
-result = requests.get(sociosurl, auth=common.BearerAuth(token), headers=common.headers)
 
-socios = result.json()
+while tanda == -1 or len(tanda) >= 100:
+    page += 1
+    print("Obteniendo listado de socios, page: %s" % page)
+    sociosurl = f"{common.apiurl}/colegiats?page={page}&pageSize=100"
+    result = requests.get(
+        sociosurl, auth=common.BearerAuth(token), headers=common.headers
+    )
+    tanda = result.json()
+    socios.extend(tanda)
 
 print("Saving file to disk")
 common.writejson(filename="socios", data=socios)
@@ -51,3 +58,4 @@ print("Valid ID's")
 print(sorted(set(validids)))
 print("Invalid ID's")
 print(sorted(set(invalidids)))
+print("Total socios: %s" % len(socios))
