@@ -521,3 +521,44 @@ def createactividad(
         return output["idActivitat"]
     else:
         return output
+
+
+def editaactividad(token, idActivitat, override):
+    """Edita una actividad
+
+    Args:
+        token (str): Token para operaciones
+        idActivitat (int): ID de la actividad a editar
+        override (dict): Diccionario de parámetros a sobreescribir
+
+    Returns:
+        _type_: json de salida
+    """
+
+    url = f"{apiurl}/activitats/{idActivitat}"
+
+    # Obtener json de  la actividad
+    actividad = requests.get(
+        url,
+        headers=headers,
+        auth=BearerAuth(token),
+    )
+
+    actividad = json.loads(actividad.text)
+
+    # Generar el nuevo json con el override de paraámetros
+    payload = actividad
+    payload.update(override)
+
+    output = requests.put(
+        url,
+        headers=headers,
+        auth=BearerAuth(token),
+        data=json.dumps(payload),
+    )
+    try:
+        output = json.loads(output.text)
+    except:
+        pass
+
+    return output
