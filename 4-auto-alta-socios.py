@@ -168,7 +168,7 @@ for socio in socios:
                             targetprogramada.append(13)
 
         if activasocio:
-            print("Socio debe activarse: %s" % activasocio)
+            print(f"Socio debe activarse: {activasocio}")
             # Añadir socio a categoria de nueva tanda
             targetcategorias.append(74)
 
@@ -205,8 +205,7 @@ for socio in socios:
             for categoria in categoriassocio:
                 if categoria in cambiospreinscrip:
                     print(
-                        "El socio pasa de categoria %s a %s"
-                        % (traduce(categoria), traduce(cambiospreinscrip[categoria]))
+                        f"El socio pasa de categoria {traduce(categoria)} a {traduce(cambiospreinscrip[categoria])}"
                     )
                     # targetcategorias.append(cambiospreinscrip[categoria])
                     removecategorias.append(categoria)
