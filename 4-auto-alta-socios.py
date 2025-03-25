@@ -27,12 +27,11 @@ print("Actualizando actividades ALTA")
 # 728: Alta sin actividades
 # 729: Alta adulto actividades
 # 730: Alta niño actividades
-# 731: Carnet tutor
 # 732: Alta Tutor actividades
 # 733: Alta Hermano Actividades
 
 
-for actividadid in [728, 729, 730, 731, 732, 733]:
+for actividadid in [728, 729, 730, 732, 733]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -67,7 +66,6 @@ diccionario = {
     728: "Alta sin actividades",
     729: "Alta adulto actividades",
     730: "Alta niño actividades",
-    731: "Carnet tutor",
     732: "Alta Tutor actividades",
     733: "Alta Hermano Actividades",
     74: "Nueva tanda",
@@ -113,7 +111,7 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        for actividadid in [728, 729, 730, 731, 732, 733]:
+        for actividadid in [728, 729, 730, 732, 733]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
@@ -159,8 +157,7 @@ for socio in socios:
                                 print(
                                     "Categoria pagada no corresponde con la candidata"
                                 )
-                        if actividadid == 731:  # Carnet adicional tutor
-                            targetcategorias.append(84)  # Carnet
+
                         if actividadid == 732:  # Alta tutor actividades
                             cambiaactividades = True
                             targetprogramada.append(60)
