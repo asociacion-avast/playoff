@@ -29,9 +29,9 @@ print("Actualizando actividades ALTA")
 # 730: Alta niño actividades
 # 732: Alta Tutor actividades
 # 733: Alta Hermano Actividades
+# 748: Alta Adulto sin actividades
 
-
-for actividadid in [728, 729, 730, 732, 733]:
+for actividadid in [728, 729, 730, 732, 733, 748]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -68,6 +68,7 @@ diccionario = {
     730: "Alta niño actividades",
     732: "Alta Tutor actividades",
     733: "Alta Hermano Actividades",
+    748: "Alta adulto sin actividades",
     74: "Nueva tanda",
     84: "Carnet tutor",
     85: "Tutor con actividades",
@@ -111,7 +112,7 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        for actividadid in [728, 729, 730, 732, 733]:
+        for actividadid in [728, 729, 730, 732, 733, 748]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
@@ -125,15 +126,17 @@ for socio in socios:
                         )
 
                         # Comprobamos que ha pagado la categoría que toca
-                        if actividadid == 728:  # Alta sin actividades
+                        if actividadid == 728:  # Alta Socio sin actividades
                             pagada = True
                             if 32 in categoriassocio:
                                 activasocio = True
                                 targetcategorias.append(1)
 
+                        if actividadid == 748:  # Alta adulto SIN actividades
                             if 54 in categoriassocio:
                                 activasocio = True
                                 targetcategorias.append(53)
+
                         if actividadid == 729:  # Alta adulto actividades
                             if 59 in categoriassocio:
                                 activasocio = True
@@ -171,6 +174,8 @@ for socio in socios:
             print(f"Socio debe activarse: {activasocio}")
             # Añadir socio a categoria de nueva tanda
             targetcategorias.append(74)
+            # Quitar de categoria de informe revisado
+            removecategorias.append(94)
 
             if cambiaactividades:
                 print("El socio cambiará a actividades")

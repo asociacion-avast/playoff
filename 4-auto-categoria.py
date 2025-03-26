@@ -30,6 +30,7 @@ dana = 83
 actividades = 90
 sinactividades = 91
 revisar = 92
+informevalidado = 94
 
 codigos_postales_dana = {
     46000,
@@ -157,7 +158,7 @@ for socio in socios:
     ):
         # Default for each member
         targetcategorias = [socioactivo]
-        removecategorias = []
+        removecategorias = [informevalidado]
 
         # Probar código postal
         try:
