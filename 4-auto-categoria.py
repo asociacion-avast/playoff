@@ -31,6 +31,7 @@ actividades = 90
 sinactividades = 91
 revisar = 92
 informevalidado = 94
+adultosconysin = 95
 
 codigos_postales_dana = {
     46000,
@@ -214,10 +215,12 @@ for socio in socios:
                 if "Socio Adulto Actividades".lower() in agrupacionom:
                     targetcategorias.append(actividades)
                     removecategorias.append(sinactividades)
+                    targetcategorias.append(adultosconysin)
 
                 if "Socio Adulto SIN Actividades".lower() in agrupacionom:
                     targetcategorias.append(sinactividades)
                     removecategorias.append(actividades)
+                    targetcategorias.append(adultosconysin)
 
                 if "Socio Actividades".lower() in agrupacionom:
                     targetcategorias.append(actividades)
