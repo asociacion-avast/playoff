@@ -39,7 +39,7 @@ if not idColegiat:
     sys.exit(-1)
 
 
-print("Procesando actividad: %s" % idActivitat)
+print(f"Procesando actividad: {idActivitat}")
 
 print(
     common.create_inscripcio(

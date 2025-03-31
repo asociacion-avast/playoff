@@ -50,9 +50,9 @@ for actividad in actividades:
         if libres > 0:
             if anyo and anyoinicio <= anyo <= anyofin:
                 print(
-                    f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
+                    f'{myid},{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
                 )
             elif not anyo:
                 print(
-                    f'{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
+                    f'{myid},{nombre},{int(actividad["maxPlaces"])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}'
                 )
