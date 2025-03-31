@@ -80,7 +80,11 @@ diccionario = {
 
 
 def traduce(id):
-    return "ID %s (%s)" % (id, diccionario[id])
+    if id in diccionario:
+        text = "ID %s (%s)" % (id, diccionario[id])
+    else:
+        text = "ID %s no encontrado en diccionaro" % id
+    return text
 
 
 print("Procesando socios...")
@@ -163,12 +167,16 @@ for socio in socios:
 
                         if actividadid == 732:  # Alta tutor actividades
                             cambiaactividades = True
+                            activasocio = True
                             targetprogramada.append(60)
+                            targetcategorias.append(53)
 
                         if actividadid == 733:  # Alta hermano actividades
+                            activasocio = True
                             cambiaactividades = True
                             targetcategorias.append(84)  # Carnet
                             targetprogramada.append(13)
+                            targetcategorias.append(1)
 
         if activasocio:
             print(f"Socio debe activarse: {activasocio}")
