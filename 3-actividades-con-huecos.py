@@ -33,7 +33,7 @@ horarios = {
     22: "",
 }
 
-print("NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
+print("ID,NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
