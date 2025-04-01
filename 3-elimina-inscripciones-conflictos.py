@@ -37,7 +37,7 @@ for actividad in actividades:
     else:
         horario = 0
 
-    if horario in {7, 8, 9, 10}:
+    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         inscritos = common.readjson(filename=f"{myid}")
 
         actividadyusuarios[myid] = []
@@ -134,7 +134,7 @@ for actividad in actividades:
     else:
         horario = 0
 
-    if horario in {7, 8, 9, 10}:
+    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         inscritos = common.readjson(filename=f"{myid}")
 
         for inscrito in inscritos:
