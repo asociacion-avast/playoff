@@ -22,7 +22,16 @@ usuariosyactividad = {}
 actividadyusuarios = {}
 usuariosyhorarios = {}
 
-horarios = {7: "11:30", 8: "09:00", 9: "10:00", 10: "12:30"}
+horarios = {
+    7: "11:30",
+    8: "09:00",
+    9: "10:00",
+    10: "12:30",
+    19: "",
+    20: "",
+    21: "",
+    22: "",
+}
 
 print("NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
 for actividad in actividades:
@@ -40,7 +49,7 @@ for actividad in actividades:
         anyoinicio = 0
         anyofin = 0
 
-    if horario in {7, 8, 9, 10}:
+    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         inscritos = common.readjson(filename=f"{myid}")
         usadas = 0
         for inscrito in inscritos:
