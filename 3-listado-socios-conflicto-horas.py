@@ -23,7 +23,7 @@ for actividad in actividades:
     else:
         horario = 0
 
-    if horario in [7, 8, 9, 10]:
+    if horario in [7, 8, 9, 10, 19, 20, 21, 22]:
         actividadyusuarios[myid] = []
 
         inscritos = common.readjson(filename="%s" % myid)

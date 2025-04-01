@@ -7,7 +7,7 @@ import common
 
 token = common.gettoken()
 
-activar = common.apiurl + "/activitats/totes"
+activar = f"{common.apiurl}/activitats/totes"
 data = {"Authorization": f"Bearer {token}"}
 
 print("Obteniendo listado de actividades")
