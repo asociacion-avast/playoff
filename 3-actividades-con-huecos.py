@@ -45,7 +45,7 @@ for actividad in actividades:
     try:
         anyoinicio = int(actividad["edatMin"])
         anyofin = int(actividad["edatMax"])
-    except:
+    except Exception:
         anyoinicio = 0
         anyofin = 0
 
