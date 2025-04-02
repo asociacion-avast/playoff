@@ -42,7 +42,7 @@ for socio in socios:
             familias["miembros"][socioid] = []
             familias["procesados"].append(socioid)
 
-            print("Actualizando familia del socio %s" % socioid)
+            print(f"Actualizando familia del socio {socioid}")
             url = f"{common.apiurl}/colegiats/{socioid}/familia"
             response = requests.get(
                 url, headers=common.headers, auth=common.BearerAuth(token)
