@@ -26,6 +26,8 @@ except Exception:
 
 print("Procesando socios")
 for socio in socios:
+    socioid = int(socio["idColegiat"])
+
     if common.validasocio(
         socio,
         estado="COLESTVAL",
@@ -33,8 +35,6 @@ for socio in socios:
         agrupaciones=["PREINSCRIPCIÓN"],
         reverseagrupaciones=True,
     ):
-        socioid = int(socio["idColegiat"])
-
         if (
             socioid not in familias["miembros"]
             and socioid not in familias["procesados"]
