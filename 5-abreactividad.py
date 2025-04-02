@@ -39,7 +39,7 @@ true = True
 
 # Get today date
 today = datetime.datetime.now()
-tomorrow = today + datetime.timedelta(days=1)
+tomorrow = today + datetime.timedelta(minutes=15)
 
 override = {
     "dataInici": "%s-%s-%s %s:%s"
