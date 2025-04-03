@@ -32,7 +32,7 @@ print("Actualizando actividades ALTA")
 # 748: Alta Adulto sin actividades
 # 769: Carnets familia legacy
 
-for actividadid in [728, 729, 730, 732, 733, 748, 769]:
+for actividadid in [728, 729, 730, 732, 733, 748]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -120,7 +120,7 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        for actividadid in [728, 729, 730, 732, 733, 748, 769]:
+        for actividadid in [728, 729, 730, 732, 733, 748]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
@@ -182,11 +182,6 @@ for socio in socios:
                             targetprogramada.append(13)
                             targetcategorias.append(1)
 
-                        if actividadid == 769:  # Socio ha pagado carnets
-                            activasocio = True
-                            targetcategorias.append(98)  # Carnet veterano
-                            removecategorias.append(97)  # Socio sin carnet
-
         if activasocio:
             print(f"Socio debe activarse: {activasocio}")
             # Añadir socio a categoria de nueva tanda
@@ -240,6 +235,3 @@ for socio in socios:
             for categoria in removecategorias:
                 print(traduce(categoria))
                 common.delcategoria(token=token, categoria=categoria, socio=socioid)
-
-
-# TODO: Comprobar que el socio ha pagado la categoría que corresponde para el cambio en el que está inscrito # (puede que ya esté en la comprobación que se hace tras cada actividad)
