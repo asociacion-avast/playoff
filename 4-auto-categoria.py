@@ -192,6 +192,10 @@ for socio in socios:
             targetcategorias.append(sinuncarnetfamiliar)
             removecategorias.append(sindoscarnetfamiliar)
 
+        if len(carnetsocio) == 2:
+            removecategorias.append(sinuncarnetfamiliar)
+            removecategorias.append(sindoscarnetfamiliar)
+
         # Probar código postal
         try:
             cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
@@ -247,8 +251,8 @@ for socio in socios:
                     targetcategorias.append(actividades)
                     removecategorias.append(sinactividades)
                     targetcategorias.append(adultosconysin)
-                    removecategorias.append(sindoscarnetfamiliar)
                     removecategorias.append(sinuncarnetfamiliar)
+                    removecategorias.append(sindoscarnetfamiliar)
 
                 if "Socio Adulto SIN Actividades".lower() in agrupacionom:
                     targetcategorias.append(sinactividades)
