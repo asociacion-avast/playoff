@@ -30,8 +30,9 @@ print("Actualizando actividades ALTA")
 # 732: Alta Tutor actividades
 # 733: Alta Hermano Actividades
 # 748: Alta Adulto sin actividades
+# 769: Carnets familia legacy
 
-for actividadid in [728, 729, 730, 732, 733, 748]:
+for actividadid in [728, 729, 730, 732, 733, 748, 769]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -69,6 +70,7 @@ diccionario = {
     732: "Alta Tutor actividades",
     733: "Alta Hermano Actividades",
     748: "Alta adulto sin actividades",
+    769: "Carnet familia legacy",
     74: "Nueva tanda",
     84: "Carnet tutor",
     85: "Tutor con actividades",
@@ -76,6 +78,8 @@ diccionario = {
     79: "Autocambio ADULTO con actividades",
     81: "Autocambio SOCIO PRINCIPAL con actividades",
     87: "Autocambio HERMANO actividades",
+    97: "Socio sin carnet",
+    98: "Carnets veteranos",
 }
 
 
@@ -116,7 +120,7 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        for actividadid in [728, 729, 730, 732, 733, 748]:
+        for actividadid in [728, 729, 730, 732, 733, 748, 769]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
@@ -178,6 +182,11 @@ for socio in socios:
                             targetprogramada.append(13)
                             targetcategorias.append(1)
 
+                        if actividadid == 769:  # Socio ha pagado carnets
+                            activasocio = True
+                            targetcategorias.append(98)  # Carnet veterano
+                            removecategorias.append(97)  # Socio sin carnet
+
         if activasocio:
             print(f"Socio debe activarse: {activasocio}")
             # Añadir socio a categoria de nueva tanda
@@ -208,11 +217,11 @@ for socio in socios:
                 if today.month <= 9:
                     targetcambio = f"22-06-{today.year}"
 
-                    print(
-                        common.escribecampo(
-                            token, socioid, common.fechacambio, valor=targetcambio
-                        ).text
-                    )
+                print(
+                    common.escribecampo(
+                        token, socioid, common.fechacambio, valor=targetcambio
+                    ).text
+                )
 
             # Aquí revisamos las categorías donde está, pero realmente hay que darlo de alta via CAMBIOS para actividades, y de normal estar sólo como socio sin actividades
             for categoria in categoriassocio:
