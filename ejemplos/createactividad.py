@@ -33,5 +33,17 @@ descripcio = "<p>Akinoest&aacute;n</p>"
 horario = 8
 
 
-response=common.createactividad(token,nom,lloc,maxplaces,minplaces,dataHoraActivitat,dataHoraFiActivitat,dataInici,dataLimit,descripcio,horario)
+response = common.createactividad(
+    token,
+    nom,
+    lloc,
+    maxplaces,
+    minplaces,
+    dataHoraActivitat,
+    dataHoraFiActivitat,
+    dataInici,
+    dataLimit,
+    descripcio,
+    horario,
+)
 pprint.pprint(json.loads(response.text))
