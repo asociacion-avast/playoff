@@ -33,6 +33,8 @@ revisar = 92
 informevalidado = 94
 adultosconysin = 95
 notienecarnet = 97
+sinuncarnetfamiliar = 99
+sindoscarnetfamiliar = 100
 
 codigos_postales_dana = {
     46000,
@@ -163,10 +165,32 @@ for socio in socios:
         removecategorias = [informevalidado]
 
         if "persona" in socio and "residencia" in socio["persona"]:
-            if socio["persona"]["residencia"] == "":
+            if (
+                socio["persona"]["residencia"] == ""
+                or socio["persona"]["residencia"] == "-"
+            ):
                 targetcategorias.append(notienecarnet)
             else:
                 removecategorias.append(notienecarnet)
+
+        carnetsocio = []
+
+        for tutor in ["tutor1", "tutor2"]:
+            if (
+                tutor in socio
+                and socio[tutor] is not None
+                and socio[tutor]["residencia"] != ""
+                and socio[tutor]["residencia"] != "-"
+            ):
+                carnetsocio.append(socio[tutor]["residencia"])
+
+        if len(carnetsocio) == 0:
+            targetcategorias.append(sindoscarnetfamiliar)
+            removecategorias.append(sinuncarnetfamiliar)
+
+        if len(carnetsocio) == 1:
+            targetcategorias.append(sinuncarnetfamiliar)
+            removecategorias.append(sindoscarnetfamiliar)
 
         # Probar código postal
         try:
@@ -223,11 +247,15 @@ for socio in socios:
                     targetcategorias.append(actividades)
                     removecategorias.append(sinactividades)
                     targetcategorias.append(adultosconysin)
+                    removecategorias.append(sindoscarnetfamiliar)
+                    removecategorias.append(sinuncarnetfamiliar)
 
                 if "Socio Adulto SIN Actividades".lower() in agrupacionom:
                     targetcategorias.append(sinactividades)
                     removecategorias.append(actividades)
                     targetcategorias.append(adultosconysin)
+                    removecategorias.append(sinuncarnetfamiliar)
+                    removecategorias.append(sindoscarnetfamiliar)
 
                 if "Socio Actividades".lower() in agrupacionom:
                     targetcategorias.append(actividades)
