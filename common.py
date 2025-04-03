@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import configparser
+import contextlib
 import json
 import os
 
@@ -205,27 +206,24 @@ def validasocio(
                                 for agrupacion in agrupaciones:
                                     if agrupacionom == agrupacion.lower():
                                         rc = True
-                                return rc
                             else:
                                 rc = True
                                 for agrupacion in agrupaciones:
                                     if agrupacionom == agrupacion.lower():
                                         rc = False
-                                return rc
+                            return rc
                         if subcategorias:
                             if not reversesubcategorias:
                                 rc = False
                                 for categoria in subcategorias:
                                     if modalitatnom == categoria.lower():
                                         rc = True
-                                return rc
                             else:
                                 rc = True
                                 for categoria in subcategorias:
                                     if modalitatnom == categoria.lower():
                                         rc = False
-                                return rc
-
+                            return rc
     return False
 
 
@@ -249,7 +247,7 @@ def create_inscripcio(token, idActivitat, idColegiat):
     data = {
         "inscripcions": [
             {
-                "formatNouActivitat": True,  # Activa o desactivada llega el aviso de 'finalidad y funcionamiento'
+                "formatNouActivitat": True,
                 "quotesObligatories": [],
                 "unitatsQuota": {},
                 "quotesOpcionals": [],
@@ -261,21 +259,20 @@ def create_inscripcio(token, idActivitat, idColegiat):
                 "isAfegirAGrupFamiliar": False,
                 "isCapFamilia": False,
                 "signatura": {},
-                "idColegiat": "%s" % idColegiat,
+                "idColegiat": f"{idColegiat}",
                 "idActivitat": idActivitat,
                 "colegiat": colegiat,
             }
         ],
         "isEnviarNotificacio": 0,
     }
-    res = requests.post(
+    return requests.post(
         url,
         data=json.dumps(data),
         auth=BearerAuth(token),
         headers=headers,
         allow_redirects=False,
     )
-    return res
 
 
 def get_colegiat_data(idColegiat=False):
@@ -410,13 +407,13 @@ def createactividad(
         ],
         "campsDinamics": [],
         "crearUsuariPermes": True,
-        "dataHoraActivitat": "%s" % dataHoraActivitat,
-        "dataHoraFiActivitat": "%s" % dataHoraFiActivitat,
+        "dataHoraActivitat": f"{dataHoraActivitat}",
+        "dataHoraFiActivitat": f"{dataHoraFiActivitat}",
         "dataHoraIniciControlAcces": "",
-        "dataInici": "%s" % dataInici,
-        "dataLimit": "%s" % dataLimit,
+        "dataInici": f"{dataInici}",
+        "dataLimit": f"{dataLimit}",
         "nomCampDescripcio": "",
-        "descripcio": "%s" % descripcio,
+        "descripcio": f"{descripcio}",
         "edatMax": "",
         "edatMin": "",
         "estat": "ACTIESTVIG",
@@ -511,11 +508,8 @@ def createactividad(
         auth=BearerAuth(token),
         data=json.dumps(payload),
     )
-    try:
+    with contextlib.suppress(Exception):
         output = json.loads(output)
-    except:
-        pass
-
     if isinstance(output, dict) and "idActivitat" in output:
         updateactividad(token=token, idactividad=output["idActivitat"])
         return output["idActivitat"]
@@ -556,9 +550,6 @@ def editaactividad(token, idActivitat, override):
         auth=BearerAuth(token),
         data=json.dumps(payload),
     )
-    try:
+    with contextlib.suppress(Exception):
         output = json.loads(output.text)
-    except:
-        pass
-
     return output
