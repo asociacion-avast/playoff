@@ -32,6 +32,7 @@ sinactividades = 91
 revisar = 92
 informevalidado = 94
 adultosconysin = 95
+notienecarnet = 97
 
 codigos_postales_dana = {
     46000,
@@ -160,6 +161,12 @@ for socio in socios:
         # Default for each member
         targetcategorias = [socioactivo]
         removecategorias = [informevalidado]
+
+        if "persona" in socio and "residencia" in socio["persona"]:
+            if socio["persona"]["residencia"] == "":
+                targetcategorias.append(notienecarnet)
+            else:
+                removecategorias.append(notienecarnet)
 
         # Probar código postal
         try:
