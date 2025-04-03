@@ -30,9 +30,12 @@ print("Actualizando actividades ALTA")
 # 732: Alta Tutor actividades
 # 733: Alta Hermano Actividades
 # 748: Alta Adulto sin actividades
-# 769: Carnets familia legacy
+# 769: Carnets tutor x2
+# 770: Carnets tutor x1
+# 771: Carnet socio
 
-for actividadid in [769]:
+
+for actividadid in [769, 770, 771]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -70,7 +73,9 @@ diccionario = {
     732: "Alta Tutor actividades",
     733: "Alta Hermano Actividades",
     748: "Alta adulto sin actividades",
-    769: "Carnet familia legacy",
+    769: "Carnet tutor x1",
+    770: "Carnet tutor x2",
+    771: "Carnet tutor x1",
     74: "Nueva tanda",
     84: "Carnet tutor",
     85: "Tutor con actividades",
@@ -133,7 +138,17 @@ for socio in socios:
                             f"El socio {socioid} está inscrito en la actividad y ha PAGADO {traduce(actividadid)}"
                         )
 
-                        if actividadid == 769:  # Socio ha pagado carnets
+                        if actividadid == 769:  # Socio ha pagado 2x carnets
+                            activasocio = True
+                            targetcategorias.append(98)  # Carnet veterano
+                            removecategorias.append(100)  # Socio sin carnet
+
+                        if actividadid == 770:  # Socio ha pagado 1x carnets
+                            activasocio = True
+                            targetcategorias.append(98)  # Carnet veterano
+                            removecategorias.append(99)  # Socio sin carnet
+
+                        if actividadid == 771:  # Socio ha pagado carnet socio
                             activasocio = True
                             targetcategorias.append(98)  # Carnet veterano
                             removecategorias.append(97)  # Socio sin carnet
