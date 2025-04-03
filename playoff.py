@@ -47,33 +47,25 @@ class PlayoffAPI:
     def get(self, path):
         url = f"{self.url_api}/{path}"
         result = requests.get(url, headers=self.get_headers())
-        if result.status_code == 200:
-            return result.json()
-        else:
-            return []
+        return result.json() if result.status_code == 200 else []
 
     def get_categorias(self):
         return self.get("modalitats")
 
     def get_colegiat_by_nif(self, nif: str) -> dict:
         res = self.get(f"colegiats?nif={nif}")
-        if len(res) > 0:
-            return res[0]
-        return {}
+        return res[0] if len(res) > 0 else {}
 
     def get_colegiat_by_passaport(self, passaport: str) -> dict:
         res = self.get(f"colegiats?residencia={passaport}")
-        if len(res) > 0:
-            return res[0]
-        return {}
+        return res[0] if len(res) > 0 else {}
 
     def get_inscripcio(self, idInscripcio):
         return self.get(f"inscripcions/{idInscripcio}")
 
     def del_inscripcio(self, idInscripcio: str):
         url = f"{self.url_api}/inscripcions?idInscripcio={idInscripcio}"
-        result = requests.delete(url, headers=self.get_headers())
-        return result
+        return requests.delete(url, headers=self.get_headers())
 
     def create_inscripcio(
         self, idActivitat: str, passaport: str = None, idColegiat: str = None
@@ -107,19 +99,18 @@ class PlayoffAPI:
                 }
             ]
         }
-        res = requests.post(
+        return requests.post(
             url,
             data=json.dumps(data),
             headers=self.get_headers(),
             allow_redirects=False,
         )
-        return res
 
     def get_inscripcions_by_idActivitat(self, idActivitat):
         return self.get(f"inscripcions?idActivitat={idActivitat}")
 
     def get_inscripcions_by_idActivitat_passaport(self, idActivitat, passaport):
-        inscripcions = self.get_inscripcions_by_idActivitat(idActivitat)
+        return self.get_inscripcions_by_idActivitat(idActivitat)
 
 
 class PlayoffWeb:
