@@ -21,5 +21,5 @@ for socio in socios:
             reverseagrupaciones=True,
         ):
             socioid = socio["idColegiat"]
-            url = f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}#tab=ACTIVITATS"
+            url = f"{common.sociobase}{socioid}#tab=ACTIVITATS"
             print(url)

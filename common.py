@@ -19,10 +19,89 @@ telegramfields = [tutor1, tutor2, socioid]
 fechacambio = "0_17_20250221121130"
 
 
+categorias = {
+    "actividades": 90,
+    "adultosconysin": 95,
+    "avast13": 66,
+    "avast15": 65,
+    "avast18": 77,
+    "dana": 83,
+    "informevalidado": 94,
+    "notienecarnet": 97,
+    "revisar": 92,
+    "sinactividades": 91,
+    "sindoscarnetfamiliar": 100,
+    "sinuncarnetfamiliar": 99,
+    "socioactivo": 82,
+    "gestionarcarnetveterano": 98,
+    "sociosinactividades": 1,
+    "adultosinactividades": 53,
+    "gestionarcarnet": 84,
+    "nuevatanda": 74,
+    "informerevisado": 94,
+}
+
+diccionario = {
+    1: "Socio principal sin actividades",
+    12: "Socio principal con actividades",
+    13: "Socio Hermano",
+    32: "Candidato a Socio principal sin actividades",
+    33: "Candidato a Socio principal con actividades",
+    53: "Adulto sin actividades",
+    54: "Candidato a Adulto sin actividades",
+    59: "Candidato a Adulto con actividades",
+    60: "Adulto con actividades",
+    728: "Alta sin actividades",
+    729: "Alta adulto actividades",
+    730: "Alta niño actividades",
+    732: "Alta Tutor actividades",
+    733: "Alta Hermano Actividades",
+    748: "Alta adulto sin actividades",
+    769: "Carnet tutor x1",
+    770: "Carnet tutor x2",
+    771: "Carnet tutor x1",
+    74: "Nueva tanda",
+    84: "Carnet tutor",
+    85: "Tutor con actividades",
+    86: "Hermano con actividades",
+    79: "Autocambio ADULTO con actividades",
+    81: "Autocambio SOCIO PRINCIPAL con actividades",
+    87: "Autocambio HERMANO actividades",
+    97: "Socio sin carnet",
+    98: "Carnets veteranos",
+}
+
+
+# Definiciones
+
+# 53: Adulto sin actividades
+# 60: Adulto con actividades
+# 12: Socio principal con actividades
+# 1: Socio principal sin actividades
+
+
+cambiospreinscrip = {32: 1, 33: 12, 54: 53, 59: 60, 85: 60, 86: 13}
+
+
+cambios = {
+    728: 1,
+    729: 60,
+    730: 12,
+}
+
+
+def traduce(id):
+    if id in diccionario:
+        text = "ID %s (%s)" % (id, diccionario[id])
+    else:
+        text = "ID %s no encontrado en diccionaro" % id
+    return text
+
+
 apiurl = f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
 headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
-
 endpoint = config["auth"]["endpoint"]
+sociobase = f"https://{endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat="
 
 
 class BearerAuth(requests.auth.AuthBase):

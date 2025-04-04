@@ -93,10 +93,3 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--mapping, "2", --sequence, "4", --offset, "2", "--preserve-quotes"]
-
-  - repo: https://github.com/hcodes/yaspeller.git
-    rev: v10.0.1
-    hooks:
-      - id: yaspeller
-        types:
-          - markdown

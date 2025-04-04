@@ -20,21 +20,9 @@ token = common.gettoken(
 headers = {"Authorization": f"Bearer {token}"}
 
 # Definiciones
-avast13 = 66
-avast15 = 65
-avast18 = 77
-socioactivo = 82
+
 # Periodicidad (bimensual: 5, anual: 3)
 extras = {82: 3}
-dana = 83
-actividades = 90
-sinactividades = 91
-revisar = 92
-informevalidado = 94
-adultosconysin = 95
-notienecarnet = 97
-sinuncarnetfamiliar = 99
-sindoscarnetfamiliar = 100
 
 codigos_postales_dana = {
     46000,
@@ -149,7 +137,7 @@ for socio in socios:
     ):
         for idcategoria in categoriassocio:
             print(
-                f"Borrando: {idcategoria} del socio https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}#tab=CATEGORIES"
+                f"Borrando: {idcategoria} del socio {common.sociobase}{socioid}#tab=CATEGORIES"
             )
             common.delcategoria(token, socioid, idcategoria)
 
@@ -161,8 +149,8 @@ for socio in socios:
         reverseagrupaciones=True,
     ):
         # Default for each member
-        targetcategorias = [socioactivo]
-        removecategorias = [informevalidado]
+        targetcategorias = [common.categorias["socioactivo"]]
+        removecategorias = [common.categorias["informevalidado"]]
         adulto = False
 
         # Carnet de socio
@@ -171,9 +159,9 @@ for socio in socios:
                 socio["persona"]["residencia"] == ""
                 or socio["persona"]["residencia"] == "-"
             ):
-                targetcategorias.append(notienecarnet)
+                targetcategorias.append(common.categorias["notienecarnet"])
             else:
-                removecategorias.append(notienecarnet)
+                removecategorias.append(common.categorias["notienecarnet"])
 
         # Carnet tutores
         carnetsocio = []
@@ -194,9 +182,9 @@ for socio in socios:
             cp = 0
 
         if cp in codigos_postales_dana:
-            targetcategorias.append(dana)
+            targetcategorias.append(common.categorias["dana"])
         else:
-            removecategorias.append(dana)
+            removecategorias.append(common.categorias["dana"])
 
         # Find our born year
         try:
@@ -242,56 +230,70 @@ for socio in socios:
 
             if "Socio Adulto Actividades".lower() in agrupacionom:
                 adulto = True
-                targetcategorias.append(actividades)
-                removecategorias.append(sinactividades)
-                targetcategorias.append(adultosconysin)
+                targetcategorias.append(common.categorias["actividades"])
+                removecategorias.append(common.categorias["sinactividades"])
+                targetcategorias.append(common.categorias["adultosconysin"])
 
             if "Socio Adulto SIN Actividades".lower() in agrupacionom:
                 adulto = True
-                targetcategorias.append(sinactividades)
-                removecategorias.append(actividades)
-                targetcategorias.append(adultosconysin)
+                targetcategorias.append(common.categorias["sinactividades"])
+                removecategorias.append(common.categorias["actividades"])
+                targetcategorias.append(common.categorias["adultosconysin"])
 
             if "Socio Actividades".lower() in agrupacionom:
-                targetcategorias.append(actividades)
-                removecategorias.append(sinactividades)
+                targetcategorias.append(common.categorias["actividades"])
+                removecategorias.append(common.categorias["sinactividades"])
 
             if "Socio SIN Actividades".lower() in agrupacionom:
-                targetcategorias.append(sinactividades)
-                removecategorias.append(actividades)
+                targetcategorias.append(common.categorias["sinactividades"])
+                removecategorias.append(common.categorias["actividades"])
 
         # Los adultos no necesitan tener tutores
         if not adulto:
             if not carnetsocio:
-                targetcategorias.append(sindoscarnetfamiliar)
-                removecategorias.append(sinuncarnetfamiliar)
+                targetcategorias.append(common.categorias["sindoscarnetfamiliar"])
+                removecategorias.append(common.categorias["sinuncarnetfamiliar"])
 
             if len(carnetsocio) == 1:
-                targetcategorias.append(sinuncarnetfamiliar)
-                removecategorias.append(sindoscarnetfamiliar)
+                targetcategorias.append(common.categorias["sinuncarnetfamiliar"])
+                removecategorias.append(common.categorias["sindoscarnetfamiliar"])
 
             if len(carnetsocio) == 2:
-                removecategorias.extend((sinuncarnetfamiliar, sindoscarnetfamiliar))
+                removecategorias.extend(
+                    (
+                        common.categorias["sinuncarnetfamiliar"],
+                        common.categorias["sindoscarnetfamiliar"],
+                    )
+                )
         else:
-            removecategorias.extend((sinuncarnetfamiliar, sindoscarnetfamiliar))
+            removecategorias.extend(
+                (
+                    common.categorias["sinuncarnetfamiliar"],
+                    common.categorias["sindoscarnetfamiliar"],
+                )
+            )
 
         edad = today.year - year - ((today.month, fechadia) < (month, day))
 
         # Add target category for +13/+15
         if edad in range(13, 15):
             # AVAST+13
-            targetcategorias.append(avast13)
+            targetcategorias.append(common.categorias["avast13"])
 
         elif edad in range(15, 18):
             # AVAST+15
-            targetcategorias.append(avast15)
+            targetcategorias.append(common.categorias["avast15"])
 
         elif edad in range(18, 30):
             # AVAST+18
-            targetcategorias.append(avast18)
+            targetcategorias.append(common.categorias["avast18"])
 
         # El socio no debe estar en grupos A+13 o A+15 o A+18
-        for i in [avast13, avast15, avast18]:
+        for i in [
+            common.categorias["avast13"],
+            common.categorias["avast15"],
+            common.categorias["avast18"],
+        ]:
             if i in categoriassocio and i not in targetcategorias:
                 print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                 common.delcategoria(token, socioid, i)
@@ -302,12 +304,12 @@ for socio in socios:
             if modalitat not in categoriassocio:
                 print(
                     "IFF",
-                    socioid,
+                    f"{common.sociobase}{socioid}",
                     modalitat,
                     categoriassocio,
                     modalitat in categoriassocio,
                 )
-                if modalitat != socioactivo:
+                if modalitat != common.categorias["socioactivo"]:
                     response = common.addcategoria(token, socioid, modalitat)
                 else:
                     response = common.addcategoria(
@@ -324,7 +326,7 @@ for socio in socios:
             if modalitat in categoriassocio:
                 print(
                     "RFF",
-                    socioid,
+                    f"{common.sociobase}{socioid}",
                     modalitat,
                     categoriassocio,
                     modalitat in categoriassocio,

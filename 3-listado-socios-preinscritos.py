@@ -24,5 +24,5 @@ for socio in socios:
     ):
         socioid = int(socio["idColegiat"])
         print(
-            f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}#tab=CATEGORIES",
+            f"{common.sociobase}{socioid}#tab=CATEGORIES",
         )

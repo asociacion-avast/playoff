@@ -75,12 +75,10 @@ for socio in socios:
 
                     if not (fecha and fecha <= today):
                         print(
-                            f"Fecha no alcanzada {fecha}: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}"
+                            f"Fecha no alcanzada {fecha}: {common.sociobase}{socioid}"
                         )
                     else:
-                        print(
-                            f"Fecha alcanzada {fecha}: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socioid}"
-                        )
+                        print(f"Fecha alcanzada {fecha}: {common.sociobase}{socioid}")
 
                         categoriassocio = []
                         modalitatsocio = []
