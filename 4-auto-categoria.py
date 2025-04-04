@@ -163,7 +163,9 @@ for socio in socios:
         # Default for each member
         targetcategorias = [socioactivo]
         removecategorias = [informevalidado]
+        adulto = False
 
+        # Carnet de socio
         if "persona" in socio and "residencia" in socio["persona"]:
             if (
                 socio["persona"]["residencia"] == ""
@@ -173,6 +175,7 @@ for socio in socios:
             else:
                 removecategorias.append(notienecarnet)
 
+        # Carnet tutores
         carnetsocio = []
 
         for tutor in ["tutor1", "tutor2"]:
@@ -183,18 +186,6 @@ for socio in socios:
                 and socio[tutor]["residencia"] != "-"
             ):
                 carnetsocio.append(socio[tutor]["residencia"])
-
-        if len(carnetsocio) == 0:
-            targetcategorias.append(sindoscarnetfamiliar)
-            removecategorias.append(sinuncarnetfamiliar)
-
-        if len(carnetsocio) == 1:
-            targetcategorias.append(sinuncarnetfamiliar)
-            removecategorias.append(sindoscarnetfamiliar)
-
-        if len(carnetsocio) == 2:
-            removecategorias.append(sinuncarnetfamiliar)
-            removecategorias.append(sindoscarnetfamiliar)
 
         # Probar código postal
         try:
@@ -216,79 +207,94 @@ for socio in socios:
 
         if fecha:
             year, month, day = fecha.year, fecha.month, fecha.day
+        else:
+            year, month, day = False, False, False
 
-            for modalitat in socio["colegiatHasModalitats"]:
-                idcategoria = int(modalitat["idModalitat"])
-                agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
-                modalitatnom = modalitat["modalitat"]["nom"].lower()
+        for modalitat in socio["colegiatHasModalitats"]:
+            idcategoria = int(modalitat["idModalitat"])
+            agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
+            modalitatnom = modalitat["modalitat"]["nom"].lower()
 
-                try:
-                    myyear = int(modalitatnom)
-                except Exception:
-                    myyear = False
+            try:
+                myyear = int(modalitatnom)
+            except Exception:
+                myyear = False
 
-                if myyear:
-                    if myyear != year:
-                        print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
-                        common.delcategoria(token, socioid, idcategoria)
+            if myyear and year:
+                if myyear != year:
+                    print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
+                    common.delcategoria(token, socioid, idcategoria)
+
+            # Attempt to find categories for a year
+
+            for categoria in categorias:
+                nombre = categoria["nom"]
 
                 # Attempt to find categories for a year
+                try:
+                    mycat = int(nombre)
+                except Exception:
+                    mycat = False
 
-                for categoria in categorias:
-                    nombre = categoria["nom"]
+                if mycat and mycat == year and year and year in range(2000, today.year):
+                    # Our member had a match with the born year
+                    targetcategorias.append(int(categoria["idModalitat"]))
 
-                    # Attempt to find categories for a year
-                    try:
-                        mycat = int(nombre)
-                    except Exception:
-                        mycat = False
+            if "Socio Adulto Actividades".lower() in agrupacionom:
+                adulto = True
+                targetcategorias.append(actividades)
+                removecategorias.append(sinactividades)
+                targetcategorias.append(adultosconysin)
 
-                    if mycat and mycat == year and year in range(2000, today.year):
-                        # Our member had a match with the born year
-                        targetcategorias.append(int(categoria["idModalitat"]))
+            if "Socio Adulto SIN Actividades".lower() in agrupacionom:
+                adulto = True
+                targetcategorias.append(sinactividades)
+                removecategorias.append(actividades)
+                targetcategorias.append(adultosconysin)
 
-                if "Socio Adulto Actividades".lower() in agrupacionom:
-                    targetcategorias.append(actividades)
-                    removecategorias.append(sinactividades)
-                    targetcategorias.append(adultosconysin)
-                    removecategorias.append(sinuncarnetfamiliar)
-                    removecategorias.append(sindoscarnetfamiliar)
+            if "Socio Actividades".lower() in agrupacionom:
+                targetcategorias.append(actividades)
+                removecategorias.append(sinactividades)
 
-                if "Socio Adulto SIN Actividades".lower() in agrupacionom:
-                    targetcategorias.append(sinactividades)
-                    removecategorias.append(actividades)
-                    targetcategorias.append(adultosconysin)
-                    removecategorias.append(sinuncarnetfamiliar)
-                    removecategorias.append(sindoscarnetfamiliar)
+            if "Socio SIN Actividades".lower() in agrupacionom:
+                targetcategorias.append(sinactividades)
+                removecategorias.append(actividades)
 
-                if "Socio Actividades".lower() in agrupacionom:
-                    targetcategorias.append(actividades)
-                    removecategorias.append(sinactividades)
+        # Los adultos no necesitan tener tutores
+        if not adulto:
+            if not carnetsocio:
+                targetcategorias.append(sindoscarnetfamiliar)
+                removecategorias.append(sinuncarnetfamiliar)
 
-                if "Socio SIN Actividades".lower() in agrupacionom:
-                    targetcategorias.append(sinactividades)
-                    removecategorias.append(actividades)
+            if len(carnetsocio) == 1:
+                targetcategorias.append(sinuncarnetfamiliar)
+                removecategorias.append(sindoscarnetfamiliar)
 
-            edad = today.year - year - ((today.month, fechadia) < (month, day))
+            if len(carnetsocio) == 2:
+                removecategorias.extend((sinuncarnetfamiliar, sindoscarnetfamiliar))
+        else:
+            removecategorias.extend((sinuncarnetfamiliar, sindoscarnetfamiliar))
 
-            # Add target category for +13/+15
-            if edad in range(13, 15):
-                # AVAST+13
-                targetcategorias.append(avast13)
+        edad = today.year - year - ((today.month, fechadia) < (month, day))
 
-            elif edad in range(15, 18):
-                # AVAST+15
-                targetcategorias.append(avast15)
+        # Add target category for +13/+15
+        if edad in range(13, 15):
+            # AVAST+13
+            targetcategorias.append(avast13)
 
-            elif edad in range(18, 30):
-                # AVAST+18
-                targetcategorias.append(avast18)
+        elif edad in range(15, 18):
+            # AVAST+15
+            targetcategorias.append(avast15)
 
-            # El socio no debe estar en grupos A+13 o A+15 o A+18
-            for i in [avast13, avast15, avast18]:
-                if i in categoriassocio and i not in targetcategorias:
-                    print(f"ERROR: Borrando categoria {i} del socio {socioid}")
-                    common.delcategoria(token, socioid, i)
+        elif edad in range(18, 30):
+            # AVAST+18
+            targetcategorias.append(avast18)
+
+        # El socio no debe estar en grupos A+13 o A+15 o A+18
+        for i in [avast13, avast15, avast18]:
+            if i in categoriassocio and i not in targetcategorias:
+                print(f"ERROR: Borrando categoria {i} del socio {socioid}")
+                common.delcategoria(token, socioid, i)
 
         # Add or remove categories
 

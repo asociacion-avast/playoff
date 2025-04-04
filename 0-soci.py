@@ -19,11 +19,12 @@ socios = []
 tanda = -1
 page = -1
 
+pagesize = 1000
 
-while tanda == -1 or len(tanda) >= 100:
+while tanda == -1 or len(tanda) >= pagesize:
     page += 1
     print("Obteniendo listado de socios, page: %s" % page)
-    sociosurl = f"{common.apiurl}/colegiats?page={page}&pageSize=100"
+    sociosurl = f"{common.apiurl}/colegiats?page={page}&pageSize={pagesize}"
     result = requests.get(
         sociosurl, auth=common.BearerAuth(token), headers=common.headers
     )
