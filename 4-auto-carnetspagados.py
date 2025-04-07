@@ -105,7 +105,11 @@ for socio in socios:
         if activasocio:
             print(f"Socio ha pagado carnet: {activasocio}")
 
-            if common.categorias["notienecarnet"] in categoriassocio:
+            if (
+                common.categorias["notienecarnet"] in categoriassocio
+                or common.categorias["sinuncarnetfamiliar"] in categoriassocio
+                or common.categorias["sindoscarnetfamiliar"] in categoriassocio
+            ):
                 print("Altas en categorias:")
                 for categoria in targetcategorias:
                     print(common.traduce(categoria))
