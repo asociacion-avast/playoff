@@ -162,8 +162,8 @@ for socio in socios:
 
             if (
                 socio["persona"]["residencia"] == "-"
-                or "ANULADO".lower() in socio["persona"]["residencia"]
-                or "ANUAL".lower() in socio["persona"]["residencia"]
+                or "ANULADO".lower() in socio["persona"]["residencia"].lower()
+                or "ANUAL".lower() in socio["persona"]["residencia"].lower()
                 or socio["persona"]["residencia"] == "null"
             ):
                 targetcategorias.append(common.categorias["carnetincorrecto"])
@@ -185,8 +185,8 @@ for socio in socios:
                 and socio[tutor] is not None
                 and socio[tutor]["residencia"] != ""
                 and socio[tutor]["residencia"] != "-"
-                and "ANULADO".lower() not in socio[tutor]["residencia"]
-                and "ANUAL".lower() not in socio[tutor]["residencia"]
+                and "ANULADO".lower() not in socio[tutor]["residencia"].lower()
+                and "ANUAL".lower() not in socio[tutor]["residencia"].lower()
                 and socio[tutor]["residencia"] != "null"
             ):
                 carnetsocio.append(socio[tutor]["residencia"])
