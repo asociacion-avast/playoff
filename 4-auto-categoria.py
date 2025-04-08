@@ -155,13 +155,26 @@ for socio in socios:
 
         # Carnet de socio
         if "persona" in socio and "residencia" in socio["persona"]:
-            if (
-                socio["persona"]["residencia"] == ""
-                or socio["persona"]["residencia"] == "-"
-            ):
+            if socio["persona"]["residencia"] == "":
                 targetcategorias.append(common.categorias["notienecarnet"])
             else:
                 removecategorias.append(common.categorias["notienecarnet"])
+
+            if (
+                socio["persona"]["residencia"] == "-"
+                or "ANULADO".lower() in socio["persona"]["residencia"]
+                or "ANUAL".lower() in socio["persona"]["residencia"]
+                or socio["persona"]["residencia"] == "null"
+            ):
+                targetcategorias.append(common.categorias["carnetincorrecto"])
+
+                # Forzar marcar que no tiene carnet
+                if common.categorias["notienecarnet"] in removecategorias:
+                    removecategorias.remove(common.categorias["notienecarnet"])
+                    targetcategorias.append(common.categorias["notienecarnet"])
+
+            else:
+                removecategorias.append(common.categorias["carnetincorrecto"])
 
         # Carnet tutores
         carnetsocio = []
@@ -172,6 +185,9 @@ for socio in socios:
                 and socio[tutor] is not None
                 and socio[tutor]["residencia"] != ""
                 and socio[tutor]["residencia"] != "-"
+                and "ANULADO".lower() not in socio[tutor]["residencia"]
+                and "ANUAL".lower() not in socio[tutor]["residencia"]
+                and socio[tutor]["residencia"] != "null"
             ):
                 carnetsocio.append(socio[tutor]["residencia"])
 

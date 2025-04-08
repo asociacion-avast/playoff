@@ -39,6 +39,8 @@ categorias = {
     "gestionarcarnet": 84,
     "nuevatanda": 74,
     "informerevisado": 94,
+    "carnetincorrecto": 101,
+    "carnetduplicado": 102,
 }
 
 diccionario = {
