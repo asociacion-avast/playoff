@@ -27,20 +27,14 @@ for socio in socios:
                         try:
                             newidsocio = int(idsocio)
                         except Exception:
-                            print(
-                                f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
-                            )
+                            print(f"{count:04} {common.sociobase}{idcolegiat}")
                             print("Invalid ID socio for user: %s" % idcolegiat)
 
                     elif idsocio != "None":
-                        print(
-                            f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
-                        )
+                        print(f"{count:04} {common.sociobase}{idcolegiat}")
                         print("Invalid ID socio for user: %s" % idcolegiat)
 
                     if "%s" % idsocio != "%s" % newidsocio:
-                        print(
-                            f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
-                        )
+                        print(f"{count:04} {common.sociobase}{idcolegiat}")
                         print("Invalid ID socio for user: %s" % idcolegiat)
                         print(idsocio, newidsocio)

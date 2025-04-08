@@ -72,9 +72,7 @@ for socio in socios:
                     if idtelegramencampo is not None or idtelegramencampo != "":
                         alguno = True
             if not alguno:
-                print(
-                    f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={id_socio}"
-                )
+                print(f"{common.sociobase}{id_socio}")
 
 
 token = common.gettoken(

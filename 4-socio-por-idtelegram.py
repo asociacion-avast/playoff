@@ -39,6 +39,4 @@ for socio in socios:
                         idbb = False
 
                     if idbb and idbb == id:
-                        print(
-                            f"Socio: https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={socio["idColegiat"]}"
-                        )
+                        print(f"Socio: {common.sociobase}{socio["idColegiat"]}")

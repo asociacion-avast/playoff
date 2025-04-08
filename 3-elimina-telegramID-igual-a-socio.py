@@ -32,9 +32,7 @@ for socio in socios:
             for field in [common.tutor1, common.tutor2, common.socioid]:
                 if field in socio["campsDinamics"]:
                     if numcolegiat == socio["campsDinamics"][field]:
-                        print(
-                            f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
-                        )
+                        print(f"{count:04} {common.sociobase}{idcolegiat}")
 
                         response = common.escribecampo(token, idcolegiat, field, "")
                         print(response)

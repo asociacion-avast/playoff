@@ -46,5 +46,5 @@ for socio in socios:
 
                     fechaficha = f"{fecha.day:02d}/{fecha.month:02d}/{fecha.year}"
                     if fecha and fechaficha != recibocorrecto:
-                        url = f"https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={id_socio}#tab=ACTIVITATS"
+                        url = f"{common.sociobase}{id_socio}#tab=ACTIVITATS"
                         print(fechaficha, recibocorrecto, "Usuario: %s" % url)

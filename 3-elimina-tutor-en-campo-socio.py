@@ -35,9 +35,7 @@ for socio in socios:
 
 for idcolegiat in sorted(set(idsociotoclean)):
     count = count + 1
-    print(
-        f"{count:04} https://{common.endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat={idcolegiat}"
-    )
+    print(f"{count:04} {common.sociobase}{idcolegiat}")
 
     response = common.escribecampo(token, idcolegiat, common.socioid, "")
 
