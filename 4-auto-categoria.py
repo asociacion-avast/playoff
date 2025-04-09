@@ -296,11 +296,11 @@ for socio in socios:
             # AVAST+13
             targetcategorias.append(common.categorias["avast13"])
 
-        elif edad in range(15, 18):
+        if edad in range(15, 21):
             # AVAST+15
             targetcategorias.append(common.categorias["avast15"])
 
-        elif edad in range(18, 30):
+        if edad in range(18, 30):
             # AVAST+18
             targetcategorias.append(common.categorias["avast18"])
 
