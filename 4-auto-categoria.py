@@ -155,14 +155,16 @@ for socio in socios:
 
         # Carnet de socio
         if "persona" in socio and "residencia" in socio["persona"]:
-            if socio["persona"]["residencia"] == "":
+            if (
+                socio["persona"]["residencia"] == ""
+                or socio["persona"]["residencia"] == "-"
+            ):
                 targetcategorias.append(common.categorias["notienecarnet"])
             else:
                 removecategorias.append(common.categorias["notienecarnet"])
 
             if (
-                socio["persona"]["residencia"] == "-"
-                or "ANULADO".lower() in socio["persona"]["residencia"].lower()
+                "ANULADO".lower() in socio["persona"]["residencia"].lower()
                 or "ANUAL".lower() in socio["persona"]["residencia"].lower()
                 or socio["persona"]["residencia"] == "null"
             ):
