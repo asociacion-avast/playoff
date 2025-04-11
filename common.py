@@ -96,7 +96,7 @@ def traduce(id):
     if id in diccionario:
         text = "ID %s (%s)" % (id, diccionario[id])
     else:
-        text = "ID %s no encontrado en diccionaro" % id
+        text = "ID %s no encontrado en diccionario" % id
     return text
 
 
