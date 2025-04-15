@@ -101,9 +101,10 @@ for socio in socios:
                                 cambiaactividades = True
                                 targetprogramada.append(60)
                             else:
-                                print(
-                                    "Categoria pagada no corresponde con la candidata"
-                                )
+                                for categoriasoc in categoriassocio:
+                                    print(
+                                        f"Categoria pagada no corresponde con la candidata {common.traduce(categoriasoc)}"
+                                    )
                         if actividadid == 730:  # Alta niño actividades
                             if 33 in categoriassocio:
                                 activasocio = True
@@ -116,9 +117,10 @@ for socio in socios:
                                 cambiaactividades = True
                                 targetprogramada.append(12)
                             else:
-                                print(
-                                    "Categoria pagada no corresponde con la candidata"
-                                )
+                                for categoriasoc in categoriassocio:
+                                    print(
+                                        f"Categoria pagada no corresponde con la candidata {common.traduce(categoriasoc)}"
+                                    )
 
                         if actividadid == 732:  # Alta tutor actividades
                             cambiaactividades = True
