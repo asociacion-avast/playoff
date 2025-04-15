@@ -50,9 +50,9 @@ for socio in socios:
                     agrupaciones=["PREINSCRIPCIÓN"],
                     reverseagrupaciones=True,
                 ):
-                    validids.append(f'{socio["campsDinamics"][field]}')
+                    validids.append(f"{socio['campsDinamics'][field]}")
                 else:
-                    invalidids.append(f'{socio["campsDinamics"][field]}')
+                    invalidids.append(f"{socio['campsDinamics'][field]}")
 
 
 print("Valid ID's")

@@ -63,7 +63,7 @@ for socio in socios:
         if isinstance(socio["campsDinamics"], dict):
             for field in [common.fechacambio]:
                 if field in socio["campsDinamics"]:
-                    fechacambiosocio = f'{socio["campsDinamics"][field]}'
+                    fechacambiosocio = f"{socio['campsDinamics'][field]}"
                     # Fecha cambio
                     try:
                         fecha = dateutil.parser.parse(fechacambiosocio)

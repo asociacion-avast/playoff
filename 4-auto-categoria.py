@@ -109,7 +109,7 @@ today = datetime.date.today()
 if today.month < 2 or (today.month == 2 and today.day < 20):
     fechacambiosocio = f"20/02/{today.year}"
 else:
-    fechacambiosocio = f"20/02/{today.year+1}"
+    fechacambiosocio = f"20/02/{today.year + 1}"
 
 # Leer datos
 socios = common.readjson("socios")

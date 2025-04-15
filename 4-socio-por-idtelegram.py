@@ -39,4 +39,4 @@ for socio in socios:
                         idbb = False
 
                     if idbb and idbb == id:
-                        print(f"Socio: {common.sociobase}{socio["idColegiat"]}")
+                        print(f"Socio: {common.sociobase}{socio['idColegiat']}")

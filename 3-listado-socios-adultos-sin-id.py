@@ -67,7 +67,7 @@ for socio in socios:
             alguno = False
             for field in common.telegramfields:
                 if field in socio["campsDinamics"]:
-                    idtelegramencampo = f'{socio["campsDinamics"][field]}'
+                    idtelegramencampo = f"{socio['campsDinamics'][field]}"
 
                     if idtelegramencampo is not None or idtelegramencampo != "":
                         alguno = True

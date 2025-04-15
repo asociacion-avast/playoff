@@ -23,4 +23,4 @@ for socio in socios:
                 if field in socio["campsDinamics"]:
                     if mysocio == socio["campsDinamics"][field]:
                         count = count + 1
-                        print(f"{count:04} {common.sociobase}{socio["idColegiat"]}")
+                        print(f"{count:04} {common.sociobase}{socio['idColegiat']}")

@@ -20,7 +20,7 @@ for socio in socios:
                     estado="COLESTVAL",
                     estatcolegiat="ESTALTA",
                 ):
-                    idsocio = f'{socio["campsDinamics"][field]}'
+                    idsocio = f"{socio['campsDinamics'][field]}"
                     newidsocio = "None"
 
                     if idsocio is not None and idsocio != "" and idsocio != "None":
