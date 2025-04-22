@@ -71,6 +71,7 @@ diccionario = {
     87: "Autocambio HERMANO actividades",
     97: "Socio sin carnet",
     98: "Carnets veteranos",
+    777: "Alta unificada",
 }
 
 

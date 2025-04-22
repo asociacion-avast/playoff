@@ -24,15 +24,7 @@ today = datetime.date.today()
 
 
 print("Actualizando actividades ALTA")
-# 728: Alta sin actividades
-# 729: Alta adulto actividades
-# 730: Alta niño actividades
-# 732: Alta Tutor actividades
-# 733: Alta Hermano Actividades
-# 748: Alta Adulto sin actividades
-# 769: Carnets familia legacy
-
-for actividadid in [728, 729, 730, 732, 733, 748]:
+for actividadid in [777]:
     common.updateactividad(token=token, idactividad=actividadid)
 
 
@@ -61,7 +53,7 @@ for socio in socios:
             idcategoria = int(categoria["idModalitat"])
             categoriassocio.append(idcategoria)
 
-        for actividadid in [728, 729, 730, 732, 733, 748]:
+        for actividadid in [777]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
@@ -73,69 +65,45 @@ for socio in socios:
                         )
 
                         # Comprobamos que ha pagado la categoría que toca
-                        if actividadid == 728:  # Alta Socio sin actividades
-                            pagada = True
-                            if 32 in categoriassocio:
-                                activasocio = True
-                                targetcategorias.append(
-                                    common.categorias["sociosinactividades"]
-                                )
 
-                        if actividadid == 748:  # Alta adulto SIN actividades
-                            if 54 in categoriassocio:
-                                activasocio = True
-                                targetcategorias.append(
-                                    common.categorias["adultosinactividades"]
-                                )
+                        pagada = True
+                        targetcategorias.append(common.categorias["gestionarcarnet"])
+                        activasocio = True
 
-                        if actividadid == 729:  # Alta adulto actividades
-                            if 59 in categoriassocio:
-                                activasocio = True
-                                targetcategorias.append(
-                                    common.categorias["gestionarcarnet"]
-                                )  # Carnet
-                                targetcategorias.append(
-                                    common.categorias["adultosinactividades"]
-                                )
-                                # Programar cambio futuro a actividades
-                                cambiaactividades = True
-                                targetprogramada.append(60)
-                            else:
-                                for categoriasoc in categoriassocio:
-                                    print(
-                                        f"Categoria pagada no corresponde con la candidata {common.traduce(categoriasoc)}"
-                                    )
-                        if actividadid == 730:  # Alta niño actividades
-                            if 33 in categoriassocio:
-                                activasocio = True
-                                targetcategorias.append(
-                                    common.categorias["gestionarcarnet"]
-                                )  # Carnet
-                                targetcategorias.append(
-                                    common.categorias["sociosinactividades"]
-                                )
-                                cambiaactividades = True
-                                targetprogramada.append(12)
-                            else:
-                                for categoriasoc in categoriassocio:
-                                    print(
-                                        f"Categoria pagada no corresponde con la candidata {common.traduce(categoriasoc)}"
-                                    )
+                        if 32 in categoriassocio:
+                            targetcategorias.append(
+                                common.categorias["sociosinactividades"]
+                            )
 
-                        if actividadid == 732:  # Alta tutor actividades
+                        if 33 in categoriassocio:
+                            targetcategorias.append(
+                                common.categorias["sociosinactividades"]
+                            )
                             cambiaactividades = True
-                            activasocio = True
+                            targetprogramada.append(12)
+
+                        if 54 in categoriassocio:
+                            targetcategorias.append(
+                                common.categorias["adultosinactividades"]
+                            )
+
+                        if 59 in categoriassocio:
+                            targetcategorias.append(
+                                common.categorias["adultosinactividades"]
+                            )
+                            # Programar cambio futuro a actividades
+                            cambiaactividades = True
+                            targetprogramada.append(60)
+
+                        if 85 in categoriassocio:  # Alta tutor actividades
+                            cambiaactividades = True
                             targetprogramada.append(60)
                             targetcategorias.append(
                                 common.categorias["adultosinactividades"]
                             )
 
-                        if actividadid == 733:  # Alta hermano actividades
-                            activasocio = True
+                        if 86 in categoriassocio:
                             cambiaactividades = True
-                            targetcategorias.append(
-                                common.categorias["gestionarcarnet"]
-                            )  # Carnet
                             targetprogramada.append(13)
                             targetcategorias.append(
                                 common.categorias["sociosinactividades"]
