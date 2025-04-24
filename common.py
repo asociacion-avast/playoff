@@ -72,6 +72,7 @@ diccionario = {
     97: "Socio sin carnet",
     98: "Carnets veteranos",
     777: "Alta unificada",
+    94: "Informe revisado",
 }
 
 
