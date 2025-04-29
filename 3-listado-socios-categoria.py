@@ -23,7 +23,9 @@ def classifymembers(socios):
         "kidsactiv": [],  # Niños CON Actividades
         "kidsinactiv-and-parents": [],  # Niños SIN Actividades y tutores
         "kidsinactiv": [],  # Niños SIN actividades
+        "preinscripcion": [],  # Socios preinscritos
         "profesores": [],  # Profesores
+        "sociohermano": [],  # Socios hermanos (con actividades)
         "teen13-and-parents": [],  # Niños y tutores [13-15)
         "teen13": [],  # Niños [13-15)
         "teen15-and-parents": [],  # Niños y tutores [15-24]
@@ -32,7 +34,6 @@ def classifymembers(socios):
         "teen18": [],  # Niños [18-29]
         "tutor": [],  # Tutores
         "valid": [],  # Cualquiera con relación avast
-        "preinscripcion": [],  # Socios preinscritos
     }
 
     # For each user check the custom fields that store the telegram ID for each tutor
@@ -93,6 +94,9 @@ def classifymembers(socios):
                                         modalitatnom = modalitat["modalitat"][
                                             "nom"
                                         ].lower()
+                                        idmodalitat = int(
+                                            modalitat["modalitat"]["idModalitat"]
+                                        )
 
                                         if "profesores".lower() in agrupacionom:
                                             resultids["profesores"].append(userid)
@@ -126,6 +130,9 @@ def classifymembers(socios):
                                             resultids["kidsactiv-and-parents"].append(
                                                 userid
                                             )
+
+                                        if idmodalitat == 13:
+                                            resultids["sociohermano"].append(userid)
 
                                         if (
                                             "Socio SIN Actividades".lower()
