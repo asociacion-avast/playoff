@@ -32,6 +32,7 @@ def classifymembers(socios):
         "teen18": [],  # Niños [18-29]
         "tutor": [],  # Tutores
         "valid": [],  # Cualquiera con relación avast
+        "preinscripcion": [],  # Socios preinscritos
     }
 
     # For each user check the custom fields that store the telegram ID for each tutor
@@ -159,6 +160,16 @@ def classifymembers(socios):
                                             resultids["teen18-and-parents"].append(
                                                 userid
                                             )
+
+                                        if "Candidato a".lower() in modalitatnom:
+                                            resultids["preinscripcion"].append(userid)
+
+    # Remove candidates in preinscripcion
+    for uid in resultids["preinscripcion"]:
+        for categoria in resultids:
+            if categoria != "preinscripcion":
+                if uid in resultids[categoria]:
+                    resultids[categoria].remove(uid)
 
     # Remove duplicates
     for item in resultids:
