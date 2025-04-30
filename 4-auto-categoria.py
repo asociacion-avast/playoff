@@ -267,16 +267,24 @@ for socio in socios:
                 removecategorias.append(common.categorias["actividades"])
 
         # Los adultos no necesitan tener tutores
-        if not adulto:
-            if not carnetsocio:
-                targetcategorias.append(common.categorias["sindoscarnetfamiliar"])
-                removecategorias.append(common.categorias["sinuncarnetfamiliar"])
+        if common.categorias["carnetpendiente"] not in categoriassocio:
+            if not adulto:
+                if not carnetsocio:
+                    targetcategorias.append(common.categorias["sindoscarnetfamiliar"])
+                    removecategorias.append(common.categorias["sinuncarnetfamiliar"])
 
-            if len(carnetsocio) == 1:
-                targetcategorias.append(common.categorias["sinuncarnetfamiliar"])
-                removecategorias.append(common.categorias["sindoscarnetfamiliar"])
+                if len(carnetsocio) == 1:
+                    targetcategorias.append(common.categorias["sinuncarnetfamiliar"])
+                    removecategorias.append(common.categorias["sindoscarnetfamiliar"])
 
-            if len(carnetsocio) == 2:
+                if len(carnetsocio) == 2:
+                    removecategorias.extend(
+                        (
+                            common.categorias["sinuncarnetfamiliar"],
+                            common.categorias["sindoscarnetfamiliar"],
+                        )
+                    )
+            else:
                 removecategorias.extend(
                     (
                         common.categorias["sinuncarnetfamiliar"],
@@ -288,6 +296,7 @@ for socio in socios:
                 (
                     common.categorias["sinuncarnetfamiliar"],
                     common.categorias["sindoscarnetfamiliar"],
+                    common.categorias["notienecarnet"],
                 )
             )
 
