@@ -42,6 +42,8 @@ categorias = {
     "sinuncarnetfamiliar": 99,
     "socioactivo": 82,
     "sociosinactividades": 1,
+    "socioactividades": 12,
+    "sociohermanoactividades": 13,
 }
 
 diccionario = {
@@ -359,7 +361,26 @@ def create_inscripcio(token, idActivitat, idColegiat):
     )
 
 
+def get_colegiat_json(idColegiat=False):
+    """
+    Gets json for colegiat in full
+    """
+    socios = readjson("socios")
+
+    for socio in socios:
+        if int(socio["idColegiat"]) == int(idColegiat):
+            return socio
+
+
 def get_colegiat_data(idColegiat=False):
+    """Get colegiat data for adding inscriptions
+
+    Args:
+        idColegiat (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
     socios = readjson("socios")
     mydata = False
 
