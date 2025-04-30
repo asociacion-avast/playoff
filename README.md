@@ -31,6 +31,7 @@ Trabajo con los datos:
 | `3-elimina-inscripciones-conflictos.py`  | Elimina inscripciones con conflicto de horas                                                            |
 | `3-elimina-telegramID-igual-a-socio.py`  | Elimina el ID de Telegram igual al nº de socio                                                          |
 | `3-elimina-tutor-en-campo-socio.py`      | Elimina ID's telegram de tutor en campo de socio                                                        |
+| `3-listado-socios-actividad-familia.py`  | Muestra familias con 'socio hermano actividades' sin 'socio principal'                                  |
 | `3-listado-socios-adultos-sin-id.py`     | Socios adultos sin ID Telegram                                                                          |
 | `3-listado-socios-anyos.py`              | Muestra socios por año de inscripción y baja                                                            |
 | `3-listado-socios-bajas.py`              | Muestra socios que están de baja con inscripciones                                                      |
