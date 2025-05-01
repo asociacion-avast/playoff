@@ -154,29 +154,30 @@ for socio in socios:
         adulto = False
 
         # Carnet de socio
-        if "persona" in socio and "residencia" in socio["persona"]:
-            if (
-                socio["persona"]["residencia"] == ""
-                or socio["persona"]["residencia"] == "-"
-            ):
-                targetcategorias.append(common.categorias["notienecarnet"])
-            else:
-                removecategorias.append(common.categorias["notienecarnet"])
-
-            if (
-                "ANULADO".lower() in socio["persona"]["residencia"].lower()
-                or "ANUAL".lower() in socio["persona"]["residencia"].lower()
-                or socio["persona"]["residencia"] == "null"
-            ):
-                targetcategorias.append(common.categorias["carnetincorrecto"])
-
-                # Forzar marcar que no tiene carnet
-                if common.categorias["notienecarnet"] in removecategorias:
-                    removecategorias.remove(common.categorias["notienecarnet"])
+        if common.categorias["carnetpendiente"] not in categoriassocio:
+            if "persona" in socio and "residencia" in socio["persona"]:
+                if (
+                    socio["persona"]["residencia"] == ""
+                    or socio["persona"]["residencia"] == "-"
+                ):
                     targetcategorias.append(common.categorias["notienecarnet"])
+                else:
+                    removecategorias.append(common.categorias["notienecarnet"])
 
-            else:
-                removecategorias.append(common.categorias["carnetincorrecto"])
+                if (
+                    "ANULADO".lower() in socio["persona"]["residencia"].lower()
+                    or "ANUAL".lower() in socio["persona"]["residencia"].lower()
+                    or socio["persona"]["residencia"] == "null"
+                ):
+                    targetcategorias.append(common.categorias["carnetincorrecto"])
+
+                    # Forzar marcar que no tiene carnet
+                    if common.categorias["notienecarnet"] in removecategorias:
+                        removecategorias.remove(common.categorias["notienecarnet"])
+                        targetcategorias.append(common.categorias["notienecarnet"])
+
+                else:
+                    removecategorias.append(common.categorias["carnetincorrecto"])
 
         # Carnet tutores
         carnetsocio = []
