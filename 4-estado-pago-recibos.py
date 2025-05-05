@@ -46,11 +46,25 @@ for socio in socios:
 
         targetcategorias = []
         removecategorias = []
+        recibos = {}
+        reciboids = []
         for recibo in response:
+            idrecibo = int(recibo["idRebut"])
+            reciboids.append(idrecibo)
+
+            recibos[idrecibo] = {}
+            recibos[idrecibo]["base"] = recibo["base"]
+            recibos[idrecibo]["concepte"] = recibo["concepte"]
+            recibos[idrecibo]["dataPagament"] = recibo["dataPagament"]
+            recibos[idrecibo]["estat"] = recibo["estat"]
             # print(
             #     recibo["base"], recibo["concepte"], recibo["dataPagament"], recibo["estat"]
             # )
-            if recibo["estat"] == "REBESTRET":
+
+        reciboids.sort(reverse=True)
+
+        for recibo in reciboids[0:3]:
+            if recibos[recibo]["estat"] == "REBESTRET":
                 targetcategorias.append(common.categorias["impagados"])
 
         if len(targetcategorias) > 0:
