@@ -21,17 +21,11 @@ procesados = []
 print("Procesando socios")
 # Iteramos sobre miembros porque cap familia hace referencia a la cuenta bancaria
 
-capsfamilia = []
-for miembro in familias["miembros"]:
-    capsfamilia.append(int(miembro))
 
-capsfamilia = sorted(set(capsfamilia))
-
-
-for capfamilia in capsfamilia:
-    parientes = familias["miembros"][f"{capfamilia}"]
-    parientes.append(capfamilia)
-    if capfamilia not in procesados:
+for familia in familias["miembros"]:
+    parientes = familias["miembros"][familia]
+    parientes.append(familia)
+    if familia not in procesados:
         procesados.extend(iter(parientes))
         # Si el socio ya ha sido procesado, no lo procesamos de nuevo
 
@@ -65,5 +59,5 @@ for capfamilia in capsfamilia:
         if socioshermanos:
             if not sociosactividad:
                 print(
-                    f"ERROR: Familia {capfamilia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{capfamilia}#tab=CATEGORIES"
+                    f"ERROR: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
                 )

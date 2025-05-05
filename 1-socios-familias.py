@@ -24,6 +24,28 @@ except Exception:
     familias = {"capfamilias": [], "miembros": {}, "procesados": []}
 
 
+def cruzar_miembros(miembros):
+    # Rellenar de forma cruzada los miembros de la familia para completar los valores
+
+    # Paso 1: convertir todas las claves y valores a enteros (algunos son a veces cadenas)
+    datos = {}
+    for k, lista in miembros.items():
+        k_int = int(k)
+        valores_int = [int(x) for x in lista]
+
+        # incluirse a sí mismo si no está
+        grupo = set(valores_int)
+        grupo.add(k_int)
+
+        for miembro in grupo:
+            if miembro not in datos:
+                datos[miembro] = set()
+            datos[miembro].update(grupo - {miembro})  # todos menos él mismo
+
+    # Paso 2: convertir los sets a listas ordenadas
+    return {k: sorted(v) for k, v in datos.items()}
+
+
 print("Procesando socios")
 for socio in socios:
     socioid = int(socio["idColegiat"])
@@ -68,18 +90,7 @@ for socio in socios:
             familias["capfamilias"].remove(socioid)
 
 
-# Find empty elements
-toclean = []
-for familia in familias["miembros"]:
-    if len(familias["miembros"][familia]) == 0:
-        toclean.append(familia)
-
-# Cleanup
-for familia in toclean:
-    del familias["miembros"][familia]
-
-familias["capfamilias"] = sorted(set(familias["capfamilias"]))
-familias["miembros"] = {k: list(set(v)) for k, v in familias["miembros"].items()}
+familias["miembros"] = cruzar_miembros(familias["miembros"])
 
 # Save to disk
 common.writejson(filename="familias", data=familias)
