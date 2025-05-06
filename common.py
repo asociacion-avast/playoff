@@ -81,6 +81,8 @@ diccionario = {
     94: "Informe revisado",
     97: "Socio sin carnet",
     98: "Carnets veteranos",
+    781: "Solicitar cambio a CON actividades",
+    782: "Solicitar cambio a SIN actividades",
 }
 
 
