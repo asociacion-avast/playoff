@@ -200,10 +200,11 @@ for socio in socios:
         except Exception:
             cp = 0
 
-        if cp in codigos_postales_dana:
-            targetcategorias.append(common.categorias["dana"])
-        else:
-            removecategorias.append(common.categorias["dana"])
+        # Asociar categoria DANA o no
+        # if cp in codigos_postales_dana:
+        #     targetcategorias.append(common.categorias["dana"])
+        # else:
+        #     removecategorias.append(common.categorias["dana"])
 
         # Find our born year
         try:
