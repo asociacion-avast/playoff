@@ -50,11 +50,8 @@ for actividad in actividades:
         anyofin = 0
 
     if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
-        inscritos = common.readjson(filename=f"{myid}")
         usadas = 0
-        for inscrito in inscritos:
-            if inscrito["estat"] == "INSCRESTNOVA":
-                usadas = usadas + 1
+        usadas = int(actividad["numInscripcions"])
         libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
             if anyo and anyoinicio <= anyo <= anyofin:
