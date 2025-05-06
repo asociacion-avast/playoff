@@ -333,6 +333,12 @@ for socio in socios:
                 print(f"ERROR: Borrando categoria {i} del socio {socioid}")
                 common.delcategoria(token, socioid, i)
 
+        # Socios con impago anual, dar de baja de categorías
+        if common.categorias["impagoanual"] in categoriassocio:
+            targetcategorias = [common.categorias["impagoanual"]]
+            removecategorias = categoriassocio
+            removecategorias.remove(common.categorias["impagoanual"])
+
         # Add or remove categories
 
         for modalitat in sorted(set(targetcategorias)):

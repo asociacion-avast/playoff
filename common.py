@@ -46,11 +46,13 @@ categorias = {
     "sociohermanoactividades": 13,
     "sociosinactividades": 1,
     "carnettutorduplicado": 104,
+    "impagoanual": 105,
 }
 
 diccionario = {
     1: "Socio principal sin actividades",
     103: "Impagados",
+    105: "Impagado anualidad",
     12: "Socio principal con actividades",
     13: "Socio Hermano",
     32: "Candidato a Socio principal sin actividades",
