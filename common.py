@@ -45,6 +45,7 @@ categorias = {
     "socioactivo": 82,
     "sociohermanoactividades": 13,
     "sociosinactividades": 1,
+    "carnettutorduplicado": 104,
 }
 
 diccionario = {

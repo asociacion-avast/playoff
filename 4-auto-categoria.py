@@ -194,6 +194,12 @@ for socio in socios:
             ):
                 carnetsocio.append(socio[tutor]["residencia"])
 
+        # Detectar si el carnet de tutor está indicado para ambos tutores
+        if len(carnetsocio) > len(sorted(set(carnetsocio))):
+            targetcategorias.append(common.categorias["carnettutorduplicado"])
+        else:
+            removecategorias.append(common.categorias["carnettutorduplicado"])
+
         # Probar código postal
         try:
             cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
