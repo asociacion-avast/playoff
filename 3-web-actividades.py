@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
 
+import datetime
 import json
 import os
 
+import dateutil.parser
 import requests
 
 user = os.environ.get("PLAYOFFUSERRO")
 password = os.environ.get("PLAYOFFPASSRO")
 apiurl = os.environ.get("PLAYOFFAPIURL")
 headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
+today = datetime.datetime.now()
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -69,30 +72,33 @@ print(
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    fechalimite = dateutil.parser.parse(actividad["dataLimit"])
 
-    try:
-        anyoinicio = int(actividad["edatMin"])
-        anyofin = int(actividad["edatMax"])
-    except Exception:
-        anyoinicio = 0
-        anyofin = 0
+    if fechalimite < today:
+        if actividad["idNivell"] and actividad["idNivell"] != "null":
+            horario = int(actividad["idNivell"])
+        else:
+            horario = 0
 
-    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
-        usadas = int(actividad["numInscripcions"])
-        libres = int(actividad["maxPlaces"]) - usadas
-        if libres > 0:
-            if anyo and anyoinicio <= anyo <= anyofin:
-                print(
-                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
-                )
-            elif not anyo:
-                print(
-                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
-                )
+        try:
+            anyoinicio = int(actividad["edatMin"])
+            anyofin = int(actividad["edatMax"])
+        except Exception:
+            anyoinicio = 0
+            anyofin = 0
+
+        if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
+            usadas = int(actividad["numInscripcions"])
+            libres = int(actividad["maxPlaces"]) - usadas
+            if libres > 0:
+                if anyo and anyoinicio <= anyo <= anyofin:
+                    print(
+                        f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                    )
+                elif not anyo:
+                    print(
+                        f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                    )
 
 print("</table>")
 print("</HTML>")
