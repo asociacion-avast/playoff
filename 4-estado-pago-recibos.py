@@ -31,6 +31,7 @@ for socio in socios:
         agrupaciones=["PREINSCRIPCIÓN"],
         reverseagrupaciones=True,
     ):
+        print(f"Procesando socio {socioid}")
         categoriassocio = []
 
         for modalitat in socio["colegiatHasModalitats"]:
@@ -48,6 +49,7 @@ for socio in socios:
         removecategorias = []
         recibos = {}
         reciboids = []
+
         for recibo in response:
             idrecibo = int(recibo["idRebut"])
             reciboids.append(idrecibo)
@@ -63,9 +65,22 @@ for socio in socios:
 
         reciboids.sort(reverse=True)
 
+        # Listar recibos anuales
+        recibosanuales = []
+        for idrecibo in reciboids:
+            if recibos[idrecibo]["concepte"].upper().find("ANUAL") > 0:
+                recibosanuales.append(idrecibo)
+
         for recibo in reciboids[0:3]:
             if recibos[recibo]["estat"] == "REBESTRET":
                 targetcategorias.append(common.categorias["impagados"])
+        # Comprobar último recibo anual
+        if len(recibosanuales) > 0:
+            recibo = recibosanuales[0]
+            if recibos[recibo]["estat"] == "REBESTRET":
+                targetcategorias.append(common.categorias["impagoanual"])
+        else:
+            removecategorias.append(common.categorias["impagoanual"])
 
         if len(targetcategorias) > 0:
             if common.categorias["impagados"] not in categoriassocio:
