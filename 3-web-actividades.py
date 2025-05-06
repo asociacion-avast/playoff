@@ -6,8 +6,6 @@ import os
 
 import requests
 
-import common
-
 user = os.environ.get("PLAYOFFUSERRO")
 password = os.environ.get("PLAYOFFPASSRO")
 apiurl = os.environ.get("PLAYOFFAPIURL")
@@ -82,7 +80,6 @@ for actividad in actividades:
         anyofin = 0
 
     if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
-        inscritos = common.readjson(filename=f"{myid}")
         usadas = int(actividad["numInscripcions"])
         libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
