@@ -63,7 +63,7 @@ horarios = {
 print("<HTML>")
 print("<table border='1'>")
 print(
-    "<tr><th>ID</th><th>NOMBRE</th><th>PLAZAS</th><th>USADAS</th><th>LIBRES</th><th>HORA</th><th>AÑO INICIO</th><th>AÑO FIN</th></tr>"
+    "<tr><th>ID</th><th>NOMBRE</th><th>LIBRES</th><th>HORA</th><th>AÑO INICIO</th><th>AÑO FIN</th></tr>"
 )
 
 for actividad in actividades:
@@ -87,11 +87,11 @@ for actividad in actividades:
         if libres > 0:
             if anyo and anyoinicio <= anyo <= anyofin:
                 print(
-                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{int(actividad['maxPlaces'])}</td><td>{usadas}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                 )
             elif not anyo:
                 print(
-                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{int(actividad['maxPlaces'])}</td><td>{usadas}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                 )
 
 print("</table>")
