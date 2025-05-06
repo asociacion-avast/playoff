@@ -17,20 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Plazas libres
-        run: python ./3-web-actividades.py
+        run: python ./3-web-actividades.py > public/index.html
         env:
           PLAYOFFAPIURL: ${{ secrets.PLAYOFFAPIURL}}
           PLAYOFFPASSRO: ${{ secrets.PLAYOFFPASSRO}}
           PLAYOFFUSERRO: ${{ secrets.PLAYOFFUSERRO}}
 
-
-      # - name: Deploy to GitHub Pages
-      # if: success() && github.event_name != 'pull_request'
-      # uses: crazy-max/ghaction-github-pages@v4.1.0
-      # with:
-      #   target_branch: gh-pages
-      #   build_dir: public
-      #   jekyll: false
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     GH_PAT: ${{ secrets.GH_PAT }}
+      - name: Deploy to GitHub Pages
+        if: success() && github.event_name != 'pull_request'
+        uses: crazy-max/ghaction-github-pages@v4.1.0
+        with:
+          target_branch: gh-pages
+          build_dir: public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

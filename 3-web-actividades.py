@@ -38,7 +38,6 @@ token = gettoken(user=user, password=password)
 activar = f"{apiurl}/activitats/totes"
 data = {"Authorization": f"Bearer {token}"}
 
-print("Obteniendo listado de actividades")
 result = requests.get(activar, auth=BearerAuth(token), headers=headers)
 
 actividades = result.json()
@@ -46,7 +45,6 @@ actividades = result.json()
 
 anyo = False
 
-print("Procesando actividades...")
 
 usuariosyactividad = {}
 actividadyusuarios = {}
@@ -62,8 +60,12 @@ horarios = {
     21: "",
     22: "",
 }
+print("<HTML>")
+print("<table border='1'>")
+print(
+    "<tr><th>ID</th><th>NOMBRE</th><th>PLAZAS</th><th>USADAS</th><th>LIBRES</th><th>HORA</th><th>AÑO INICIO</th><th>AÑO FIN</th></tr>"
+)
 
-print("ID,NOMBRE,PLAZAS,USADAS,LIBRES,HORA,AÑO INICIO,AÑO FIN")
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
@@ -85,9 +87,12 @@ for actividad in actividades:
         if libres > 0:
             if anyo and anyoinicio <= anyo <= anyofin:
                 print(
-                    f"{myid},{nombre},{int(actividad['maxPlaces'])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}"
+                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{int(actividad['maxPlaces'])}</td><td>{usadas}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                 )
             elif not anyo:
                 print(
-                    f"{myid},{nombre},{int(actividad['maxPlaces'])},{usadas},{libres},{horarios[horario]},{anyoinicio},{anyofin}"
+                    f"<tr><td>{myid}</td><td>{nombre}</td><td>{int(actividad['maxPlaces'])}</td><td>{usadas}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                 )
+
+print("</table>")
+print("</HTML>")
