@@ -48,6 +48,7 @@ Trabajo con los datos:
 | `3-reescribe-descripcion-actividades.py` | Reescribe descripción de actividades                                                                    |
 | `3-sociosconflictohoras.py`              | Muestra socios con conflicto de horas                                                                   |
 | `3-sociosdana.py`                        | Muestra ID telegram de socios en Códigos postales afectados por la DANA                                 |
+| `3-web-actividades.py`                   | Listado de talleres con inscripción abierta y plazas                                                    |
 | `4-auto-alta-socios.py`                  | Procesa socios en preinscripción que han pagado las actividades para hacer el cambio a socios en activo |
 | `4-auto-cambios-modalidad.py`            | Cambia socios de modalidad según campo personalizado fecha cambio y categoría objetivo                  |
 | `4-auto-carnetspagados.py`               | Verifica los socios que han pagado carnet de socios 'Veteranos' para gestión                            |
