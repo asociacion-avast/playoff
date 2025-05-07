@@ -74,7 +74,11 @@ diccionario = {
     770: "Carnet tutor x2",
     771: "Carnet tutor x1",
     777: "Alta unificada",
+    78: "Autocambio ADULTO sin actividades",
+    781: "Solicitar cambio a CON actividades",
+    782: "Solicitar cambio a SIN actividades",
     79: "Autocambio ADULTO con actividades",
+    80: "Autocambio SOCIO SIN actividades",
     81: "Autocambio SOCIO PRINCIPAL con actividades",
     84: "Carnet pendiente",
     85: "Tutor con actividades",
@@ -83,8 +87,6 @@ diccionario = {
     94: "Informe revisado",
     97: "Socio sin carnet",
     98: "Carnets veteranos",
-    781: "Solicitar cambio a CON actividades",
-    782: "Solicitar cambio a SIN actividades",
 }
 
 

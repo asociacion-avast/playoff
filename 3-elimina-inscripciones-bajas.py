@@ -46,6 +46,7 @@ resultids = {
     "teen15": [],  # Niños [15-24]
     "tutor": [],  # Tutores
     "valid": [],  # Cualquiera con relación avast
+    "impagoanual": [],
 }
 
 
@@ -69,9 +70,13 @@ for socio in socios:
         estado="COLESTPRE",
         estatcolegiat="ESTALTA",
     ):
+        categoriassocio = []
+
         if "colegiatHasModalitats" in socio:
             # Iterate over all categories for the user
             for modalitat in socio["colegiatHasModalitats"]:
+                idcategoria = int(modalitat["idModalitat"])
+                categoriassocio.append(idcategoria)
                 if "modalitat" in modalitat:
                     # Save name for comparing the ones we target
                     agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
@@ -123,9 +128,12 @@ for socio in socios:
 
                     if "avast13".lower() in modalitatnom:
                         resultids["teen13-and-parents"].append(id_socio)
-    if id_socio not in resultids["activ"]:
-        # El socio no tiene actividades, ni de adulto ni de niño
 
+                if idcategoria == common.categorias["impagoanual"]:
+                    resultids["impagoanual"].append(id_socio)
+
+    if id_socio not in resultids["activ"] and id_socio not in resultids["impagoanual"]:
+        # El socio no tiene actividades, ni de adulto ni de niño
         sociosbaja.append(id_socio)
 
 
