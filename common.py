@@ -4,6 +4,7 @@ import configparser
 import contextlib
 import json
 import os
+from datetime import date
 
 import dateutil.parser
 import requests
@@ -687,3 +688,30 @@ def editaactividad(token, idActivitat, override):
     with contextlib.suppress(Exception):
         output = json.loads(output.text)
     return output
+
+
+def mes_proximo_bimestre(fecha=None):
+    if fecha is None:
+        fecha = date.today()
+    mes = fecha.month
+
+    # Definimos los bimestres en orden cíclico
+    bimestres = [(9, 10), (11, 12), (1, 2), (3, 4), (5, 6)]
+
+    # Regla especial: entre junio y agosto inclusive,
+    # el cambio al bimestre 9–10 (septiembre–octubre) ocurre el 1 de septiembre
+    if mes in [6, 7, 8]:
+        return 7  # Seguimos considerando que el siguiente es septiembre
+
+    # Buscar a qué bimestre pertenece el mes actual
+    for i, (m1, m2) in enumerate(bimestres):
+        if mes == m1 or mes == m2:
+            next_index = (i + 1) % len(bimestres)
+            if next_index == 0:
+                return 7
+            return bimestres[next_index][
+                0
+            ]  # Devolver primer mes del siguiente bimestre
+
+    # Fallback por si algo falla
+    return 7
