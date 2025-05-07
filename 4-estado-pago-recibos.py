@@ -32,11 +32,7 @@ for socio in socios:
         reverseagrupaciones=True,
     ):
         print(f"Procesando socio {socioid}")
-        categoriassocio = []
-
-        for modalitat in socio["colegiatHasModalitats"]:
-            idcategoria = int(modalitat["idModalitat"])
-            categoriassocio.append(idcategoria)
+        categoriassocio = common.getcategoriassocio(socio=socio)
 
         url = f"{common.apiurl}/colegiats/rebuts?idColegiat={socioid}&limit=1000"
         response = json.loads(

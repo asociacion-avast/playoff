@@ -80,25 +80,12 @@ for socio in socios:
                     else:
                         print(f"Fecha alcanzada {fecha}: {common.sociobase}{socioid}")
 
-                        categoriassocio = []
-                        modalitatsocio = []
-                        for categoria in socio["colegiatHasModalitats"]:
-                            idcategoria = int(categoria["idModalitat"])
-                            categoriassocio.append(idcategoria)
+                        categoriassocio = common.getcategoriassocio(socio)
 
-                            if "modalitat" in categoria:
-                                # Save name for comparing the ones we target
-                                agrupacionom = categoria["modalitat"]["agrupacio"][
-                                    "nom"
-                                ].lower()
-                                modalitatnom = categoria["modalitat"]["nom"].lower()
-                                modalitatid = int(categoria["modalitat"]["idModalitat"])
-                                modalitatsocio.append(modalitatid)
-
-                        print(f"Socio en categorias: {modalitatsocio}")
+                        print(f"Socio en categorias: {categoriassocio}")
                         targetadd = []
                         targetremove = []
-                        for categoria in modalitatsocio:
+                        for categoria in categoriassocio:
                             if categoria in cambios:
                                 print(
                                     f"Categoria : {categoria} cambia a {cambios[categoria]}"
@@ -113,7 +100,7 @@ for socio in socios:
                             if categoria not in targetadd
                         )
                         for categoria in targetremove:
-                            if categoria in modalitatsocio:
+                            if categoria in categoriassocio:
                                 print(
                                     f"INFO: Borrando categoria {categoria} del socio {socioid}"
                                 )

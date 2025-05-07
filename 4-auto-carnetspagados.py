@@ -59,11 +59,7 @@ for socio in socios:
     ):
         socioid = int(socio["idColegiat"])
 
-        categoriassocio = []
-
-        for categoria in socio["colegiatHasModalitats"]:
-            idcategoria = int(categoria["idModalitat"])
-            categoriassocio.append(idcategoria)
+        categoriassocio = common.getcategoriassocio(socio=socio)
 
         for actividadid in [769]:
             inscritos = common.readjson(filename=f"{actividadid}")

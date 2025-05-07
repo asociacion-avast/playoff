@@ -122,11 +122,7 @@ fechadia = calendar.monthrange(today.year, today.month)[1]
 for socio in socios:
     # ID Socio
     socioid = int(socio["idColegiat"])
-    categoriassocio = []
-
-    for modalitat in socio["colegiatHasModalitats"]:
-        idcategoria = int(modalitat["idModalitat"])
-        categoriassocio.append(idcategoria)
+    categoriassocio = common.getcategoriassocio(socio=socio)
 
     if common.validasocio(
         socio,

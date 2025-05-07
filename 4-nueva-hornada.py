@@ -48,10 +48,7 @@ for socio in socios:
             alta = False
             print(f"ERROR: Sin fecha alta para socio ID: {socioid}")
 
-        categoriassocio = []
-        for categoria in socio["colegiatHasModalitats"]:
-            idcategoria = int(categoria["idModalitat"])
-            categoriassocio.append(idcategoria)
+        categoriassocio = common.getcategoriassocio(socio=socio)
 
         if alta.year >= 2024 and alta.month >= 9:
             targetcategorias = [nuevos]

@@ -715,3 +715,9 @@ def mes_proximo_bimestre(fecha=None):
 
     # Fallback por si algo falla
     return 7
+
+
+def getcategoriassocio(socio):
+    return [
+        int(categoria["idModalitat"]) for categoria in socio["colegiatHasModalitats"]
+    ]

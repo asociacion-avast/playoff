@@ -47,12 +47,8 @@ for socio in socios:
     ):
         socioid = int(socio["idColegiat"])
 
-        categoriassocio = []
+        categoriassocio = common.getcategoriassocio(socio=socio)
         inscripciones = []
-
-        for categoria in socio["colegiatHasModalitats"]:
-            idcategoria = int(categoria["idModalitat"])
-            categoriassocio.append(idcategoria)
 
         saltarsocio = False
         for cambio in [78, 79, 80, 81, 87]:
