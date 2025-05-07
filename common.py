@@ -23,6 +23,7 @@ categorias = {
     "actividades": 90,
     "adultosconysin": 95,
     "adultosinactividades": 53,
+    "adultoconactividades": 60,
     "avast13": 66,
     "avast15": 65,
     "avast18": 77,
@@ -366,6 +367,24 @@ def create_inscripcio(token, idActivitat, idColegiat):
         headers=headers,
         allow_redirects=False,
     )
+
+
+def anula_inscripcio(token, inscripcion, comunica=False):
+    url = f"{apiurl}/inscripcions/{inscripcion}/anular"
+    response = requests.patch(url, headers=headers, auth=BearerAuth(token))
+
+    if comunica:
+        url = f"{apiurl}/inscripcions/{inscripcion}/comunicar_anulacio"
+        requests.post(url, headers=headers, auth=BearerAuth(token))
+
+    return response
+
+
+def delete_inscripcio(token, inscripcion):
+    url = f"{apiurl}/inscripcions?idInscripcio={inscripcion}"
+    response = requests.delete(url, headers=headers, auth=BearerAuth(token))
+
+    return response
 
 
 def get_colegiat_json(idColegiat=False):

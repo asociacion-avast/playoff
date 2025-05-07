@@ -4,8 +4,6 @@
 import configparser
 import os
 
-import requests
-
 import common
 
 config = configparser.ConfigParser()
@@ -198,17 +196,9 @@ for usuario, value in usuariosyhorarios.items():
             # Rellena variable para luego sacar el nombre
             inscripcionesanuladas.append(inscripcion)
 
-            print("Anulando")
-            url = f"{common.apiurl}/inscripcions/{inscripcion}/anular"
-            response = requests.patch(
-                url, headers=common.headers, auth=common.BearerAuth(token)
-            )
-            print(response)
-
-            print("Comunicando")
-            url = f"{common.apiurl}/inscripcions/{inscripcion}/comunicar_anulacio"
-            response = requests.post(
-                url, headers=common.headers, auth=common.BearerAuth(token)
+            print("Anulando y Comunicando")
+            response = common.anula_inscripcio(
+                token=token, inscripcion=inscripcion, comunica=True
             )
             print(response)
 

@@ -4,8 +4,6 @@
 import configparser
 import os
 
-import requests
-
 import common
 
 config = configparser.ConfigParser()
@@ -59,8 +57,5 @@ token = common.gettoken(
 )
 
 for anulada in anuladas:
-    url = f"{common.apiurl}/inscripcions?idInscripcio={anulada}"
-    response = requests.delete(
-        url, headers=common.headers, auth=common.BearerAuth(token)
-    )
+    response = common.anula_inscripcio(token=token, inscripcion=anulada)
     print(response)
