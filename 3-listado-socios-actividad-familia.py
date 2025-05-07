@@ -35,29 +35,25 @@ for familia in familias["miembros"]:
 
         for pariente in parientes:
             socio = common.get_colegiat_json(idColegiat=pariente)
-            if "colegiatHasModalitats" in socio:
-                # Iterate over all categories for the user
-                for modalitat in socio["colegiatHasModalitats"]:
-                    if "modalitat" in modalitat:
-                        # Save name for comparing the ones we target
-                        agrupacionom = modalitat["modalitat"]["agrupacio"][
-                            "nom"
-                        ].lower()
-                        modalitatnom = modalitat["modalitat"]["nom"].lower()
-                        idmodalitat = int(modalitat["modalitat"]["idModalitat"])
+            categorias = common.getcategoriassocio(socio)
 
-                        if idmodalitat == common.categorias["sociohermanoactividades"]:
-                            socioshermanos.append(pariente)
+            if common.categorias["adultosconysin"] not in categorias:
+                if common.categorias["sociohermanoactividades"] in categorias:
+                    socioshermanos.append(pariente)
 
-                        if idmodalitat == common.categorias["socioactividades"]:
-                            sociosactividad.append(pariente)
+                if common.categorias["socioactividades"] in categorias:
+                    sociosactividad.append(pariente)
 
-                        if idmodalitat == 1:
-                            sociossinactiv.append(pariente)
+                if common.categorias["sociosinactividades"] in categorias:
+                    sociossinactiv.append(pariente)
 
         # Familia procesada
         if socioshermanos:
             if not sociosactividad:
                 print(
-                    f"ERROR: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
+                    f"ERROR TOODESC: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
+                )
+            if len(sociosactividad) > 1:
+                print(
+                    f"ERROR LOWDESC: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
                 )
