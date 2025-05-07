@@ -48,6 +48,7 @@ categorias = {
     "sociosinactividades": 1,
     "carnettutorduplicado": 104,
     "impagoanual": 105,
+    "sincarnetyactividades": 106,
 }
 
 diccionario = {

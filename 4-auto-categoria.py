@@ -308,6 +308,12 @@ for socio in socios:
                 )
             )
 
+        if (
+            common.categorias["notienecarnet"] in targetcategorias
+            and common.categorias["actividades"] in targetcategorias
+        ):
+            targetcategorias.append(common.categorias["sincarnetyactividades"])
+
         edad = today.year - year - ((today.month, fechadia) < (month, day))
 
         # Add target category for +13/+15
@@ -336,8 +342,9 @@ for socio in socios:
         # Socios con impago anual, dar de baja de categorías
         if common.categorias["impagoanual"] in categoriassocio:
             targetcategorias = [common.categorias["impagoanual"]]
-            removecategorias = categoriassocio
-            removecategorias.remove(common.categorias["impagoanual"])
+            removecategorias = list(categoriassocio)
+            if common.categorias["impagoanual"] in removecategorias:
+                removecategorias.remove(common.categorias["impagoanual"])
 
         # Add or remove categories
 
