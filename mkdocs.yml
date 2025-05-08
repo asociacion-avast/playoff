@@ -2,7 +2,9 @@
 site_name: Scripts playoff
 docs_dir: docs
 theme:
-  name: mkdocs
+  name: readthedocs
 
 nav:
   - Inicio: index.md
+  - Altas: autoalta.md
+  - Cambio modalidad: auto-cambio-modalidad.md

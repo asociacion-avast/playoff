@@ -1,4 +1,21 @@
-Create a file in `~/.avast.ini` with the following structure:
+# Introducción
+
+Estos scripts permiten realizar una serie de acciones de forma automatizada para llevar a cabo labores de mantenimiento así como automatizaciones de procesos.
+
+Entre los scripts, hay algunos de obtención de datos, que descargan los datos a local para luego trabajar contra esos datos en lugar de tener que ir consultando el API, y por ese motivo, algunas actuaciones que modifican directamente datos via el API, necesitan que luego refresquemos esos datos en local, por ejemplo:
+
+> Al modificar categorías, los usuarios se han modificado en la web, pero nuestra copia local es de 'antes', por lo que si volvemos a ejecutar el script de categorías, volverá a mandar los cambios. Sin embargo, si tras ejecutarlo, descargamos de nuevo el listado de socios, al volver a ejecutar el script de categorías, no debería modificar nada por ver en los datos locales que las categorías ya estaban presentes.
+
+# Configuración
+
+Los scripts necesitan autentificación, y los scripts utilizan dos tipos:
+
+- Lectura
+- Lectura y esctitura
+
+Aunque un mismo usuario tenga ambos derechos, en la configuración, debemos indicarlo en dos lugares, por si quisieramos hacer distinción y así podemos localizar rápidamente los scripts que pueden modificar datos.
+
+La configuración la realizamos en un fichero `.avast.ini` en nuestra carpeta de usuario (`~`):
 
 ```ini
 [auth]
@@ -9,9 +26,13 @@ RWusername=myRWusername
 RWpassword=myRWpassword
 ```
 
-This will be used by the scripts to perform the different tasks (`common.py` contains some functions used by the scripts)
+# Los scripts
 
-Obtención de datos (saved in `data` folder):
+Como decíamos, tenemos scripts de obtención de datos y scripts de trabajo que realizan modificaciones o consultas sobre esos datos.
+
+## Scripts de obtención de datos
+
+Estos scripts obtienen datos del API de playoff y los almacenan en la carpeta `data` del repositorio:
 
 | Script                 | Función                                                |
 | ---------------------- | ------------------------------------------------------ |
@@ -21,7 +42,11 @@ Obtención de datos (saved in `data` folder):
 | `1-socios-familias.py` | Actualiza las familias y los socios en cada familia    |
 | `2-sociosporactiv.py`  | Baja lista de socios en cada actividad (inscripciones) |
 
-Trabajo con los datos:
+## Scripts de trabajo con los datos
+
+Estos scripts utilizan los datos descargados por los anteriores y toman acciones relativas a su función y a los datos que han encontrado.
+
+Para los más complejos, existe un fichero adicional donde se explica la funcionalidad y operativa de uso en los ficheros de documentación adicionales que también enlazaremos
 
 | Script                                   | Función                                                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
