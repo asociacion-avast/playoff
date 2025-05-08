@@ -56,12 +56,13 @@ for socio in socios:
         estado="COLESTVAL",
         estatcolegiat="ESTALTA",
         agrupaciones=["PREINSCRIPCIÓN"],
+        reverseagrupaciones=True,
     ):
         socioid = int(socio["idColegiat"])
 
         categoriassocio = common.getcategoriassocio(socio=socio)
 
-        for actividadid in [769]:
+        for actividadid in [769, 770, 771]:
             inscritos = common.readjson(filename=f"{actividadid}")
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
