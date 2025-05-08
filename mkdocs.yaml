@@ -1,0 +1,8 @@
+---
+site_name: Scripts playoff
+docs_dir: docs
+theme:
+  name: mkdocs
+
+nav:
+  - Inicio: index.md
