@@ -9,3 +9,5 @@ Se han definido dos actividades para cambio, una para pasar a tener actividades 
 Para ello, estas actividades se muestran sólo a los socios que cumplen el criterio y así los socios sin actividades pueden pasar a tenerlas y viceversa.
 
 La forma de hacerlo, es mediante la inscripción a esa actividad, que usando la funcionalidad de `auto-cambio-modalidad` programa un cambio para el próximo bimestre para el socio, de forma que puede seguir en su actual estado hasta que cambie.
+
+Al finalizar el proceso de programar el cambio, se elimina la inscripción a la actividad (anulada) para su uso en posteriores ocasiones.
