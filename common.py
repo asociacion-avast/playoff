@@ -50,6 +50,7 @@ categorias = {
     "carnettutorduplicado": 104,
     "impagoanual": 105,
     "sincarnetyactividades": 106,
+    "prioritario": 108,
 }
 
 diccionario = {
