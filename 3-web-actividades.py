@@ -64,6 +64,8 @@ horarios = {
     22: "",
 }
 print("<HTML>")
+print("<h1>Actividades</h1>")
+print("<h2>Generado el %s</h2>" % today.strftime("%d/%m/%Y %H:%M"))
 print("<table border='1'>")
 print(
     "<tr><th>ID</th><th>NOMBRE</th><th>LIBRES</th><th>HORA</th><th>AÑO INICIO</th><th>AÑO FIN</th></tr>"
