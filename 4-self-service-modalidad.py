@@ -114,7 +114,7 @@ for socio in socios:
 
             month = common.mes_proximo_bimestre()
 
-            targetcambio = f"01-{month:02}-{year}"
+            targetcambio = f"{year}-{month:02}-01"
 
             print(f"Programando fecha cambio: {targetcambio}")
 

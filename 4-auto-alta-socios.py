@@ -131,9 +131,9 @@ for socio in socios:
 
                 print("Programando fecha cambio")
                 if today.month > 9:
-                    targetcambio = f"01-01-{today.year + 1}"
+                    targetcambio = f"{today.year + 1}-01-01"
                 if today.month <= 9:
-                    targetcambio = f"22-06-{today.year}"
+                    targetcambio = f"{today.year}-06-22"
 
                 print(
                     common.escribecampo(
