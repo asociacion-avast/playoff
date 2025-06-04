@@ -19,7 +19,7 @@ socios = []
 tanda = -1
 page = -1
 
-pagesize = 1000
+pagesize = 100
 
 while tanda == -1 or len(tanda) >= pagesize:
     page += 1
@@ -28,7 +28,11 @@ while tanda == -1 or len(tanda) >= pagesize:
     result = requests.get(
         sociosurl, auth=common.BearerAuth(token), headers=common.headers
     )
-    tanda = result.json()
+
+    try:
+        tanda = result.json()
+    except:
+        tanda = []
     socios.extend(tanda)
 
 print("Saving file to disk")
