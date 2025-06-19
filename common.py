@@ -51,6 +51,9 @@ categorias = {
     "impagoanual": 105,
     "sincarnetyactividades": 106,
     "prioritario": 108,
+    "cambioadultoconactividades": 79,
+    "cambiosocioconactividades": 81,
+    "cambiohermanoconactividades": 87,
 }
 
 diccionario = {

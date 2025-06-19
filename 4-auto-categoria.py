@@ -304,9 +304,11 @@ for socio in socios:
                 )
             )
 
-        if (
-            common.categorias["notienecarnet"] in targetcategorias
-            and common.categorias["actividades"] in targetcategorias
+        if common.categorias["notienecarnet"] in targetcategorias and (
+            common.categorias["actividades"] in targetcategorias
+            or common.categorias["cambioadultoconactividades"] in targetcategorias
+            or common.categorias["cambiosocioconactividades"] in targetcategorias
+            or common.categorias["cambiohermanoconactividades"] in targetcategorias
         ):
             targetcategorias.append(common.categorias["sincarnetyactividades"])
 
