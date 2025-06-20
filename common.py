@@ -55,6 +55,8 @@ categorias = {
     "cambiosocioconactividades": 81,
     "cambiohermanoconactividades": 87,
     "conactividadessininscripciones": 109,
+    "cambioadultosin": 78,
+    "cambiosociosin": 80,
 }
 
 diccionario = {

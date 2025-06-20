@@ -63,6 +63,7 @@ for socio in socios:
         if (
             common.categorias["actividades"] in categoriassocio
             and common.categorias["adultosconysin"] not in categoriassocio
+            and common.categorias["cambiosociosin"] not in categoriassocio
         ):
             if (
                 common.categorias["conactividadessininscripciones"]
@@ -74,7 +75,7 @@ for socio in socios:
                     )
                     common.addcategoria(
                         token,
-                        socio,
+                        id_socio,
                         common.categorias["conactividadessininscripciones"],
                     )
                 else:
@@ -85,15 +86,19 @@ for socio in socios:
                         print(f"Socio {id_socio} ha resulto la situacion")
                         common.delcategoria(
                             token,
-                            socio,
+                            id_socio,
                             common.categorias["conactividadessininscripciones"],
                         )
 
-        if common.categorias["sinactividades"] in categoriassocio:
+        if (
+            common.categorias["sinactividades"] in categoriassocio
+            or common.categorias["cambiosociosin"] in categoriassocio
+        ):
             if common.categorias["conactividadessininscripciones"] in categoriassocio:
-                print(f"Socio {id_socio} ha resulto la situacion")
-                common.delcategoria(
-                    token,
-                    socio,
-                    common.categorias["conactividadessininscripciones"],
+                print(f"Socio {id_socio} ha resuelto la situacion")
+                resultado = common.delcategoria(
+                    token=token,
+                    socio=id_socio,
+                    categoria=common.categorias["conactividadessininscripciones"],
                 )
+                print(resultado.text)
