@@ -16,8 +16,6 @@ actividades = common.readjson(filename="actividades")
 socios = common.readjson(filename="socios")
 
 
-print("Procesando actividades...")
-
 usuariosyactividad = {}
 sociosactividades = []
 sociocategorias = {}
@@ -27,7 +25,7 @@ token = common.gettoken(
     user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
 )
 
-
+print("Procesando actividades...")
 for actividad in actividades:
     myid = actividad["idActivitat"]
 
@@ -46,7 +44,7 @@ for actividad in actividades:
 
                     usuariosyactividad[colegiat].append(myid)
 
-
+print("Procesando socios...")
 for socio in socios:
     id_socio = socio["idColegiat"]
     if common.validasocio(
@@ -62,32 +60,39 @@ for socio in socios:
     ):
         categoriassocio = common.getcategoriassocio(socio)
 
-        if common.categorias["adultosconysin"] not in categoriassocio and (
+        if (
             common.categorias["actividades"] in categoriassocio
-            or common.categorias["sociohermanoactividades"] in categoriassocio
+            and common.categorias["adultosconysin"] not in categoriassocio
         ):
-            if socio in usuariosyactividad:
-                if (
-                    common.categorias["conactividadessininscripciones"]
-                    in categoriassocio
-                ):
+            if (
+                common.categorias["conactividadessininscripciones"]
+                not in categoriassocio
+            ):
+                if id_socio not in usuariosyactividad:
                     print(
-                        f"Socio {socio} tiene categoria de actividades y tiene inscripciones"
+                        f"Socio {id_socio} tiene categoria de actividades, pero no inscripciones"
                     )
-                    common.delcategoria(
+                    common.addcategoria(
                         token,
                         socio,
                         common.categorias["conactividadessininscripciones"],
                     )
+                else:
+                    if (
+                        common.categorias["conactividadessininscripciones"]
+                        in categoriassocio
+                    ):
+                        print(f"Socio {id_socio} ha resulto la situacion")
+                        common.delcategoria(
+                            token,
+                            socio,
+                            common.categorias["conactividadessininscripciones"],
+                        )
 
-            elif (
-                common.categorias["conactividadessininscripciones"]
-                not in categoriassocio
-            ):
-                print(
-                    f"Socio {socio} tiene categoria de actividades, pero no inscripciones"
-                )
-                common.addcategoria(
+        if common.categorias["sinactividades"] in categoriassocio:
+            if common.categorias["conactividadessininscripciones"] in categoriassocio:
+                print(f"Socio {id_socio} ha resulto la situacion")
+                common.delcategoria(
                     token,
                     socio,
                     common.categorias["conactividadessininscripciones"],
