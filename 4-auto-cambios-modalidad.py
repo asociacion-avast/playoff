@@ -85,61 +85,74 @@ for socio in socios:
                         print(f"Socio en categorias: {categoriassocio}")
                         targetadd = []
                         targetremove = []
+
+                        haycambio = False
                         for categoria in categoriassocio:
                             if categoria in cambios:
+                                haycambio = True
                                 print(
                                     f"Categoria : {categoria} cambia a {cambios[categoria]}"
                                 )
                                 targetadd.append(cambios[categoria])
                                 targetremove.append(categoria)
 
-                        # Eliminar categorias en conflicto
-                        targetremove.extend(
-                            categoria
-                            for categoria in [1, 12, 53, 60, 13]
-                            if categoria not in targetadd
-                        )
-                        for categoria in targetremove:
-                            if categoria in categoriassocio:
-                                print(
-                                    f"INFO: Borrando categoria {categoria} del socio {socioid}"
-                                )
-                                response = common.delcategoria(
-                                    token, socioid, categoria
-                                )
-                                print(response)
-
-                        for categoria in targetadd:
+                        if not haycambio:
                             print(
-                                f"INFO: Añadiendo categoria {categoria} del socio {socioid}"
+                                f"INFO: No hay cambios para el socio {socioid} ({common.sociobase}{socioid}). Borrando fecha cambio."
                             )
-                            if categoria in extras and extras[categoria]:
-                                # La cuota de actividades es el dia 5 del bimestre
-                                # septiembre, noviembre, enero, marzo, mayo
-
-                                targetrecibo = common.calcular_proximo_recibo(
-                                    f"{today.year}/{today.month}/{today.day}"
-                                )
-
-                                response = common.addcategoria(
-                                    token,
-                                    socioid,
-                                    categoria,
-                                    extra={
-                                        "tipusperiodicitat": extras[categoria],
-                                        "dataProperaGeneracio": targetrecibo,
-                                    },
-                                )
-                            else:
-                                response = common.addcategoria(
-                                    token, socioid, categoria
-                                )
-                            print(response.text)
-
-                            print("Vaciando fecha cambio")
                             print(
                                 common.escribecampo(
                                     token, socioid, common.fechacambio, valor=""
                                 )
                             )
-                            print(response)
+                        else:
+                            # Eliminar categorias en conflicto
+                            targetremove.extend(
+                                categoria
+                                for categoria in [1, 12, 53, 60, 13]
+                                if categoria not in targetadd
+                            )
+                            for categoria in targetremove:
+                                if categoria in categoriassocio:
+                                    print(
+                                        f"INFO: Borrando categoria {categoria} del socio {socioid}"
+                                    )
+                                    response = common.delcategoria(
+                                        token, socioid, categoria
+                                    )
+                                    print(response)
+
+                            for categoria in targetadd:
+                                print(
+                                    f"INFO: Añadiendo categoria {categoria} del socio {socioid}"
+                                )
+                                if categoria in extras and extras[categoria]:
+                                    # La cuota de actividades es el dia 5 del bimestre
+                                    # septiembre, noviembre, enero, marzo, mayo
+
+                                    targetrecibo = common.calcular_proximo_recibo(
+                                        f"{today.year}/{today.month}/{today.day}"
+                                    )
+
+                                    response = common.addcategoria(
+                                        token,
+                                        socioid,
+                                        categoria,
+                                        extra={
+                                            "tipusperiodicitat": extras[categoria],
+                                            "dataProperaGeneracio": targetrecibo,
+                                        },
+                                    )
+                                else:
+                                    response = common.addcategoria(
+                                        token, socioid, categoria
+                                    )
+                                print(response.text)
+
+                                print("Vaciando fecha cambio")
+                                print(
+                                    common.escribecampo(
+                                        token, socioid, common.fechacambio, valor=""
+                                    )
+                                )
+                                print(response)
