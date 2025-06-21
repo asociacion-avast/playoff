@@ -725,6 +725,16 @@ def mes_proximo_bimestre(fecha=None):
 
 
 def getcategoriassocio(socio):
-    return [
-        int(categoria["idModalitat"]) for categoria in socio["colegiatHasModalitats"]
-    ]
+    categorias = []
+    if (
+        socio
+        and isinstance(socio, dict)
+        and "colegiatHasModalitats" in socio
+        and isinstance(socio["colegiatHasModalitats"], list)
+    ):
+        categorias.extend(
+            int(categoria["idModalitat"])
+            for categoria in socio["colegiatHasModalitats"]
+            if "idModalitat" in categoria
+        )
+    return categorias
