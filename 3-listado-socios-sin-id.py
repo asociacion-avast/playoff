@@ -59,16 +59,20 @@ for socio in socios:
                         resultids["adult"].append(id_socio)
                         procesa = False
 
-        if procesa and isinstance(socio["campsDinamics"], dict):
-            alguno = False
-            for field in common.telegramfields:
-                if field in socio["campsDinamics"]:
-                    idtelegramencampo = f"{socio['campsDinamics'][field]}"
+        if procesa:
+            if isinstance(socio["campsDinamics"], dict):
+                alguno = False
+                for field in common.telegramfields:
+                    if field in socio["campsDinamics"]:
+                        idtelegramencampo = f"{socio['campsDinamics'][field]}"
 
-                    if idtelegramencampo is not None or idtelegramencampo != "":
-                        alguno = True
-            if not alguno:
-                print(f"{common.sociobase}{id_socio}")
+                        if idtelegramencampo is not None or idtelegramencampo != "":
+                            alguno = True
+                if not alguno:
+                    print(f"{common.sociobase}{id_socio}")
+
+            else:
+                print(f"Poblema: {common.sociobase}{id_socio}")
 
 
 token = common.gettoken(
