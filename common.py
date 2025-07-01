@@ -120,7 +120,7 @@ cambios = {
 
 def traduce(id):
     if id in diccionario:
-        text = "ID %s (%s)" % (id, diccionario[id])
+        text = f"ID {id} ({diccionario[id]})"
     else:
         text = "ID %s no encontrado en diccionario" % id
     return text
@@ -160,7 +160,7 @@ def writejson(filename, data):
 
 
 def readjson(filename):
-    with open(f"data/{filename}.json", "r", encoding="utf-8") as f:
+    with open(f"data/{filename}.json", encoding="utf-8") as f:
         return json.load(f)
 
 

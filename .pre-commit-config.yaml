@@ -54,20 +54,20 @@ repos:
     repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
+  # Ruff version.
     rev: v0.12.1
     hooks:
-      # Run the linter.
+  # Run the linter.
       - id: ruff
         args:
           - --fix
-      # Run the formatter.
+  # Run the formatter.
       - id: ruff-format
 
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.11.0-1
     hooks:
-      # Choose one of:
+  # Choose one of:
       - id: shfmt # native (requires/installs Go to build)
         args:
           - -w
@@ -82,14 +82,28 @@ repos:
     repo: https://github.com/asottile/blacken-docs
     rev: 1.19.1
 
-  # - repo: https://github.com/asottile/pyupgrade
-  #   rev: v2.38.0
-  #   hooks:
-  #     - id: pyupgrade
-  #       args: [--py39-plus]
+# - repo: https://github.com/asottile/pyupgrade
+#   rev: v2.38.0
+#   hooks:
+#     - id: pyupgrade
+#       args: [--py39-plus]
 
   - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
     rev: 0.2.3 # or other specific tag
     hooks:
       - id: yamlfmt
         args: [--mapping, "2", --sequence, "4", --offset, "2", "--preserve-quotes"]
+
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.0
+    hooks:
+      - id: autoflake
+        description: Remove unused imports and variables
+        args: [--in-place, --remove-all-unused-imports, --remove-unused-variables, --remove-duplicate-keys, --ignore-init-module-imports]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.10.1
+    hooks:
+      - id: pyupgrade
+        description: Upgrade Python syntax
+        args: [--py38-plus]
