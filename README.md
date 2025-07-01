@@ -29,7 +29,7 @@ Trabajo con los datos:
 | `3-elimina-inscripciones-anuladas.py`       | Elimina las inscripciones anuladas por socios                                                           |
 | `3-elimina-inscripciones-bajas.py`          | Elimina inscripciones de socios de baja en actividades o en la asociación                               |
 | `3-elimina-inscripciones-conflictos.py`     | Elimina inscripciones con conflicto de horas                                                            |
-| `3-elimina-telegramID-igual-a-socio.py`     | Elimina el ID de Telegram igual al nº de socio                                                          |
+| `3-elimina-telegramID-incorrecto.py`        | Elimina el ID de Telegram incorrecto o igual al nº de socio                                             |
 | `3-elimina-tutor-en-campo-socio.py`         | Elimina ID's telegram de tutor en campo de socio                                                        |
 | `3-listado-socios-actividad-familia.py`     | Muestra familias con 'socio hermano actividades' sin 'socio principal'                                  |
 | `3-listado-socios-adultos-sin-id.py`        | Socios adultos sin ID Telegram                                                                          |
