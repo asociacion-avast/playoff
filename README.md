@@ -54,7 +54,6 @@ Trabajo con los datos:
 | `4-auto-carnetspagados.py`                  | Verifica los socios que han pagado carnet de socios 'Veteranos' para gestión                            |
 | `4-auto-categoria.py`                       | Asigna categorías (año, +13/+15/+18) y borrar categorías no válidas                                     |
 | `4-estado-pago-recibos.py`                  | Etiqueta como con impagos o elimina etiqueta en función de estado de recibos                            |
-| `4-nueva-hornada.py`                        | Añade socios a categoría de Acogida por reciente incorporación                                          |
 | `4-self-service-telegram.py`                | Gestiona de forma self-service la obtención del formulario de actualización                             |
 | `4-sendupdate-telegram-socio.py`            | Manda actualización de datos para ID de telegram del SOCIO                                              |
 | `4-sendupdate-telegram-tutor.py`            | Manda actualización de datos para ID de telegram de TUTORES                                             |
