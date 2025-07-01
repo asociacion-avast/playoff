@@ -31,19 +31,19 @@ for actividadid in [815, 816]:
 print("Procesando socios...")
 
 # For each user check the custom fields that store the telegram ID for each tutor
-for socio in socios:
-    if common.validasocio(
-        socio,
-        estado="COLESTVAL",
-        estatcolegiat="ESTALTA",
-        agrupaciones=["PREINSCRIPCIÓN"],
-        reverseagrupaciones=True,
-    ):
-        socioid = int(socio["idColegiat"])
+for actividadid in [815, 816]:
+    inscritos = common.readjson(filename=f"{actividadid}")
+    inscripciones = []
 
-        for actividadid in [815, 816]:
-            inscritos = common.readjson(filename=f"{actividadid}")
-            inscripciones = []
+    for socio in socios:
+        if common.validasocio(
+            socio,
+            estado="COLESTVAL",
+            estatcolegiat="ESTALTA",
+            agrupaciones=["PREINSCRIPCIÓN"],
+            reverseagrupaciones=True,
+        ):
+            socioid = int(socio["idColegiat"])
 
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
