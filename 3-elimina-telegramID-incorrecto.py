@@ -21,15 +21,22 @@ headers = {"Authorization": f"Bearer {token}"}
 
 def is_valid_telegram_id(value):
     """
-    Check if a value is a valid telegram ID (positive integer) or empty/None (also valid)
+    Check if a value is a valid telegram ID (positive integer without signs) or empty/None (also valid)
     """
     # Empty/None values are valid (user might not have provided telegram ID yet)
     if not value:
         return True
 
+    # Convert to string to check for signs
+    value_str = str(value).strip()
+
+    # Reject if contains '+' or '-' signs
+    if "+" in value_str or "-" in value_str:
+        return False
+
     # Handle both string and integer inputs
     try:
-        telegram_id = int(value)
+        telegram_id = int(value_str)
         return telegram_id > 0
     except (ValueError, TypeError):
         return False
