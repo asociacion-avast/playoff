@@ -60,6 +60,7 @@ categorias = {
 }
 
 diccionario = {
+    # De la cateogria 36 a 48 son años de nacimiento, siendo 36 el año 2003
     1: "Socio principal sin actividades",
     103: "Impagados",
     105: "Impagado anualidad",
@@ -67,10 +68,38 @@ diccionario = {
     13: "Socio Hermano",
     32: "Candidato a Socio principal sin actividades",
     33: "Candidato a Socio principal con actividades",
+    34: "Año 2010",
+    35: "Año 2011",
+    36: "Año 2003",
+    37: "Año 2004",
+    38: "Año 2005",
+    39: "Año 2006",
+    40: "Año 2007",
+    41: "Año 2008",
+    42: "Año 2009",
+    43: "Año 2012",
+    44: "Año 2013",
+    45: "Año 2014",
+    46: "Año 2015",
+    47: "Año 2016",
+    48: "Año 2017",
+    50: "Año 2018",
+    51: "Año 2019",
     53: "Adulto sin actividades",
     54: "Candidato a Adulto sin actividades",
+    55: "Año 2002",
+    56: "Año 2001",
+    57: "Año 2000",
     59: "Candidato a Adulto con actividades",
     60: "Adulto con actividades",
+    68: "Año 2021",
+    69: "Año 2020",
+    65: "Avast 15",
+    66: "Avast 13",
+    77: "Avast 18",
+    70: "Año 2022",
+    71: "Año 2024",
+    72: "Año 2023",
     728: "Alta sin actividades",
     729: "Alta adulto actividades",
     730: "Alta niño actividades",
@@ -88,15 +117,17 @@ diccionario = {
     79: "Autocambio ADULTO con actividades",
     80: "Autocambio SOCIO SIN actividades",
     81: "Autocambio SOCIO PRINCIPAL con actividades",
+    815: "Solicitar correo ID TUTOR",
+    816: "Solicitar correo ID SOCIO",
+    82: "Asociado en activo",
     84: "Carnet pendiente",
     85: "Tutor con actividades",
     86: "Hermano con actividades",
     87: "Autocambio HERMANO actividades",
+    90: "Socio con actividades",
     94: "Informe revisado",
     97: "Socio sin carnet",
     98: "Carnets veteranos",
-    815: "Solicitar correo ID TUTOR",
-    816: "Solicitar correo ID SOCIO",
 }
 
 
@@ -115,6 +146,23 @@ cambios = {
     728: 1,
     729: 60,
     730: 12,
+}
+
+
+# Convierte numero de mes en nombre
+nombremes = {
+    1: "enero",
+    2: "febrero",
+    3: "marzo",
+    4: "abril",
+    5: "mayo",
+    6: "junio",
+    7: "julio",
+    8: "agosto",
+    9: "septiembre",
+    10: "octubre",
+    11: "noviembre",
+    12: "diciembre",
 }
 
 
@@ -847,6 +895,70 @@ def getcomunicadosocio(associat):
                 "idFamiliaComunicat": 0,
                 "tipusComunicat": "TPCINVITACIO",
                 "plantillaComunicat": "PCINVITACIONS",
+            }
+        ),
+        "configExtra": json.dumps(
+            {
+                "idsColegiats": [f"{associat}"],
+                "idsPatrocinadors": [],
+                "idsRebuts": [],
+                "idsInscripcions": [],
+                "idsReserves": [],
+                "setEstatReclamacioImpagats": 0,
+                "idActivitat": null,
+                "idsValorsSeccioPersonalitzada": null,
+                "idEnquesta": null,
+                "idRegistreAssistencia": null,
+                "idConvocatoria": null,
+                "idConfiguracioImprimirPdf": null,
+                "idAgrupacio": null,
+                "idModalitat": null,
+                "idsAssociats": null,
+                "idConfiguracioFormulariColegi": "17",
+                "anys": null,
+                "perso": null,
+                "idsContactes": [],
+            }
+        ),
+        "configIncloure": json.dumps(
+            {
+                "isEmail": true,
+                "isEmailOficial": true,
+                "isEmailTutors": true,
+                "isEmailCapFamilia": true,
+                "isEmailExtra": "",
+                "emailsExtra": [],
+            }
+        ),
+        "destinataris": json.dumps([f"{associat}"]),
+        "destinatarisPatrocinador": "[]",
+        "destinatarisContacte": "[]",
+    }
+    return data
+
+
+def getcomunicado(associat, title, descripcio):
+    true = True
+    null = ""
+
+    data = {
+        "comunicat": json.dumps(
+            {
+                "idComunicat": 0,
+                "titol": f"{title}",
+                "descripcioIntro": f"{descripcio}",
+                "adjunts": [],
+                "estat": "COMESTESB",
+                "dataEnviamentProgramada": null,
+                "isLoaded": true,
+            }
+        ),
+        "configBase": json.dumps(
+            {
+                "idConfiguracioComunicat": "1",
+                "idFamiliaComunicat": 0,
+                "tipusComunicat": "TPCGENERIC",
+                "plantillaComunicat": "437",
             }
         ),
         "configExtra": json.dumps(
