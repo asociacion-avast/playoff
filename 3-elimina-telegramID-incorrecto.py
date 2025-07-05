@@ -59,11 +59,24 @@ def validate_and_clean_telegram_fields(socio, token):
 
     cleaned_count = 0
 
+    if isinstance(socio["campsDinamics"], dict):
+        values = {"tutor1": "", "tutor2": "", "socioid": ""}
+    else:
+        values = False
+
     # Check each telegram field that exists for this socio
     for field_id in common.telegramfields:
         if field_id in socio["campsDinamics"]:
             field_name = field_names.get(field_id, f"UNKNOWN_{field_id}")
             field_value = socio["campsDinamics"][field_id]
+
+            # Fill values on each field
+            if field_id == common.tutor1:
+                values["tutor1"] = field_value
+            elif field_id == common.tutor2:
+                values["tutor2"] = field_value
+            elif field_id == common.socioid:
+                values["socioid"] = field_value
 
             # Skip empty/None values (they are valid)
             if not field_value:
@@ -86,6 +99,20 @@ def validate_and_clean_telegram_fields(socio, token):
                 response = common.escribecampo(token, idcolegiat, field_id, "")
                 print(f"    Response: {response}")
                 cleaned_count += 1
+
+    if values:
+        # Chack that the same value is not stored in different fields
+        if values["tutor1"] == values["tutor2"] and values["tutor1"] != "":
+            response = common.escribecampo(token, idcolegiat, common.tutor2, "")
+            cleaned_count += 1
+        if (
+            values["tutor1"] == values["socioid"]
+            and values["tutor1"] != ""
+            or values["tutor2"] == values["socioid"]
+            and values["tutor2"] != ""
+        ):
+            response = common.escribecampo(token, idcolegiat, common.socioid, "")
+            cleaned_count += 1
 
     return cleaned_count
 
