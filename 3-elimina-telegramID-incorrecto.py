@@ -121,6 +121,7 @@ print("Procesando socios")
 
 
 for socio in socios:
+    idcolegiat = socio["idColegiat"]
     if isinstance(socio["campsDinamics"], dict):
         # Check if any telegram fields exist for this socio
         telegram_fields_present = any(
@@ -128,9 +129,12 @@ for socio in socios:
         )
 
         if telegram_fields_present:
-            idcolegiat = socio["idColegiat"]
-
             cleaned_fields = validate_and_clean_telegram_fields(socio, token)
 
             if cleaned_fields != 0:
                 print(f"{common.sociobase}{idcolegiat}")
+    # else:
+    #     # No custom fields populated writing wrong ID.... then cleaning it up
+
+    #     response = common.escribecampo(token, idcolegiat, common.socioid, "algo")
+    #     response = common.escribecampo(token, idcolegiat, common.socioid, "")

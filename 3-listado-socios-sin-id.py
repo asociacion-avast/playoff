@@ -72,7 +72,7 @@ for socio in socios:
                     print(f"{common.sociobase}{id_socio}")
 
             else:
-                print(f"Poblema: {common.sociobase}{id_socio}")
+                print(f"Problema: {common.sociobase}{id_socio}")
 
 
 token = common.gettoken(
