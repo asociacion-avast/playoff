@@ -107,7 +107,7 @@ diccionario = {
     733: "Alta Hermano Actividades",
     74: "Nueva tanda",
     748: "Alta adulto sin actividades",
-    769: "Carnet tutor x2V eterano",
+    769: "Carnet tutor x2 Veterano",
     770: "Carnet tutor x1 Veterano",
     771: "Carnet Socio Veterano",
     777: "Alta unificada",
