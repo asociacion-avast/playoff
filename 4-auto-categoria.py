@@ -344,8 +344,53 @@ for socio in socios:
             if common.categorias["impagoanual"] in removecategorias:
                 removecategorias.remove(common.categorias["impagoanual"])
 
-        # Add or remove categories
+        # Classify acogida
+        if common.categorias["acogidacolab"] not in categoriassocio:
+            if (
+                common.categorias["acogida"] in categoriassocio
+                or common.categorias["acogida"] in targetcategorias
+            ):
+                if (
+                    common.categorias["adultoconactividades"] in categoriassocio
+                    or common.categorias["adultoconactividades"] in targetcategorias
+                ):
+                    targetcategorias.append(common.categorias["acogidaadultactiv"])
+                if (
+                    common.categorias["adultosinactividades"] in categoriassocio
+                    or common.categorias["adultosinactividades"] in targetcategorias
+                ):
+                    targetcategorias.append(common.categorias["acogidaadultsinactiv"])
+                if (
+                    common.categorias["socioactividades"] in categoriassocio
+                    or common.categorias["socioactividades"] in targetcategorias
+                ):
+                    targetcategorias.append(common.categorias["acogidaconactiv"])
+                if (
+                    common.categorias["sociosinactividades"] in categoriassocio
+                    or common.categorias["sociosinactividades"] in targetcategorias
+                ):
+                    targetcategorias.append(common.categorias["acogidasinactiv"])
+                if (
+                    common.categorias["sociohermanoactividades"] in categoriassocio
+                    or common.categorias["sociohermanoactividades"] in targetcategorias
+                ):
+                    targetcategorias.append(common.categorias["acogidaconactiv"])
 
+        if (
+            common.categorias["acogida"] not in categoriassocio
+            and common.categorias["acogida"] not in targetcategorias
+            or common.categorias["acogidacolab"] in categoriassocio
+        ):
+            removecategorias.append(common.categorias["acogidaadultactiv"])
+            removecategorias.append(common.categorias["acogidaadultsinactiv"])
+            removecategorias.append(common.categorias["acogidaconactiv"])
+            removecategorias.append(common.categorias["acogidasinactiv"])
+            removecategorias.append(common.categorias["acogidaconactiv"])
+
+        if common.categorias["acogidacolab"] in categoriassocio:
+            targetcategorias.append(common.categorias["acogida"])
+
+        # Add or remove categories
         for modalitat in sorted(set(targetcategorias)):
             if modalitat not in categoriassocio:
                 print(
