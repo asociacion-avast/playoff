@@ -56,7 +56,11 @@ for recibo in response:
     # Año en curso (obtenido del sistema)
 
     # Convert datapagament to a date object using dateutil.parser
-    datapagament = dateutil.parser.parse(recibo["dataPagament"])
+    try:
+        datapagament = dateutil.parser.parse(recibo["dataPagament"])
+    except:
+        print("Error procesando %s" % recibo["dataPagament"])
+        continue
 
     if datapagament >= datetime.datetime(
         year - 1, 9, 1
@@ -91,6 +95,7 @@ texto += "AVAST (Asociación Valenciana de Apoyo a las Altas Capacidades) Inscri
 
 if receiptfound:
     print("Enviando comunicado")
+    # 3290
     response = common.enviacomunicado(
         token=token, data=common.getcomunicado(3290, "Información de recibos", texto)
     )
