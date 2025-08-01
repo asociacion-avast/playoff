@@ -22,38 +22,67 @@ print("Procesando socios")
 # Iteramos sobre miembros porque cap familia hace referencia a la cuenta bancaria
 
 
-for familia in familias["miembros"]:
-    parientes = familias["miembros"][familia]
-    parientes.append(familia)
-    if familia not in procesados:
-        procesados.extend(iter(parientes))
-        # Si el socio ya ha sido procesado, no lo procesamos de nuevo
-
-        sociosactividad = []
-        socioshermanos = []
-        sociossinactiv = []
-
-        for pariente in parientes:
-            socio = common.get_colegiat_json(idColegiat=pariente)
+def procesar_parientes(parientes, modfam):
+    for pariente in parientes:
+        socio = common.get_colegiat_json(idColegiat=pariente)
+        if (
+            socio
+            and "estatColegiat" in socio
+            and socio["estatColegiat"]["nom"] == "ESTBAIXA"
+        ):
+            modfam["baja"].append(pariente)
+        if (
+            socio
+            and "estatColegiat" in socio
+            and socio["estatColegiat"]["nom"] == "ESTALTA"
+        ):
             categorias = common.getcategoriassocio(socio)
 
             if common.categorias["adultosconysin"] not in categorias:
                 if common.categorias["sociohermanoactividades"] in categorias:
-                    socioshermanos.append(pariente)
+                    modfam["sociohermanoactividades"].append(pariente)
 
                 if common.categorias["socioactividades"] in categorias:
-                    sociosactividad.append(pariente)
+                    modfam["socioactividades"].append(pariente)
 
                 if common.categorias["sociosinactividades"] in categorias:
-                    sociossinactiv.append(pariente)
+                    modfam["sociosinactividades"].append(pariente)
 
-        # Familia procesada
-        if socioshermanos:
-            if not sociosactividad:
-                print(
-                    f"ERROR TOODESC: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
-                )
-            if len(sociosactividad) > 1:
-                print(
-                    f"ERROR LOWDESC: Familia {familia} tiene {len(parientes)} miembros, {len(sociosactividad)} actividad, {len(sociossinactiv)} sin actividad, {len(socioshermanos)} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
-                )
+            else:
+                modfam["adultosconysin"].append(pariente)
+
+
+def reportar_errores(familia, parientes, modfam):
+    if len(modfam["sociohermanoactividades"]) > 0:
+        if not modfam["socioactividades"]:
+            print(
+                f"ERROR TOODESC: Familia {familia} tiene {len(parientes)} miembros, {len(modfam['socioactividades'])} actividad, {len(modfam['sociosinactividades'])} sin actividad, {len(modfam['sociohermanoactividades'])} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
+            )
+            print("DISTRIBUCION", modfam)
+        if len(modfam["socioactividades"]) > 1:
+            print(
+                f"ERROR LOWDESC: Familia {familia} tiene {len(parientes)} miembros, {len(modfam['socioactividades'])} actividad, {len(modfam['sociosinactividades'])} sin actividad, {len(modfam['sociohermanoactividades'])} hermanos: {common.sociobase}{familia}#tab=CATEGORIES"
+            )
+            print("DISTRIBUCION", modfam)
+
+
+for familia in sorted(set(familias["miembros"])):
+    parientes = familias["miembros"][familia]
+    # Añadir el socio que está siendo procesado a la lista de parientes
+    parientes.append(familia)
+
+    modfam = {
+        "adultosconysin": [],
+        "sociohermanoactividades": [],
+        "socioactividades": [],
+        "sociosinactividades": [],
+        "baja": [],
+    }
+
+    if familia in procesados:
+        print(f"Familia {familia} ya procesada, saltando")
+    else:
+        procesados.extend(iter(parientes))
+        # Si el socio ya ha sido procesado, no lo procesamos de nuevo
+        procesar_parientes(parientes, modfam)
+        reportar_errores(familia, parientes, modfam)
