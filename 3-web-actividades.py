@@ -31,7 +31,7 @@ def gettoken(user=user, password=password):
 
     data = {"username": user, "password": password}
 
-    result = requests.post(loginurl, data=json.dumps(data), headers=headers)
+    result = requests.post(loginurl, data=json.dumps(data), headers=headers, timeout=15)
 
     return result.json()["access_token"]
 
@@ -41,7 +41,7 @@ token = gettoken(user=user, password=password)
 activar = f"{apiurl}/activitats/totes"
 data = {"Authorization": f"Bearer {token}"}
 
-result = requests.get(activar, auth=BearerAuth(token), headers=headers)
+result = requests.get(activar, auth=BearerAuth(token), headers=headers, timeout=15)
 
 actividades = result.json()
 

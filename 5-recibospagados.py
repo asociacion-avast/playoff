@@ -27,7 +27,9 @@ socioid = 3722
 
 url = f"{common.apiurl}/colegiats/rebuts?idColegiat={socioid}&limit=1000"
 response = json.loads(
-    requests.get(url, headers=common.headers, auth=common.BearerAuth(token)).text
+    requests.get(
+        url, headers=common.headers, auth=common.BearerAuth(token), timeout=15
+    ).text
 )
 
 print(f"{common.sociobase}{socioid}#tab=CATEGORIES")

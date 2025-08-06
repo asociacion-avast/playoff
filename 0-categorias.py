@@ -19,7 +19,7 @@ data = {"Authorization": f"Bearer {token}"}
 
 print("Obteniendo listado de categorias")
 result = requests.get(
-    categoriasurl, auth=common.BearerAuth(token), headers=common.headers
+    categoriasurl, auth=common.BearerAuth(token), headers=common.headers, timeout=15
 )
 
 categorias = result.json()

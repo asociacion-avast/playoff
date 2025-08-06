@@ -37,7 +37,7 @@ for socio in socios:
         url = f"{common.apiurl}/colegiats/rebuts?idColegiat={socioid}&limit=1000"
         response = json.loads(
             requests.get(
-                url, headers=common.headers, auth=common.BearerAuth(token)
+                url, headers=common.headers, auth=common.BearerAuth(token), timeout=15
             ).text
         )
 

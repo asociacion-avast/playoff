@@ -11,7 +11,9 @@ activar = f"{common.apiurl}/activitats/totes"
 data = {"Authorization": f"Bearer {token}"}
 
 print("Obteniendo listado de actividades")
-result = requests.get(activar, auth=common.BearerAuth(token), headers=common.headers)
+result = requests.get(
+    activar, auth=common.BearerAuth(token), headers=common.headers, timeout=15
+)
 
 actividades = result.json()
 

@@ -26,7 +26,7 @@ while tanda == -1 or len(tanda) >= pagesize:
     print("Obteniendo listado de socios, page: %s" % page)
     sociosurl = f"{common.apiurl}/colegiats?page={page}&pageSize={pagesize}"
     result = requests.get(
-        sociosurl, auth=common.BearerAuth(token), headers=common.headers
+        sociosurl, auth=common.BearerAuth(token), headers=common.headers, timeout=15
     )
 
     try:

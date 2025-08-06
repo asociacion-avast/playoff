@@ -67,7 +67,7 @@ for socio in socios:
             print(f"Actualizando familia del socio {socioid}")
             url = f"{common.apiurl}/colegiats/{socioid}/familia"
             response = requests.get(
-                url, headers=common.headers, auth=common.BearerAuth(token)
+                url, headers=common.headers, auth=common.BearerAuth(token), timeout=15
             )
             if response.status_code == 200:
                 family = json.loads(response.text)
