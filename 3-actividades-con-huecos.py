@@ -50,8 +50,10 @@ for actividad in actividades:
         anyofin = 0
 
     if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
-        usadas = 0
-        usadas = int(actividad["numInscripcions"])
+        try:
+            usadas = int(actividad["numInscripcions"])
+        except Exception:
+            usadas = 0
         libres = int(actividad["maxPlaces"]) - usadas
         if libres > 0:
             if anyo and anyoinicio <= anyo <= anyofin:
