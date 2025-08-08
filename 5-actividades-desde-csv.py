@@ -44,11 +44,12 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
         aula_nom = row["AULA"].replace("\n", " ").replace("\r", " ").strip()
         edificio_nom = row["EDIFICIO"].replace("\n", " ").replace("\r", " ").strip()
         profesores_nom = row["profesores"].replace("\n", " ").replace("\r", " ").strip()
+        piso = row["PLANTA"].replace("\n", " ").replace("\r", " ").strip()
         override = {
             "estat": "ACTIESTPRIV",
             "tipusControlEdat": "CENAIXEMENT",
             "tipus": "TAIND",
-            "llocActivitat": f"Aula: {aula_nom}, Edificio: {edificio_nom}",
+            "llocActivitat": f"Aula: {aula_nom}, Planta: {piso}, Edificio: {edificio_nom}",
             "dataLimit": "2025-10-31 23:59:59",
             "dataInici": "2025-09-01 00:00:00",
             "dataFi": "2025-10-31 23:59:59",
@@ -70,7 +71,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
             "nom": f"{actividad_nom} : {hora_nom}",
             "minPlaces": int(row["pzas min"]),
             "maxPlaces": int(row["pzas max"]),
-            "descripcio": f"Profesor: {profesores_nom}, Aula: {aula_nom}, Edificio: {edificio_nom}",
+            "descripcio": f"Profesor: {profesores_nom}. Detalle de actividades en https://asociacion-avast.org/detalle-de-actividades/",
             "aula": aula_nom,
             "edificio": edificio_nom,
             "dataHoraActivitat": "2025-09-13",
