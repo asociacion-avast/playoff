@@ -84,7 +84,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "idNivell": "%s" % slot,
                 "edatMin": int(row["AÑO INICIO"]),
                 "edatMax": int(row["AÑO FIN"]),
-                "nom": f"{actividad_nom} : {hora_nom}",
+                "nom": f"{actividad_nom}: ({int(row['AÑO INICIO'])}-{int(row['AÑO FIN'])}) : {hora_nom}",
                 "minPlaces": int(row["pzas min"]),
                 "maxPlaces": int(row["pzas max"]),
                 "descripcio": f"Profesor: {profesores_nom}. Detalle de actividades en https://asociacion-avast.org/detalle-de-actividades/",
