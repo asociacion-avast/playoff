@@ -37,7 +37,10 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
     for row in reader:
         print(row)
         idActividad = int(row["idActividad"])
-        slot = hora_slot_map.get(row.get("HORA", "").split("-")[0].strip())
+        horain = row.get("HORA", "").split("-")[0].strip()
+
+        slot = hora_slot_map.get(horain)
+
         # Clean up newlines in relevant fields
         actividad_nom = row["ACTIVIDAD"].replace("\n", " ").replace("\r", " ").strip()
         hora_nom = row.get("HORA", "").replace("\n", " ").replace("\r", " ").strip()
@@ -45,6 +48,9 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
         edificio_nom = row["EDIFICIO"].replace("\n", " ").replace("\r", " ").strip()
         profesores_nom = row["profesores"].replace("\n", " ").replace("\r", " ").strip()
         piso = row["PLANTA"].replace("\n", " ").replace("\r", " ").strip()
+        profesor_email = (
+            row["email"].replace("\n", " ").replace("\r", " ").strip() or "desconocido"
+        )
         override = {
             "estat": "ACTIESTPRIV",
             "tipusControlEdat": "CENAIXEMENT",
@@ -57,14 +63,14 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
             "isDescripcioPublica": True,
             "isPermetreInscripcionsTotesModalitats": 0,
             "activitatHasModalitats": [
-                {"idModalitat": "82", "idActivitat": f"{idActividad}"}
+                {"idModalitat": "90", "idActivitat": f"{idActividad}"}
             ],
             "limitacioEstatsSocis": ["1"],
             "placesLliures": 50,
             "usuarisRestringits": [],
             "crearUsuariPermes": 0,
             "isPermetreAnularInscripcions": 1,
-            "horesAntelacio": 144,
+            "horesAntelacio": 0,
             "idNivell": "%s" % slot,
             "edatMin": int(row["AÑO INICIO"]),
             "edatMax": int(row["AÑO FIN"]),
@@ -74,8 +80,23 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
             "descripcio": f"Profesor: {profesores_nom}. Detalle de actividades en https://asociacion-avast.org/detalle-de-actividades/",
             "aula": aula_nom,
             "edificio": edificio_nom,
-            "dataHoraActivitat": "2025-09-13",
+            "dataHoraActivitat": f"2025-09-13 {horain}:00",
             "dataHoraFiActivitat": "2026-06-20",
+            "campsDinamics": [
+                {
+                    "nom": "profesor1",
+                    "format": "CD_FORMAT_TEXT",
+                    "textAjuda": f"<p>{profesor_email}</p>",
+                    "opcionsDesplegable": [],
+                    "ordre": 0,
+                    "nomIntern": "0_0_20250811100011",
+                    "campsCondicionatAmb": [],
+                    "campsCondicionatAmbVisual": [],
+                    "ocultarPartPublica": 1,
+                }
+            ],
+            "isDadesPersonalsNoModificables": 1,
+            "isAssociatDadesMinim": 1,
         }
         result = common.editaactividad(token, idActividad, override)
         print(f"Editando actividad {idActividad} {override['nom']}")
