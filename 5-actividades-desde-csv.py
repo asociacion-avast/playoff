@@ -43,6 +43,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
 
         if idActividad:
             horain = row.get("HORA", "").split("-")[0].strip()
+            horaout = row.get("HORA", "").split("-")[1].strip()
 
             slot = hora_slot_map.get(horain)
 
@@ -50,7 +51,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
             actividad_nom = (
                 row["ACTIVIDAD"].replace("\n", " ").replace("\r", " ").strip()
             )
-            hora_nom = row.get("HORA", "").replace("\n", " ").replace("\r", " ").strip()
+            hora_nom = f"{horain}-{horaout}"
             aula_nom = row["AULA"].replace("\n", " ").replace("\r", " ").strip()
             edificio_nom = row["EDIFICIO"].replace("\n", " ").replace("\r", " ").strip()
             profesores_nom = (
@@ -61,6 +62,19 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 row["email"].replace("\n", " ").replace("\r", " ").strip()
                 or "desconocido"
             )
+            # Build descripcio with additional requirements
+            descripcio = f"Profesor: {profesores_nom}. Detalle de actividades en <a href=https://asociacion-avast.org/detalle-de-actividades/>https://asociacion-avast.org/detalle-de-actividades/</a>"
+            if row.get("WIFI", "").strip():
+                descripcio += "\n<p>Esta actividad requiere acceso a la red WiFi. Recoja sus credenciales en la Cabina cristales conserjería UPV - Edif. 5F 1ª planta ETSII. Más información en <a href=https://asociacion-avast.org/clave-informatica/>https://asociacion-avast.org/clave-informatica/</a></p>"
+            if row.get("DISPOSITIVO", "").strip():
+                descripcio += "\n<p>Esta actividad requiere que el participante traiga su propio dispositivo (portátil, tablet, etc.).</p>"
+            if row.get("DESCRIPCION", "").strip():
+                descripcio += f"\n<p>{row['DESCRIPCION'].replace(chr(10), ' ').replace(chr(13), ' ').strip()}</p>"
+            if row.get("MATERIALES", "").strip():
+                descripcio += f"\n<p>Materiales necesarios: {row['MATERIALES'].replace(chr(10), ' ').replace(chr(13), ' ').strip()}</p>"
+            if row.get("URL", "").strip():
+                descripcio += f"\n<p>Más información en <a href='{row['URL'].strip()}'>{row['URL'].strip()}</a></p>"
+
             override = {
                 "estat": "ACTIESTPRIV",
                 "tipusControlEdat": "CENAIXEMENT",
@@ -87,7 +101,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "nom": f"{actividad_nom}: ({int(row['AÑO INICIO'])}-{int(row['AÑO FIN'])}) : {hora_nom}",
                 "minPlaces": int(row["pzas min"]),
                 "maxPlaces": int(row["pzas max"]),
-                "descripcio": f"Profesor: {profesores_nom}. Detalle de actividades en https://asociacion-avast.org/detalle-de-actividades/",
+                "descripcio": descripcio,
                 "aula": aula_nom,
                 "edificio": edificio_nom,
                 "dataHoraActivitat": f"2025-09-13 {horain}:00",
