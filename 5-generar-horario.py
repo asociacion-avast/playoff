@@ -24,9 +24,9 @@ COLOR_CIAN_BRILLANTE = "#00bac3"
 COLOR_UBICACION_FONDO = "#9cc9d6"
 
 
-def generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento):
+def generar_html_tabla(df, horarios_fijos, anio_nacimiento, anio_academico):
     """
-    Genera el HTML de la tabla de horario a partir de un DataFrame agrupado.
+    Genera el HTML de la tabla de horario a partir de un DataFrame procesado.
     """
     html_output = f"""
     <!DOCTYPE html>
@@ -46,6 +46,7 @@ def generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento):
             .actividad-cell span {{ white-space: nowrap; }}
             .location-header {{ font-size: 0.9em; font-weight: normal; }}
             .anio-header {{ font-size: 1.5em; text-align: center; margin-bottom: 20px; }}
+            .academic-year-header {{ font-size: 1.8em; font-weight: bold; text-align: center; margin-bottom: 10px; color: {COLOR_AZUL_OSCURO}; }}
             /* Estilo para los rangos de edad para que el texto sea legible sobre el fondo */
             .actividad-cell span[style*="background-color"] {{
                 color: black !important;
@@ -54,10 +55,13 @@ def generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento):
     </head>
     <body>
     """
-    if anio_nacimiento:
+    html_output += f"<div class='academic-year-header'>Horario de Actividades Curso Académico {anio_academico}</div>"
+    if anio_nacimiento and not isinstance(anio_nacimiento, str):
         html_output += (
-            f"<div class='anio-header'>Horario para nacidos en {anio_nacimiento}</div>"
+            f"<div class='anio-header'>Para nacidos en {anio_nacimiento}</div>"
         )
+    elif isinstance(anio_nacimiento, str):
+        html_output += f"<div class='anio-header'>Para el grupo {anio_nacimiento}</div>"
 
     html_output += """
     <table>
@@ -83,14 +87,28 @@ def generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento):
     <tbody>
     """
 
-    for (escuela, edificio, planta, aula), grupo in df_grouped:
+    last_escuela = None
+    last_edificio = None
+
+    for index, row in df.iterrows():
         html_output += "<tr>"
-        html_output += f"<td class='location-cell'><a href='https://asociacion-avast.org/ubicacion/' target='_blank' style='color: {COLOR_AZUL_OSCURO}; text-decoration: none;'>{escuela}</a></td>"
-        html_output += f"<td class='location-cell'>{edificio}</td>"
-        html_output += f"<td class='location-cell'>{planta}</td>"
-        html_output += f"<td class='location-cell'>{aula}</td>"
+
+        # Celdas con rowspan para ESCUELA y EDIFICIO
+        if row["ESCUELA"] != last_escuela:
+            html_output += f"<td class='location-cell' rowspan='{row['rowspan_escuela']}'><a href='https://asociacion-avast.org/ubicacion/' target='_blank' style='color: {COLOR_AZUL_OSCURO}; text-decoration: none;'>{row['ESCUELA']}</a></td>"
+            last_escuela = row["ESCUELA"]
+
+        if row["EDIFICIO"] != last_edificio:
+            html_output += f"<td class='location-cell' rowspan='{row['rowspan_edificio']}'>{row['EDIFICIO']}</td>"
+            last_edificio = row["EDIFICIO"]
+
+        html_output += f"<td class='location-cell'>{row['PLANTA']}</td>"
+        html_output += f"<td class='location-cell'>{row['AULA']}</td>"
+
+        # Celdas de horario
         for col in horarios_fijos.keys():
-            html_output += f"<td class='actividad-cell'>{grupo[col].iloc[0]}</td>"
+            html_output += f"<td class='actividad-cell'>{row[col]}</td>"
+
         html_output += "</tr>"
 
     html_output += """
@@ -102,7 +120,7 @@ def generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento):
     return html_output
 
 
-def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos):
+def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos, anio_academico):
     """
     Genera una tabla de horario en formato HTML para un año de nacimiento específico.
     """
@@ -225,9 +243,21 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos):
                                 break
 
     final_schedule = final_schedule.reset_index()
-    df_grouped = final_schedule.groupby(["ESCUELA", "EDIFICIO", "PLANTA", "AULA"])
 
-    html_output = generar_html_tabla(df_grouped, horarios_fijos, anio_nacimiento)
+    # Calcular rowspan para ESCUELA y EDIFICIO
+    final_schedule["rowspan_escuela"] = final_schedule.groupby("ESCUELA")[
+        "ESCUELA"
+    ].transform("count")
+    final_schedule["rowspan_edificio"] = final_schedule.groupby(
+        ["ESCUELA", "EDIFICIO"]
+    )["EDIFICIO"].transform("count")
+
+    # Eliminar filas duplicadas para las celdas con rowspan
+    df_with_rowspan = final_schedule.copy()
+
+    html_output = generar_html_tabla(
+        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico
+    )
     output_filename = f"horario_filtrado-{anio_nacimiento}.html"
     return html_output, output_filename
 
@@ -238,6 +268,14 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
     Puede generar un solo horario o un rango de ellos.
     """
     try:
+        # Lógica para determinar el año académico en curso (del 1 de julio al 30 de junio)
+        hoy = datetime.now()
+        anio_actual = hoy.year
+        if hoy.month >= 7:
+            anio_academico = f"{anio_actual}-{anio_actual + 1}"
+        else:
+            anio_academico = f"{anio_actual - 1}-{anio_actual}"
+
         required_cols = [
             "ACTIVIDAD",
             "HORA",
@@ -445,12 +483,20 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                                         break
 
             final_schedule = final_schedule.reset_index()
-            df_grouped = final_schedule.groupby(
-                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
-            )
+
+            # Calcular rowspan para ESCUELA y EDIFICIO
+            final_schedule["rowspan_escuela"] = final_schedule.groupby("ESCUELA")[
+                "ESCUELA"
+            ].transform("count")
+            final_schedule["rowspan_edificio"] = final_schedule.groupby(
+                ["ESCUELA", "EDIFICIO"]
+            )["EDIFICIO"].transform("count")
 
             html_output = generar_html_tabla(
-                df_grouped, horarios_fijos, anio_nacimiento=None
+                final_schedule,
+                horarios_fijos,
+                anio_nacimiento=None,
+                anio_academico=anio_academico,
             )
 
             with open("horario.html", "w", encoding="utf-8") as f:
@@ -462,7 +508,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 f"🔍 Generando horario para el año de nacimiento: {anio_nacimiento}..."
             )
             html_output, filename = generar_horario_para_anio(
-                df, anio_nacimiento, horarios_fijos
+                df, anio_nacimiento, horarios_fijos, anio_academico
             )
             if html_output:
                 with open(filename, "w", encoding="utf-8") as f:
@@ -474,7 +520,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             )
             for anio in range(anio_nacimiento, anio_fin + 1):
                 html_output, filename = generar_horario_para_anio(
-                    df, anio, horarios_fijos
+                    df, anio, horarios_fijos, anio_academico
                 )
                 if html_output:
                     with open(filename, "w", encoding="utf-8") as f:
@@ -509,7 +555,11 @@ if __name__ == "__main__":
 
     # Convertir el argumento de año a entero si es posible, si no, se queda como string
     try:
-        anio_inicio = int(args.anio_nacimiento) if args.anio_nacimiento else None
+        anio_inicio = (
+            int(args.anio_nacimiento)
+            if args.anio_nacimiento and args.anio_nacimiento.isdigit()
+            else args.anio_nacimiento
+        )
     except (ValueError, TypeError):
         anio_inicio = args.anio_nacimiento
 
