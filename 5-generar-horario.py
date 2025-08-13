@@ -2,6 +2,8 @@
 
 import argparse
 import os
+import re  # Importamos la librería de expresiones regulares
+import urllib.request
 from datetime import datetime
 
 import numpy as np
@@ -24,9 +26,12 @@ COLOR_CIAN_BRILLANTE = "#00bac3"
 COLOR_UBICACION_FONDO = "#9cc9d6"
 
 
-def generar_html_tabla(df, horarios_fijos, anio_nacimiento, anio_academico):
+def generar_html_tabla(
+    df, horarios_fijos, anio_nacimiento, anio_academico, svg_content
+):
     """
-    Genera el HTML de la tabla de horario a partir de un DataFrame procesado.
+    Genera el HTML de la tabla de horario a partir de un DataFrame procesado,
+    con el código SVG del logo incrustado.
     """
     html_output = f"""
     <!DOCTYPE html>
@@ -47,6 +52,8 @@ def generar_html_tabla(df, horarios_fijos, anio_nacimiento, anio_academico):
             .location-header {{ font-size: 0.9em; font-weight: normal; }}
             .anio-header {{ font-size: 1.5em; text-align: center; margin-bottom: 20px; }}
             .academic-year-header {{ font-size: 1.8em; font-weight: bold; text-align: center; margin-bottom: 10px; color: {COLOR_AZUL_OSCURO}; }}
+            .logo-header {{ text-align: center; margin-bottom: 10px; }}
+            .logo-header svg {{ max-width: 15%; height: auto; }}
             /* Estilo para los rangos de edad para que el texto sea legible sobre el fondo */
             .actividad-cell span[style*="background-color"] {{
                 color: black !important;
@@ -54,6 +61,11 @@ def generar_html_tabla(df, horarios_fijos, anio_nacimiento, anio_academico):
         </style>
     </head>
     <body>
+    """
+    html_output += f"""
+    <div class="logo-header">
+        {svg_content}
+    </div>
     """
     html_output += f"<div class='academic-year-header'>Horario de Actividades Curso Académico {anio_academico}</div>"
     if anio_nacimiento and not isinstance(anio_nacimiento, str):
@@ -120,7 +132,9 @@ def generar_html_tabla(df, horarios_fijos, anio_nacimiento, anio_academico):
     return html_output
 
 
-def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos, anio_academico):
+def generar_horario_para_anio(
+    df, anio_nacimiento, horarios_fijos, anio_academico, svg_content
+):
     """
     Genera una tabla de horario en formato HTML para un año de nacimiento específico.
     """
@@ -264,9 +278,12 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos, anio_academic
     df_with_rowspan = final_schedule.copy()
 
     html_output = generar_html_tabla(
-        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico
+        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico, svg_content
     )
-    output_filename = f"horario_filtrado-{anio_nacimiento}.html"
+    output_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        f"horario_filtrado-{anio_nacimiento}.html",
+    )
     return html_output, output_filename
 
 
@@ -275,6 +292,29 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
     Lee un CSV de actividades y genera una tabla de horario en HTML.
     Puede generar un solo horario o un rango de ellos.
     """
+    # --- Obtención y filtrado del logo SVG desde Pastebin ---
+    pastebin_url = "https://pastebin.com/raw/dbjRuQbJ"
+    logo_svg_content = ""
+    try:
+        with urllib.request.urlopen(pastebin_url) as response:
+            full_content = response.read().decode("utf-8")
+            # Usamos una expresión regular para encontrar y extraer el bloque SVG completo
+            match = re.search(r"<svg.*?</svg>", full_content, re.DOTALL)
+            if match:
+                logo_svg_content = match.group(0)
+                print(
+                    "✅ Código SVG del logo obtenido y filtrado de Pastebin correctamente."
+                )
+            else:
+                print(
+                    "❌ Error: No se encontró un bloque <svg>...</svg> en el contenido."
+                )
+    except Exception as e:
+        print(f"❌ Error al obtener el código SVG del logo de Pastebin: {e}")
+        # En caso de error, el logo se mostrará vacío
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
     try:
         # Lógica para determinar el año académico en curso (del 1 de julio al 30 de junio)
         hoy = datetime.now()
@@ -513,9 +553,11 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 horarios_fijos,
                 anio_nacimiento=None,
                 anio_academico=anio_academico,
+                svg_content=logo_svg_content,
             )
+            output_filename = os.path.join(script_dir, "horario.html")
 
-            with open("horario.html", "w", encoding="utf-8") as f:
+            with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(html_output)
             print("🎉 Tabla de horario completa generada y guardada en 'horario.html'")
 
@@ -524,24 +566,36 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 f"🔍 Generando horario para el año de nacimiento: {anio_nacimiento}..."
             )
             html_output, filename = generar_horario_para_anio(
-                df, anio_nacimiento, horarios_fijos, anio_academico
+                df,
+                anio_nacimiento,
+                horarios_fijos,
+                anio_academico,
+                svg_content=logo_svg_content,
             )
             if html_output:
                 with open(filename, "w", encoding="utf-8") as f:
                     f.write(html_output)
-                print(f"🎉 Tabla de horario generada y guardada en '{filename}'")
+                print(
+                    f"🎉 Tabla de horario generada y guardada en '{os.path.basename(filename)}'"
+                )
         else:
             print(
                 f"🔍 Generando horarios para el rango de años: {anio_nacimiento} a {anio_fin}..."
             )
             for anio in range(anio_nacimiento, anio_fin + 1):
                 html_output, filename = generar_horario_para_anio(
-                    df, anio, horarios_fijos, anio_academico
+                    df,
+                    anio,
+                    horarios_fijos,
+                    anio_academico,
+                    svg_content=logo_svg_content,
                 )
                 if html_output:
                     with open(filename, "w", encoding="utf-8") as f:
                         f.write(html_output)
-                    print(f"  ✅ '{filename}' generado correctamente.")
+                    print(
+                        f"  ✅ '{os.path.basename(filename)}' generado correctamente."
+                    )
             print(
                 f"🎉 ¡Generación de horarios completada para el rango de {anio_nacimiento} a {anio_fin}!"
             )
@@ -579,5 +633,7 @@ if __name__ == "__main__":
     except (ValueError, TypeError):
         anio_inicio = args.anio_nacimiento
 
-    csv_path = os.path.join(os.path.dirname(__file__), "actividades.csv")
+    csv_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "actividades.csv"
+    )
     generar_horario_final(csv_path, anio_inicio, args.anio_fin)
