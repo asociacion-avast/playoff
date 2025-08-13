@@ -90,6 +90,10 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                     {"idModalitat": "90", "idActivitat": f"{idActividad}"}
                 ],
                 "limitacioEstatsSocis": ["1"],
+                "isEnviarEmailConfirmacioCapFamilia": 1,
+                "isEnviarRebutConfirmacio": 0,
+                "isNoPermetreRebreEmailsEntitat": True,
+                "isEnviarArxiuCalendari": 0,
                 "placesLliures": 50,
                 "usuarisRestringits": [],
                 "crearUsuariPermes": 0,
@@ -121,7 +125,9 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 ],
                 "isDadesPersonalsNoModificables": 1,
                 "isAssociatDadesMinim": 1,
+                "idPlantillaComunicat": 203,
             }
+
             result = common.editaactividad(token, idActividad, override)
             print(f"Editando actividad {idActividad} {override['nom']}")
             pprint.pprint(result)
