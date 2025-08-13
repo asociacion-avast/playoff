@@ -162,10 +162,18 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos, anio_academic
         anos_inicio_act = row["AÑO INICIO"]
         anos_fin_act = row["AÑO FIN"]
 
+        # --- Lógica de ordenamiento de rangos de edad ---
+        rangos_ordenados = sorted(
+            COLORES.items(),
+            key=lambda item: item[0][0]
+            if isinstance(item[0][0], int)
+            else float("inf"),
+        )
+
         rangos_ajustados_html = []
 
-        # Lógica para mostrar las etiquetas de edad o de grupo (TUTORES, ADULTOS)
-        for rango, color in COLORES.items():
+        # Itera sobre los rangos de edad ORDENADOS
+        for rango, color in rangos_ordenados:
             rango_inicio_def = rango[0]
             rango_fin_def = rango[1]
 
@@ -392,9 +400,17 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 anos_inicio_act = row["AÑO INICIO"]
                 anos_fin_act = row["AÑO FIN"]
 
+                # --- Lógica de ordenamiento de rangos de edad ---
+                rangos_ordenados = sorted(
+                    COLORES.items(),
+                    key=lambda item: item[0][0]
+                    if isinstance(item[0][0], int)
+                    else float("inf"),
+                )
+
                 rangos_ajustados_html = []
 
-                for rango, color in COLORES.items():
+                for rango, color in rangos_ordenados:
                     rango_inicio_def = rango[0]
                     rango_fin_def = rango[1]
 
