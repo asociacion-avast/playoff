@@ -81,7 +81,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "tipus": "TAIND",
                 "llocActivitat": f"Aula: {aula_nom}, Planta: {piso}, Edificio: {edificio_nom}",
                 "dataLimit": "2025-10-31 23:59:59",
-                "dataInici": "2025-09-01 00:00:00",
+                "dataInici": "2025-07-01 00:00:00",
                 "dataFi": "2025-10-31 23:59:59",
                 "isVisibleCampsPersonalitzatsPersona": "1",
                 "isDescripcioPublica": True,
