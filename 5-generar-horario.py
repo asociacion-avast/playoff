@@ -7,12 +7,15 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-# Definición de los colores según el rango de edad (colores originales)
+# Definición de los colores según el rango de edad
+# Se han añadido colores para los nuevos grupos: 'TUTORES' y 'ADULTOS AVAST'
 COLORES = {
     (2017, 2020): "#FCF37C",
     (2014, 2016): "#FCBB8B",
     (2011, 2013): "#81D3C9",
     (2003, 2010): "#EFC1FD",
+    ("TUTORES", "TUTORES"): "#87CEEB",
+    ("ADULTOS AVAST", "ADULTOS AVAST"): "#D3D3D3",
 }
 
 # Colores de la paleta del logotipo
@@ -103,14 +106,24 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos):
     """
     Genera una tabla de horario en formato HTML para un año de nacimiento específico.
     """
-    df_filtrado = df[
-        (df["AÑO INICIO"] <= anio_nacimiento) & (df["AÑO FIN"] >= anio_nacimiento)
-    ].copy()
+    # Se filtra por año de nacimiento O por los nuevos grupos (TUTORES, ADULTOS AVAST)
+    if isinstance(anio_nacimiento, str):
+        # Lógica para filtrar solo por el grupo de edad string (ej. 'TUTORES' o 'ADULTOS AVAST')
+        df_filtrado = df[
+            (df["AÑO INICIO"] == anio_nacimiento) | (df["AÑO FIN"] == anio_nacimiento)
+        ].copy()
+    else:
+        # Lógica para filtrar por un año de nacimiento numérico, incluyendo siempre TUTORES
+        df_filtrado = df[
+            (
+                (pd.to_numeric(df["AÑO INICIO"], errors="coerce") <= anio_nacimiento)
+                & (pd.to_numeric(df["AÑO FIN"], errors="coerce") >= anio_nacimiento)
+            )
+            | (df["AÑO INICIO"] == "TUTORES")
+        ].copy()
 
     if df_filtrado.empty:
-        print(
-            f"❌ No se encontraron actividades para el año de nacimiento: {anio_nacimiento}"
-        )
+        print(f"❌ No se encontraron actividades para el grupo: {anio_nacimiento}")
         return None, None
 
     locations = df_filtrado[["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]].drop_duplicates()
@@ -128,23 +141,33 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos):
     for index, row in df_filtrado.iterrows():
         loc_tuple = (row["ESCUELA"], row["EDIFICIO"], row["PLANTA"], row["AULA"])
 
-        anos_inicio_act = int(row["AÑO INICIO"])
-        anos_fin_act = int(row["AÑO FIN"])
+        anos_inicio_act = row["AÑO INICIO"]
+        anos_fin_act = row["AÑO FIN"]
 
         rangos_ajustados_html = []
-        colores_ordenados = sorted(COLORES.items(), key=lambda x: x[0][0])
 
-        for rango, color in colores_ordenados:
+        # Lógica para mostrar las etiquetas de edad o de grupo (TUTORES, ADULTOS)
+        for rango, color in COLORES.items():
             rango_inicio_def = rango[0]
             rango_fin_def = rango[1]
 
-            overlap_start = max(rango_inicio_def, anos_inicio_act)
-            overlap_end = min(rango_fin_def, anos_fin_act)
-
-            if overlap_start <= overlap_end:
-                rangos_ajustados_html.append(
-                    f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
-                )
+            if isinstance(rango_inicio_def, int):
+                # Lógica para rangos de edad numéricos
+                try:
+                    overlap_start = max(rango_inicio_def, int(anos_inicio_act))
+                    overlap_end = min(rango_fin_def, int(anos_fin_act))
+                    if overlap_start <= overlap_end:
+                        rangos_ajustados_html.append(
+                            f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
+                        )
+                except ValueError:
+                    continue  # Si no son números, pasamos al siguiente rango
+            else:
+                # Lógica para rangos de texto (TUTORES, ADULTOS AVAST)
+                if anos_inicio_act == rango_inicio_def:
+                    rangos_ajustados_html.append(
+                        f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{rango_inicio_def}</span>"
+                    )
 
         iconos_html = ""
         if row.get("WIFI", ""):
@@ -162,12 +185,14 @@ def generar_horario_para_anio(df, anio_nacimiento, horarios_fijos):
                 f"<span style='font-size: small;'>{row['profesores']}</span><br>"
             )
 
-        # ⚠️ Atributo title para la descripción sobre el nombre de la actividad
         descripcion_html = ""
         if row["DESCRIPCION"]:
             descripcion_html = f"title='{row['DESCRIPCION']}'"
 
-        contenido_actividad = f"{profesor_html}<b {descripcion_html}>{row['ACTIVIDAD']}</b>{etiquetas_html}"
+        # Reemplazar saltos de línea del CSV con <br> para HTML
+        actividad_con_saltos = row["ACTIVIDAD"].replace("\n", "<br>").replace("\r", "")
+
+        contenido_actividad = f"{profesor_html}<b {descripcion_html}>{actividad_con_saltos}</b>{etiquetas_html}"
 
         hora_inicio_act = datetime.strptime(row["HORA_INICIO_STR"], "%H:%M")
         hora_fin_act = datetime.strptime(row["HORA_FIN_STR"], "%H:%M")
@@ -213,7 +238,6 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
     Puede generar un solo horario o un rango de ellos.
     """
     try:
-        # Se añaden las nuevas columnas a la lista de columnas requeridas
         required_cols = [
             "ACTIVIDAD",
             "HORA",
@@ -230,6 +254,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             "MATERIALES",
         ]
 
+        # Eliminamos el reemplazo de saltos de línea al leer el CSV para mantenerlos
         df = pd.read_csv(
             csv_path, delimiter=";", encoding="utf-8", keep_default_na=False
         )
@@ -245,7 +270,6 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             df[col] = df[col].replace(np.nan, "", regex=True)
 
         for col in [
-            "ACTIVIDAD",
             "HORA",
             "AULA",
             "EDIFICIO",
@@ -264,15 +288,16 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 .str.strip()
             )
 
+        # Mantenemos los saltos de línea en la columna ACTIVIDAD
+        df["ACTIVIDAD"] = df["ACTIVIDAD"].astype(str)
+
         df["PLANTA"] = (
             pd.to_numeric(df["PLANTA"], errors="coerce").fillna(0).astype(int)
         )
-        df["AÑO INICIO"] = (
-            pd.to_numeric(df["AÑO INICIO"], errors="coerce").fillna(0).astype(int)
-        )
-        df["AÑO FIN"] = (
-            pd.to_numeric(df["AÑO FIN"], errors="coerce").fillna(0).astype(int)
-        )
+
+        # Se convierte a string para manejar los nuevos valores de texto
+        df["AÑO INICIO"] = df["AÑO INICIO"].astype(str)
+        df["AÑO FIN"] = df["AÑO FIN"].astype(str)
 
         df["HORA_INICIO_STR"] = (
             df["HORA"].str.split("-").str[0].str.strip().replace("", "00:00")
@@ -299,7 +324,12 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
         if anio_nacimiento is None:
             print("Generando horario completo...")
 
-            locations = df[["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]].drop_duplicates()
+            # Al generar el horario completo, se incluyen todas las actividades
+            df_a_procesar = df
+
+            locations = df_a_procesar[
+                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+            ].drop_duplicates()
             final_schedule = pd.DataFrame(
                 index=locations.index,
                 columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
@@ -313,7 +343,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 ["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
             )
             final_schedule = final_schedule.fillna("")
-            for index, row in df.iterrows():
+            for index, row in df_a_procesar.iterrows():
                 loc_tuple = (
                     row["ESCUELA"],
                     row["EDIFICIO"],
@@ -321,23 +351,30 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                     row["AULA"],
                 )
 
-                anos_inicio_act = int(row["AÑO INICIO"])
-                anos_fin_act = int(row["AÑO FIN"])
+                anos_inicio_act = row["AÑO INICIO"]
+                anos_fin_act = row["AÑO FIN"]
 
                 rangos_ajustados_html = []
-                colores_ordenados = sorted(COLORES.items(), key=lambda x: x[0][0])
 
-                for rango, color in colores_ordenados:
+                for rango, color in COLORES.items():
                     rango_inicio_def = rango[0]
                     rango_fin_def = rango[1]
 
-                    overlap_start = max(rango_inicio_def, anos_inicio_act)
-                    overlap_end = min(rango_fin_def, anos_fin_act)
-
-                    if overlap_start <= overlap_end:
-                        rangos_ajustados_html.append(
-                            f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
-                        )
+                    if isinstance(rango_inicio_def, int):
+                        try:
+                            overlap_start = max(rango_inicio_def, int(anos_inicio_act))
+                            overlap_end = min(rango_fin_def, int(anos_fin_act))
+                            if overlap_start <= overlap_end:
+                                rangos_ajustados_html.append(
+                                    f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
+                                )
+                        except ValueError:
+                            continue
+                    else:
+                        if anos_inicio_act == rango_inicio_def:
+                            rangos_ajustados_html.append(
+                                f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{rango_inicio_def}</span>"
+                            )
 
                 iconos_html = ""
                 if row.get("WIFI", ""):
@@ -359,7 +396,12 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 if row["DESCRIPCION"]:
                     descripcion_html = f"title='{row['DESCRIPCION']}'"
 
-                contenido_actividad = f"{profesor_html}<b {descripcion_html}>{row['ACTIVIDAD']}</b>{etiquetas_html}"
+                # Reemplazar saltos de línea del CSV con <br> para HTML
+                actividad_con_saltos = (
+                    row["ACTIVIDAD"].replace("\n", "<br>").replace("\r", "")
+                )
+
+                contenido_actividad = f"{profesor_html}<b {descripcion_html}>{actividad_con_saltos}</b>{etiquetas_html}"
 
                 hora_inicio_act = datetime.strptime(row["HORA_INICIO_STR"], "%H:%M")
                 hora_fin_act = datetime.strptime(row["HORA_FIN_STR"], "%H:%M")
@@ -455,16 +497,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--anio_nacimiento",
         "-a",
-        type=int,
-        help="Año de nacimiento para filtrar las actividades (opcional).",
+        help="Año de nacimiento para filtrar las actividades (opcional). Puede ser un año o 'TUTORES' o 'ADULTOS AVAST'.",
     )
     parser.add_argument(
         "--anio_fin",
         "-b",
         type=int,
-        help="Año de nacimiento final del rango para filtrar actividades. Requiere --anio_nacimiento para funcionar.",
+        help="Año de nacimiento final del rango para filtrar actividades. Requiere --anio_nacimiento para funcionar si este es un número.",
     )
     args = parser.parse_args()
 
+    # Convertir el argumento de año a entero si es posible, si no, se queda como string
+    try:
+        anio_inicio = int(args.anio_nacimiento) if args.anio_nacimiento else None
+    except (ValueError, TypeError):
+        anio_inicio = args.anio_nacimiento
+
     csv_path = os.path.join(os.path.dirname(__file__), "actividades.csv")
-    generar_horario_final(csv_path, args.anio_nacimiento, args.anio_fin)
+    generar_horario_final(csv_path, anio_inicio, args.anio_fin)
