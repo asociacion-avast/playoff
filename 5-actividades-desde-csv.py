@@ -63,7 +63,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 or "desconocido"
             )
             # Build descripcio with additional requirements
-            descripcio = f"Profesor: {profesores_nom}. Detalle de actividades en <a href=https://asociacion-avast.org/detalle-de-actividades/>https://asociacion-avast.org/detalle-de-actividades/</a>"
+            descripcio = f"Impartido por: {profesores_nom}."
             if row.get("WIFI", "").strip():
                 descripcio += "\n<p>Esta actividad requiere acceso a la red WiFi. Recoja sus credenciales en la Cabina cristales conserjería UPV - Edif. 5F 1ª planta ETSII. Más información en <a href=https://asociacion-avast.org/clave-informatica/>https://asociacion-avast.org/clave-informatica/</a></p>"
             if row.get("DISPOSITIVO", "").strip():

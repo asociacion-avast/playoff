@@ -95,7 +95,11 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
             .enlace-mas-info:hover {
                 text-decoration: underline;
             }
-
+            .materiales {
+                font-size: 0.85em;
+                color: #888;
+                margin-top: 5px;
+            }
         </style>
     </head>
     <body>
@@ -110,10 +114,15 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
             lector_csv = csv.DictReader(archivo_csv, delimiter=";")
 
             for fila in lector_csv:
-                if (
-                    not fila.get("idActividad")
-                    or not fila.get("DESCRIPCION", "").strip()
-                ):
+                # Modificación para leer del campo EDAD y mostrar las categorías especiales
+                categoria = fila.get("EDAD", "").strip().upper()
+                if not fila.get("idActividad") and categoria not in [
+                    "ADULTOS",
+                    "AVAST",
+                    "TUTORES",
+                ]:
+                    continue
+                if not fila.get("DESCRIPCION", "").strip():
                     continue
 
                 titulo_original = fila.get("ACTIVIDAD", "Actividad sin nombre").strip()
@@ -129,6 +138,7 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                 ).strip()
                 mini_url = fila.get("MINIATURA", "").strip()
                 mas_info_url = fila.get("URL", "").strip()
+                materiales_texto = fila.get("MATERIALES", "").strip()
 
                 iconos_requisitos = ""
                 necesita_wifi = bool(fila.get("WIFI", "").strip())
@@ -147,13 +157,20 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                 if mas_info_url:
                     enlace_html = f'<a href="{mas_info_url}" class="enlace-mas-info" target="_blank">Más información</a>'
 
+                materiales_html = ""
+                if materiales_texto:
+                    materiales_html = (
+                        f'<p class="materiales">**Materiales:** {materiales_texto}</p>'
+                    )
+
                 tarjeta_html = f"""
                 <div class="tarjeta-actividad">
                     {imagen_html}
                     <div class="contenido-tarjeta">
                         <h2 class="titulo-actividad">{titulo} {iconos_requisitos}</h2>
-                        <p class="profesor">Profesor(es): {profesor}</p>
+                        <p class="profesor">Impartido por: {profesor}</p>
                         <p class="descripcion-actividad">{descripcion}</p>
+                        {materiales_html}
                         <div class="info-adicional">
                             {enlace_html}
                         </div>
