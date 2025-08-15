@@ -2,7 +2,7 @@
 
 import argparse
 import os
-import re  # Importamos la librería de expresiones regulares
+import re
 import urllib.request
 from datetime import datetime
 
@@ -24,6 +24,28 @@ COLORES = {
 COLOR_AZUL_OSCURO = "#00546e"
 COLOR_CIAN_BRILLANTE = "#00bac3"
 COLOR_UBICACION_FONDO = "#9cc9d6"
+
+
+def guardar_html_para_wordpress(html_completo, output_path):
+    """
+    Extrae solo el contenido del body del HTML completo (excluyendo el logo) para que sea compatible
+    con bloques de HTML personalizado en WordPress.
+    """
+    # Buscamos el contenido a partir del primer div de título
+    match = re.search(
+        r"<div class='academic-year-header'.*</body>", html_completo, re.DOTALL
+    )
+    if match:
+        body_content = match.group(0).strip().replace("</body>", "")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(body_content)
+        print(
+            f"🎉 Código para WordPress generado y guardado en '{os.path.basename(output_path)}'."
+        )
+    else:
+        print(
+            "❌ Error: No se encontró el contenido del horario en el HTML para WordPress."
+        )
 
 
 def generar_html_tabla(
@@ -560,6 +582,12 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(html_output)
             print("🎉 Tabla de horario completa generada y guardada en 'horario.html'")
+
+            # Generar el archivo para WordPress, solo si se está generando el horario completo
+            wordpress_output_filename = os.path.join(
+                script_dir, "horario-wordpress.html"
+            )
+            guardar_html_para_wordpress(html_output, wordpress_output_filename)
 
         elif anio_fin is None:
             print(
