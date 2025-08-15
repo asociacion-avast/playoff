@@ -60,5 +60,10 @@ Trabajo con los datos:
 | `4-socio-por-idtelegram.py`                 | Localiza el socio en base a la ID de Telegram                                                           |
 | `4-socios-actividades-sin-inscripciones.py` | Marca socios que están en actividades pero no tienen inscripciones activas                              |
 | `5-abreactividad.py`                        | Abre plazo de inscripción en una actividad                                                              |
+| `5-actividades-desde-csv.py`                | Procesa actividades desde un archivo CSV y actualiza/crea actividades en el sistema                     |
+| `5-actualiza-wordpress.py`                  | Actualiza el contenido de una página o entrada en WordPress con el HTML generado                        |
+| `5-addcategoria.py`                         | Añade una categoría a un socio                                                                          |
 | `5-archivaactividades.py`                   | Archiva actividades cuya fecha de fin ya ha pasado                                                      |
+| `5-generar-descripcion-web.py`              | Genera una página web con la descripción de actividades en formato HTML                                 |
+| `5-generar-horario.py`                      | Genera el horario de actividades en formato HTML                                                        |
 | `5-inscribeactividad.py`                    | Inscribe a un socio en una actividad                                                                    |
