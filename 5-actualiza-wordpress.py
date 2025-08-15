@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 import base64
 import json
 import os
@@ -58,49 +59,7 @@ def actualizar_contenido_wordpress(
         print(f"❌ Ocurrió un error inesperado: {e}\n")
 
 
-def reemplazar_archivo_wordpress(
-    id_contenido, ruta_nuevo_archivo, url_sitio, usuario, contrasena_app
-):
-    """
-    Reemplaza un archivo existente en la biblioteca de medios de WordPress.
-    """
-    if not os.path.exists(ruta_nuevo_archivo):
-        print(f"❌ Error: El archivo {ruta_nuevo_archivo} no se encontró.\n")
-        return
-
-    try:
-        credenciales = f"{usuario}:{contrasena_app}"
-        token = base64.b64encode(credenciales.encode("utf-8"))
-
-        url_api = f"{url_sitio}/wp-json/wp/v2/media/{id_contenido}"
-
-        headers = {
-            "Authorization": f"Basic {token.decode('utf-8')}",
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": f'attachment; filename="{os.path.basename(ruta_nuevo_archivo)}"',
-        }
-
-        with open(ruta_nuevo_archivo, "rb") as f:
-            datos_binarios = f.read()
-
-        print(f"--- Reemplazando el fichero con ID: {id_contenido} ---")
-        respuesta = requests.post(url_api, headers=headers, data=datos_binarios)
-
-        if respuesta.status_code == 200:
-            print(f"✅ ¡Fichero con ID {id_contenido} reemplazado correctamente!")
-            print(f"URL del fichero: {respuesta.json()['source_url']}\n")
-        else:
-            print(
-                f"❌ Error al reemplazar el fichero. Código de estado: {respuesta.status_code}"
-            )
-            print(f"Mensaje de error de la API: {respuesta.text}\n")
-
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Error de conexión: {e}\n")
-    except Exception as e:
-        print(f"❌ Ocurrió un error inesperado: {e}\n")
-
-
+# --- Bloque principal para leer el JSON y ejecutar la función correcta ---
 if __name__ == "__main__":
     try:
         with open(".wordpressauth.json", encoding="utf-8") as f:
@@ -130,17 +89,9 @@ if __name__ == "__main__":
                     url_sitio=url_sitio,
                     usuario=usuario,
                     contrasena_app=contrasena_app,
-                    tipo_contenido=tipo,  # Le pasamos 'posts' o 'pages' a la función
+                    tipo_contenido=tipo,
                     texto_introduccion=item.get("texto_introduccion", ""),
                     texto_final=item.get("texto_final", ""),
-                )
-            elif tipo == "media":
-                reemplazar_archivo_wordpress(
-                    id_contenido=item.get("id_contenido"),
-                    ruta_nuevo_archivo=item.get("ruta_nuevo_archivo"),
-                    url_sitio=url_sitio,
-                    usuario=usuario,
-                    contrasena_app=contrasena_app,
                 )
             else:
                 print(f"⚠️ Tipo de contenido desconocido en la configuración: {tipo}\n")
