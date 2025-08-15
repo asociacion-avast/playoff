@@ -1,4 +1,4 @@
-*.json
+data/*.json
 sorteo/*.txt
 *.csv
 .codegpt

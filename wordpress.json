@@ -1,0 +1,20 @@
+[
+  {
+    "tipo_contenido": "pages",
+    "id_contenido": 41,
+
+    "ruta_archivo_html": "pagina_actividades.html",
+    "url_sitio": "https://asociacion-avast.org",
+    "texto_introduccion": "AVAST organiza, con carácter quincenal, un programa de apoyo específico a las altas capacidades. Este programa se confecciona con el fin de satisfacer las necesidades emocionales y educativas que presenta este tipo de alumnado.<p>Los padres, madres y tutores/as legales de nuestros socios y socias, dispondrán de talleres especialmente diseñados para adentrarse en el mundo de las altas capacidades, resolver dudas y problemas y compartir experiencias.<p>Estos son los programas que se impartirán en AVAST durante el curso 2025-2026.",
+    "texto_final": ""
+  },
+  {
+    "tipo_contenido": "pages",
+    "id_contenido": 2003,
+
+    "ruta_archivo_html": "horario-wordpress.html",
+    "url_sitio": "https://asociacion-avast.org",
+    "texto_introduccion": "<!-- wp:paragraph -->\n<p>Como siempre, tendremos actividades cada 15 días aproximadamente (dependiendo de festivos y puentes) según el calendario que podéis consultar aquí: <a href='https://asociacion-avast.org/?page_id=39'>Calendario</a>.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Las <strong><mark style='background-color:rgba(0, 0, 0, 0)' class='has-inline-color has-bright-red-color'>actividades para socios/as </mark></strong>funcionan con inscripción y tienen aforo limitado. Una vez inscrito en alguna de las actividades, la inscripción se mantendrá hasta el final del curso académico a no ser que el propio socio la anule para inscribirse en otra o dejar la hora libre. Cada socio podrá inscribirse a un máximo de 4 actividades ( 1 por hora). Para aquellos nuevos, os podréis inscribir a través de nuestra App, tal y como os informaremos por correo electrónico y en nuestras redes. <a href='https://asociacion-avast.org/?p=2013'>Aquí podéis consultar los enlaces.</a></p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Como es habitual ofertamos dos de tipos de actividades para socios y socias:</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class='wp-block-list'><!-- wp:list-item -->\n<li>Actividades llevadas a cabo por psicólogas que trabajan herramientas y habilidades para la vida diaria.</li>\n<!-- /wp:list-item -->\n\n<!-- wp:list-item -->\n<li>Actividades de enriquecimiento de muy diversa temática.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>Algunas de las actividades requieren que el socio disponga de <strong><mark style='background-color:rgba(0, 0, 0, 0)' class='has-inline-color has-bright-red-color'>clave informática </mark></strong>de la UPV. Inscribiéndote en ellas, autorizas la cesión de los datos necesarios para tramitarla. Puedes consultar más información en <a href='https://asociacion-avast.org/?page_id=2434'>este enlace</a>.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>También realizamos <strong><mark style='background-color:rgba(0, 0, 0, 0)' class='has-inline-color has-bright-red-color'>charlas para familias</mark></strong> impartidas por psicólogos y psicólogas expert@s en altas capacidades. Estas charlas y talleres están incluidos en la cuota de socio y no precisan inscripción. </p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Podéis consultar una descripción de las actividades que se ofertan en esta página: <a href='https://asociacion-avast.org/?page_id=41'>Detalle de actividades</a></p>\n<!-- /wp:paragraph -->",
+    "texto_final": "<!-- wp:paragraph -->\n<p>Esperamos que las actividades os resulten de interés. Seguiremos trabajando para mejorar y adaptar la oferta a las necesidades</p>\n<!-- /wp:paragraph -->"
+  }
+]
