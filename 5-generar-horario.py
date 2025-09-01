@@ -101,43 +101,21 @@ def generar_html_tabla(
     <table>
     <thead>
         <tr>
-            <th colspan='4'>UBICACIÓN</th>
+            <th colspan='1'>UBICACIÓN</th>
             """
     for header in horarios_fijos.keys():
         html_output += f"<th>{header}</th>"
-    html_output += """
-        </tr>
-        <tr>
-            <th class='location-header'>Escuela</th>
-            <th class='location-header'>Edificio</th>
-            <th class='location-header'>Planta</th>
-            <th class='location-header'>Aula</th>
-        """
-    for _ in horarios_fijos.keys():
-        html_output += "<th></th>"
     html_output += """
         </tr>
     </thead>
     <tbody>
     """
 
-    last_escuela = None
-    last_edificio = None
-
     for index, row in df.iterrows():
         html_output += "<tr>"
 
-        # Celdas con rowspan para ESCUELA y EDIFICIO
-        if row["ESCUELA"] != last_escuela:
-            html_output += f"<td class='location-cell' rowspan='{row['rowspan_escuela']}'><a href='https://asociacion-avast.org/ubicacion/' target='_blank' style='color: {COLOR_AZUL_OSCURO}; text-decoration: none;'>{row['ESCUELA']}</a></td>"
-            last_escuela = row["ESCUELA"]
-
-        if row["EDIFICIO"] != last_edificio:
-            html_output += f"<td class='location-cell' rowspan='{row['rowspan_edificio']}'>{row['EDIFICIO']}</td>"
-            last_edificio = row["EDIFICIO"]
-
-        html_output += f"<td class='location-cell'>{row['PLANTA']}</td>"
-        html_output += f"<td class='location-cell'>{row['AULA']}</td>"
+        # Celda única para la ubicación
+        html_output += f"<td class='location-cell'>{row['UBICACION_COMBINADA']}</td>"
 
         # Celdas de horario
         for col in horarios_fijos.keys():
@@ -288,19 +266,22 @@ def generar_horario_para_anio(
 
     final_schedule = final_schedule.reset_index()
 
-    # Calcular rowspan para ESCUELA y EDIFICIO
-    final_schedule["rowspan_escuela"] = final_schedule.groupby("ESCUELA")[
-        "ESCUELA"
-    ].transform("count")
-    final_schedule["rowspan_edificio"] = final_schedule.groupby(
-        ["ESCUELA", "EDIFICIO"]
-    )["EDIFICIO"].transform("count")
-
-    # Eliminar filas duplicadas para las celdas con rowspan
-    df_with_rowspan = final_schedule.copy()
+    # Eliminar las columnas originales después de generar la combinación
+    final_schedule["UBICACION_COMBINADA"] = (
+        final_schedule["ESCUELA"]
+        + "<br>"
+        + final_schedule["EDIFICIO"]
+        + "<br>"
+        + final_schedule["PLANTA"].astype(str)
+        + "<br>"
+        + final_schedule["AULA"]
+    )
+    final_schedule = final_schedule.drop(
+        columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+    )
 
     html_output = generar_html_tabla(
-        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico, svg_content
+        final_schedule, horarios_fijos, anio_nacimiento, anio_academico, svg_content
     )
     output_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -562,16 +543,28 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
 
             final_schedule = final_schedule.reset_index()
 
-            # Calcular rowspan para ESCUELA y EDIFICIO
-            final_schedule["rowspan_escuela"] = final_schedule.groupby("ESCUELA")[
-                "ESCUELA"
-            ].transform("count")
-            final_schedule["rowspan_edificio"] = final_schedule.groupby(
-                ["ESCUELA", "EDIFICIO"]
-            )["EDIFICIO"].transform("count")
+            # Crea la nueva columna combinada
+            final_schedule["UBICACION_COMBINADA"] = (
+                "<b>Escuela:</b> "
+                + final_schedule["ESCUELA"]
+                + "<br>"
+                + "<b>Edificio:</b> "
+                + final_schedule["EDIFICIO"]
+                + "<br>"
+                + "<b>Planta:</b> "
+                + final_schedule["PLANTA"].astype(str)
+                + "<br>"
+                + "<b>Aula:</b> "
+                + final_schedule["AULA"]
+            )
+
+            # Eliminar las columnas originales después de generar la combinación
+            df_with_rowspan = final_schedule.drop(
+                columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+            )
 
             html_output = generar_html_tabla(
-                final_schedule,
+                df_with_rowspan,
                 horarios_fijos,
                 anio_nacimiento=None,
                 anio_academico=anio_academico,
@@ -593,6 +586,20 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             print(
                 f"🔍 Generando horario para el año de nacimiento: {anio_nacimiento}..."
             )
+            # En los horarios filtrados, también se crea la columna combinada
+            df["UBICACION_COMBINADA"] = (
+                "<b>Escuela:</b> "
+                + df["ESCUELA"]
+                + "<br>"
+                + "<b>Edificio:</b> "
+                + df["EDIFICIO"]
+                + "<br>"
+                + "<b>Planta:</b> "
+                + df["PLANTA"].astype(str)
+                + "<br>"
+                + "<b>Aula:</b> "
+                + df["AULA"]
+            )
             html_output, filename = generar_horario_para_anio(
                 df,
                 anio_nacimiento,
@@ -609,6 +616,20 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
         else:
             print(
                 f"🔍 Generando horarios para el rango de años: {anio_nacimiento} a {anio_fin}..."
+            )
+            # En los horarios filtrados, también se crea la columna combinada
+            df["UBICACION_COMBINADA"] = (
+                "<b>Escuela:</b> "
+                + df["ESCUELA"]
+                + "<br>"
+                + "<b>Edificio:</b> "
+                + df["EDIFICIO"]
+                + "<br>"
+                + "<b>Planta:</b> "
+                + df["PLANTA"].astype(str)
+                + "<br>"
+                + "<b>Aula:</b> "
+                + df["AULA"]
             )
             for anio in range(anio_nacimiento, anio_fin + 1):
                 html_output, filename = generar_horario_para_anio(

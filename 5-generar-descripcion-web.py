@@ -6,8 +6,8 @@ import re
 
 def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
     """
-    Lee un archivo CSV con datos de actividades y genera un archivo HTML con
-    un diseño de mampostería usando la librería Masonry para una vista compacta.
+    Lee un archivo CSV con datos de actividades, filtra y agrupa por nombre de actividad y profesor,
+    y genera un archivo HTML con la información formateada como tarjetas y los iconos correspondientes.
     """
 
     # Encabezado del HTML, ahora incluye la referencia a Font Awesome y Masonry
@@ -26,7 +26,6 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                 line-height: 1.6;
             }
             .contenedor-actividades {
-                /* Contenedor principal de Masonry */
                 padding: 20px;
                 margin: auto;
             }
@@ -38,7 +37,6 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                 transition: transform 0.2s;
                 background-color: #fff;
                 margin-bottom: 20px;
-                /* El ancho se define aquí para que Masonry lo use */
                 width: calc(33.333% - 20px);
             }
             .tarjeta-actividad:hover {
@@ -116,7 +114,7 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
             lector_csv = csv.DictReader(archivo_csv, delimiter=";")
 
             for fila in lector_csv:
-                # Modificación para leer del campo EDAD y mostrar las categorías especiales
+                # Se mantiene la lógica para mostrar categorías especiales y descripciones.
                 categoria = fila.get("EDAD", "").strip().upper()
                 if not fila.get("idActividad") and categoria not in [
                     "ADULTOS",
@@ -129,12 +127,14 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
 
                 titulo_original = fila.get("ACTIVIDAD", "Actividad sin nombre").strip()
                 titulo = re.sub(r"\s+[A-Z0-9]$", "", titulo_original).strip()
-
-                if titulo in actividades_procesadas:
-                    continue
-                actividades_procesadas.add(titulo)
-
                 profesor = fila.get("profesores", "Profesor no asignado").strip()
+
+                # Clave única para evitar duplicados, combinando título y profesor
+                unique_key = f"{titulo}-{profesor}"
+                if unique_key in actividades_procesadas:
+                    continue
+                actividades_procesadas.add(unique_key)
+
                 descripcion = fila.get(
                     "DESCRIPCION", "Descripción no disponible"
                 ).strip()
