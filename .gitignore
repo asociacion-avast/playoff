@@ -3,3 +3,6 @@ sorteo/*.txt
 *.csv
 .codegpt
 __pycache__/
+.idea/
+.trunk/
+.wordpressauth.json
