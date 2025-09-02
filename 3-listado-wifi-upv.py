@@ -8,52 +8,25 @@ actividades = common.readjson(filename="actividades")
 socios = common.readjson(filename="socios")
 
 
-conclavewifi = [
-    547,
-    548,
-    549,
-    550,
-    551,
-    552,
-    553,
-    554,
-    556,
-    557,
-    558,
-    559,
-    590,
-    598,
-    599,
-    600,
-    601,
-    602,
-    604,
-    605,
-    612,
-    614,
-    620,
-    621,
-    622,
-    623,
-    624,
-    625,
-    628,
-    629,
-    648,
-    649,
-    650,
-    651,
-    652,
-    653,
-    654,
-    655,
-    660,
-    661,
-    688,
-    690,
-    687,
-    689,
-]
+# Importa del fichero 'actividades.csv' las actividades que se realizan con wifi
+
+conclavewifi = []
+
+with open("actividades.csv") as f:
+    for line in f:
+        if line.strip() and not line.startswith("#"):
+            parts = line.strip().split(";")
+            if len(parts) >= 7:
+                try:
+                    idactividad = int(parts[1])
+                except:
+                    idactividad = 0
+
+                if parts[4].upper() == "X":
+                    if idactividad > 0:
+                        conclavewifi.append(int(parts[1]))
+
+print("Actividades con wifi en politécnica:", conclavewifi)
 
 
 usersconclave = []
