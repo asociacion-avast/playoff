@@ -68,7 +68,7 @@ def generar_html_tabla(
             table {{ border-collapse: collapse; width: 100%; }}
             th, td {{ border: 1px solid black; padding: 8px; text-align: center; vertical-align: middle; }}
             th {{ background-color: {COLOR_AZUL_OSCURO}; color: white; }}
-            .location-cell {{ font-weight: bold; background-color: {COLOR_UBICACION_FONDO}; color: {COLOR_AZUL_OSCURO}; padding: 10px; white-space: nowrap; }}
+            .location-cell {{ font-weight: bold; background-color: {COLOR_UBICACION_FONDO}; color: {COLOR_AZUL_OSCURO}; padding: 10px; }}
             .actividad-cell {{ word-wrap: break-word; }}
             .actividad-cell span {{ white-space: nowrap; }}
             .location-header {{ font-size: 0.9em; font-weight: normal; }}
@@ -158,20 +158,48 @@ def generar_horario_para_anio(
         print(f"❌ No se encontraron actividades para el grupo: {anio_nacimiento}")
         return None, None
 
-    locations = df_filtrado[["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]].drop_duplicates()
+    # Agregamos la columna 'SEMANA' para el grupo de adultos y sábados alternos
+    def get_semana(row):
+        descripcion_lower = row["DESCRIPCION"].lower()
+        if "primer sábado" in descripcion_lower:
+            return "Primer Sábado"
+        elif "segundo sábado" in descripcion_lower:
+            return "Segundo Sábado"
+        elif "semana 1" in descripcion_lower:
+            return "Semana 1"
+        elif "semana 2" in descripcion_lower:
+            return "Semana 2"
+        else:
+            return "Todas"
+
+    df_filtrado["SEMANA"] = df_filtrado.apply(get_semana, axis=1)
+
+    # Ahora la agrupación de ubicaciones considera la semana para crear filas separadas
+    locations = df_filtrado[
+        ["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
+    ].drop_duplicates()
     final_schedule = pd.DataFrame(
         index=locations.index,
-        columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"] + list(horarios_fijos.keys()),
+        columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
+        + list(horarios_fijos.keys()),
     )
-    final_schedule[["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]] = locations
+    final_schedule[["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]] = locations
     final_schedule = final_schedule.sort_values(
-        by=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+        by=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
     )
-    final_schedule = final_schedule.set_index(["ESCUELA", "EDIFICIO", "PLANTA", "AULA"])
+    final_schedule = final_schedule.set_index(
+        ["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
+    )
     final_schedule = final_schedule.fillna("")
 
     for index, row in df_filtrado.iterrows():
-        loc_tuple = (row["ESCUELA"], row["EDIFICIO"], row["PLANTA"], row["AULA"])
+        loc_tuple = (
+            row["ESCUELA"],
+            row["EDIFICIO"],
+            row["PLANTA"],
+            row["AULA"],
+            row["SEMANA"],
+        )
 
         anos_inicio_act = row["AÑO INICIO"]
         anos_fin_act = row["AÑO FIN"]
@@ -266,22 +294,31 @@ def generar_horario_para_anio(
 
     final_schedule = final_schedule.reset_index()
 
-    # Eliminar las columnas originales después de generar la combinación
+    # Crea la nueva columna combinada, incluyendo la semana si aplica
     final_schedule["UBICACION_COMBINADA"] = (
-        final_schedule["ESCUELA"]
+        final_schedule["SEMANA"].apply(
+            lambda x: f"<b>{x}</b><br>" if x != "Todas" else ""
+        )
+        + "<b>Escuela:</b> "
+        + final_schedule["ESCUELA"]
         + "<br>"
+        + "<b>Edificio:</b> "
         + final_schedule["EDIFICIO"]
         + "<br>"
+        + "<b>Planta:</b> "
         + final_schedule["PLANTA"].astype(str)
         + "<br>"
+        + "<b>Aula:</b> "
         + final_schedule["AULA"]
     )
-    final_schedule = final_schedule.drop(
-        columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+
+    # Eliminar las columnas originales después de generar la combinación
+    df_with_rowspan = final_schedule.drop(
+        columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
     )
 
     html_output = generar_html_tabla(
-        final_schedule, horarios_fijos, anio_nacimiento, anio_academico, svg_content
+        df_with_rowspan, horarios_fijos, anio_academico, anio_nacimiento, svg_content
     )
     output_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -295,9 +332,11 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
     Lee un CSV de actividades y genera una tabla de horario en HTML.
     Puede generar un solo horario o un rango de ellos.
     """
+    # Se inicializa la variable svg_content aquí
+    logo_svg_content = ""
+
     # --- Obtención y filtrado del logo SVG desde Pastebin ---
     pastebin_url = "https://pastebin.com/raw/dbjRuQbJ"
-    logo_svg_content = ""
     try:
         with urllib.request.urlopen(pastebin_url) as response:
             full_content = response.read().decode("utf-8")
@@ -395,11 +434,13 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             df["HORA"].str.split("-").str[1].str.strip().replace("", "00:00")
         )
 
+        # Se corrige el nombre de la columna a 'DURACION_MINS' (en mayúsculas)
         df["DURACION_MINS"] = (
             pd.to_datetime(df["HORA_FIN_STR"], format="%H:%M", errors="coerce")
             - pd.to_datetime(df["HORA_INICIO_STR"], format="%H:%M", errors="coerce")
         ).dt.total_seconds() / 60
 
+        # Se corrige el nombre de la columna para la validación
         df = df.dropna(subset=["DURACION_MINS"])
 
         horarios_fijos = {
@@ -410,26 +451,46 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             "12:35 - 13:35": ("12:35", "13:35"),
         }
 
+        # La lógica de generación se mueve aquí, dentro del bloque try
         if anio_nacimiento is None:
             print("Generando horario completo...")
 
             # Al generar el horario completo, se incluyen todas las actividades
             df_a_procesar = df
 
+            # Agregamos la columna 'SEMANA' para los adultos
+            def get_semana_full(row):
+                descripcion_lower = row["DESCRIPCION"].lower()
+                if "primer sábado" in descripcion_lower:
+                    return "Primer Sábado"
+                elif "segundo sábado" in descripcion_lower:
+                    return "Segundo Sábado"
+                elif "semana 1" in descripcion_lower:
+                    return "Semana 1"
+                elif "semana 2" in descripcion_lower:
+                    return "Semana 2"
+                else:
+                    return "Todas"
+
+            df_a_procesar["SEMANA"] = df_a_procesar.apply(get_semana_full, axis=1)
+
+            # Ahora la agrupación de ubicaciones considera la semana
             locations = df_a_procesar[
-                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
             ].drop_duplicates()
             final_schedule = pd.DataFrame(
                 index=locations.index,
-                columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+                columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
                 + list(horarios_fijos.keys()),
             )
-            final_schedule[["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]] = locations
+            final_schedule[["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]] = (
+                locations
+            )
             final_schedule = final_schedule.sort_values(
-                by=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+                by=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
             )
             final_schedule = final_schedule.set_index(
-                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+                ["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
             )
             final_schedule = final_schedule.fillna("")
             for index, row in df_a_procesar.iterrows():
@@ -438,6 +499,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                     row["EDIFICIO"],
                     row["PLANTA"],
                     row["AULA"],
+                    row["SEMANA"],
                 )
 
                 anos_inicio_act = row["AÑO INICIO"]
@@ -543,9 +605,12 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
 
             final_schedule = final_schedule.reset_index()
 
-            # Crea la nueva columna combinada
+            # Crea la nueva columna combinada, incluyendo la semana si aplica
             final_schedule["UBICACION_COMBINADA"] = (
-                "<b>Escuela:</b> "
+                final_schedule["SEMANA"].apply(
+                    lambda x: f"<b>{x}</b><br>" if x != "Todas" else ""
+                )
+                + "<b>Escuela:</b> "
                 + final_schedule["ESCUELA"]
                 + "<br>"
                 + "<b>Edificio:</b> "
@@ -560,14 +625,14 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
 
             # Eliminar las columnas originales después de generar la combinación
             df_with_rowspan = final_schedule.drop(
-                columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA"]
+                columns=["ESCUELA", "EDIFICIO", "PLANTA", "AULA", "SEMANA"]
             )
 
             html_output = generar_html_tabla(
                 df_with_rowspan,
                 horarios_fijos,
-                anio_nacimiento=None,
-                anio_academico=anio_academico,
+                anio_academico,
+                anio_nacimiento,
                 svg_content=logo_svg_content,
             )
             output_filename = os.path.join(script_dir, "horario.html")
@@ -586,9 +651,26 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             print(
                 f"🔍 Generando horario para el año de nacimiento: {anio_nacimiento}..."
             )
+
             # En los horarios filtrados, también se crea la columna combinada
+            def get_semana_filtered(row):
+                descripcion_lower = row["DESCRIPCION"].lower()
+                if "primer sábado" in descripcion_lower:
+                    return "Primer Sábado"
+                elif "segundo sábado" in descripcion_lower:
+                    return "Segundo Sábado"
+                elif "semana 1" in descripcion_lower:
+                    return "Semana 1"
+                elif "semana 2" in descripcion_lower:
+                    return "Semana 2"
+                else:
+                    return "Todas"
+
+            df["SEMANA"] = df.apply(get_semana_filtered, axis=1)
+
             df["UBICACION_COMBINADA"] = (
-                "<b>Escuela:</b> "
+                df["SEMANA"].apply(lambda x: f"<b>{x}</b><br>" if x != "Todas" else "")
+                + "<b>Escuela:</b> "
                 + df["ESCUELA"]
                 + "<br>"
                 + "<b>Edificio:</b> "
@@ -617,9 +699,26 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             print(
                 f"🔍 Generando horarios para el rango de años: {anio_nacimiento} a {anio_fin}..."
             )
+
             # En los horarios filtrados, también se crea la columna combinada
+            def get_semana_range(row):
+                descripcion_lower = row["DESCRIPCION"].lower()
+                if "primer sábado" in descripcion_lower:
+                    return "Primer Sábado"
+                elif "segundo sábado" in descripcion_lower:
+                    return "Segundo Sábado"
+                elif "semana 1" in descripcion_lower:
+                    return "Semana 1"
+                elif "semana 2" in descripcion_lower:
+                    return "Semana 2"
+                else:
+                    return "Todas"
+
+            df["SEMANA"] = df.apply(get_semana_range, axis=1)
+
             df["UBICACION_COMBINADA"] = (
-                "<b>Escuela:</b> "
+                df["SEMANA"].apply(lambda x: f"<b>{x}</b><br>" if x != "Todas" else "")
+                + "<b>Escuela:</b> "
                 + df["ESCUELA"]
                 + "<br>"
                 + "<b>Edificio:</b> "
