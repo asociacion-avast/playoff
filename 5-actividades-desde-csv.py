@@ -126,6 +126,7 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "isDadesPersonalsNoModificables": 1,
                 "isAssociatDadesMinim": 1,
                 "idPlantillaComunicat": 203,
+                "isVisiblePlacesActivitat": 0,
             }
 
             result = common.editaactividad(token, idActividad, override)
