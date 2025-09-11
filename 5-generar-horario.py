@@ -89,13 +89,19 @@ def generar_html_tabla(
         {svg_content}
     </div>
     """
+    # Muestra el año académico en todos los casos
     html_output += f"<div class='academic-year-header'>Horario de Actividades Curso Académico {anio_academico}</div>"
-    if anio_nacimiento and not isinstance(anio_nacimiento, str):
-        html_output += (
-            f"<div class='anio-header'>Para nacidos en {anio_nacimiento}</div>"
-        )
-    elif isinstance(anio_nacimiento, str):
-        html_output += f"<div class='anio-header'>Para el grupo {anio_nacimiento}</div>"
+
+    # Omite el texto 'Para el grupo...' solo si se está generando el horario general
+    if anio_nacimiento is not None:
+        if isinstance(anio_nacimiento, str):
+            html_output += (
+                f"<div class='anio-header'>Para el grupo {anio_nacimiento}</div>"
+            )
+        else:
+            html_output += (
+                f"<div class='anio-header'>Para nacidos en {anio_nacimiento}</div>"
+            )
 
     html_output += """
     <table>
@@ -126,6 +132,89 @@ def generar_html_tabla(
     html_output += """
     </tbody>
     </table>
+    """
+    # Añadimos el script de filtrado al final del cuerpo HTML
+    html_output += """
+    <script>
+    (function() {
+      const tabla = document.querySelector("table");
+      if (!tabla) return; // seguridad
+
+      // Crear contenedor del filtro
+      const filtroDiv = document.createElement("div");
+      filtroDiv.style.margin = "1em 0";
+      filtroDiv.style.textAlign = "center";
+
+      filtroDiv.innerHTML = `
+        <label for="filtroAnio">Filtrar por grupo: </label>
+        <select id="filtroAnio">
+          <option value="">-- Mostrar todos --</option>
+          <option value="2003-2010">2003-2010</option>
+          <option value="2011-2013">2011-2013</option>
+          <option value="2014-2016">2014-2016</option>
+          <option value="2017-2020">2017-2020</option>
+          <option value="TUTORES">TUTORES</option>
+          <option value="ADULTOS">ADULTOS</option>
+        </select>
+        <button id="btnFiltro">Seleccionar</button>
+      `;
+
+      // Insertar antes de la tabla
+      tabla.parentNode.insertBefore(filtroDiv, tabla);
+
+      // Guardar contenido original de cada celda
+      const filas = tabla.rows;
+      for (let i = 0; i < filas.length; i++) {
+        const celdas = filas[i].cells;
+        for (let j = 0; j < celdas.length; j++) {
+          celdas[j].dataset.original = celdas[j].innerHTML;
+        }
+      }
+
+      // Función de filtrado
+      function aplicarFiltro() {
+        const anio = document.getElementById("filtroAnio").value.toUpperCase();
+
+        for (let i = 0; i < filas.length; i++) {
+          const celdas = filas[i].cells;
+          let tieneContenido = false; // para saber si alguna celda queda visible (aparte de descanso)
+
+          for (let j = 0; j < celdas.length; j++) {
+            // Mantener siempre cabecera y ubicación
+            if (i === 0 || j === 0) {
+              celdas[j].innerHTML = celdas[j].dataset.original;
+              continue;
+            }
+
+            const textoOriginal = celdas[j].dataset.original;
+            const textoMayus = textoOriginal.toUpperCase();
+
+            if (anio === "" || textoMayus.includes(anio)) {
+              celdas[j].innerHTML = textoOriginal;
+              if (textoMayus.trim() !== "DESCANSO") {
+                tieneContenido = true;
+              }
+            } else {
+              // mantener descanso aunque no coincida
+              if (textoMayus.trim() === "DESCANSO") {
+                celdas[j].innerHTML = textoOriginal;
+              } else {
+                celdas[j].innerHTML = "";
+              }
+            }
+          }
+
+          // Ocultar fila si solo tiene ubicación + descansos (sin actividades)
+          if (i !== 0) {
+            filas[i].style.display = tieneContenido ? "" : "none";
+          }
+        }
+      }
+
+      // Conectar botón
+      document.getElementById("btnFiltro").addEventListener("click", aplicarFiltro);
+    })();
+    </script>
     </body>
     </html>
     """
@@ -318,7 +407,7 @@ def generar_horario_para_anio(
     )
 
     html_output = generar_html_tabla(
-        df_with_rowspan, horarios_fijos, anio_academico, anio_nacimiento, svg_content
+        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico, svg_content
     )
     output_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -631,8 +720,8 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             html_output = generar_html_tabla(
                 df_with_rowspan,
                 horarios_fijos,
+                None,
                 anio_academico,
-                anio_nacimiento,
                 svg_content=logo_svg_content,
             )
             output_filename = os.path.join(script_dir, "horario.html")
