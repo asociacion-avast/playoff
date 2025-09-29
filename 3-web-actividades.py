@@ -76,7 +76,7 @@ for actividad in actividades:
     nombre = actividad["nom"]
     fechalimite = dateutil.parser.parse(actividad["dataLimit"])
 
-    if fechalimite < today:
+    if fechalimite >= today:
         if actividad["idNivell"] and actividad["idNivell"] != "null":
             horario = int(actividad["idNivell"])
         else:
