@@ -50,13 +50,8 @@ for socio in socios:
         categoriassocio = common.getcategoriassocio(socio=socio)
         inscripciones = []
 
-        saltarsocio = False
-        for cambio in [78, 79, 80, 81, 87]:
-            if cambio in categoriassocio:
-                saltarsocio = True
-                # print(
-                # f"El socio {socioid} tiene un cambio programado ya ({common.traduce(cambio)}) saltando..."
-                #  )
+        saltarsocio = any(cambio in categoriassocio for cambio in [78, 79, 80, 81, 87])
+
         if not saltarsocio:
             for actividadid in [781, 782]:
                 inscritos = common.readjson(filename=f"{actividadid}")
@@ -87,7 +82,7 @@ for socio in socios:
                                     cambiaactividades = True
                                     targetprogramada.append(81)
 
-                            if actividadid == 782:
+                            elif actividadid == 782:
                                 # Pasar a SIN actividades
                                 if (
                                     common.categorias["socioactividades"]
@@ -107,11 +102,7 @@ for socio in socios:
             print(f"Socio debe activarse: {activasocio}")
 
             # Next year if we're in the last bimester
-            if today.month >= 11:
-                year = today.year + 1
-            else:
-                year = today.year
-
+            year = today.year + 1 if today.month >= 11 else today.year
             month = common.mes_proximo_bimestre()
 
             targetcambio = f"{year}-{month:02}-01"
