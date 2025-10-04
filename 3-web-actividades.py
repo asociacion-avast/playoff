@@ -93,14 +93,17 @@ for actividad in actividades:
             usadas = int(actividad["numInscripcions"])
             libres = int(actividad["maxPlaces"]) - usadas
             if libres > 0:
+                if libres <= 5:
+                    color = "#fff2cc"  # amarillo claro
+                else:
+                    color = "#ccffcc"  #
                 if anyo and anyoinicio <= anyo <= anyofin:
                     print(
-                        f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                        f"<tr style='background-color:{color}'><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                     )
                 elif not anyo:
                     print(
-                        f"<tr><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
+                        f"<tr style='background-color:{color}'><td>{myid}</td><td>{nombre}</td><td>{libres}</td><td>{horarios[horario]}</td><td>{anyoinicio}</td><td>{anyofin}</td></tr>"
                     )
-
 print("</table>")
 print("</HTML>")
