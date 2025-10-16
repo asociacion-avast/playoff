@@ -37,7 +37,7 @@ def guardar_html_para_wordpress(html_completo, output_path):
     )
     if match:
         body_content = match.group(0).strip().replace("</body>", "")
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(output_path, "w") as f:
             f.write(body_content)
         print(
             f"🎉 Código para WordPress generado y guardado en '{os.path.basename(output_path)}'."
@@ -473,7 +473,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
 
         # Eliminamos el reemplazo de saltos de línea al leer el CSV para mantenerlos
         df = pd.read_csv(
-            csv_path, delimiter=";", encoding="utf-8", keep_default_na=False
+            csv_path, delimiter=";", encoding="latin1", keep_default_na=False
         )
 
         if not all(col in df.columns for col in required_cols):
@@ -726,7 +726,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             )
             output_filename = os.path.join(script_dir, "horario.html")
 
-            with open(output_filename, "w", encoding="utf-8") as f:
+            with open(output_filename, "w") as f:
                 f.write(html_output)
             print("🎉 Tabla de horario completa generada y guardada en 'horario.html'")
 
@@ -779,7 +779,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 svg_content=logo_svg_content,
             )
             if html_output:
-                with open(filename, "w", encoding="utf-8") as f:
+                with open(filename, "w") as f:
                     f.write(html_output)
                 print(
                     f"🎉 Tabla de horario generada y guardada en '{os.path.basename(filename)}'"
@@ -828,7 +828,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                     svg_content=logo_svg_content,
                 )
                 if html_output:
-                    with open(filename, "w", encoding="utf-8") as f:
+                    with open(filename, "w") as f:
                         f.write(html_output)
                     print(
                         f"  ✅ '{os.path.basename(filename)}' generado correctamente."

@@ -110,7 +110,7 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
     actividades_procesadas = set()
 
     try:
-        with open(nombre_archivo_csv, encoding="utf-8") as archivo_csv:
+        with open(nombre_archivo_csv, encoding="latin1") as archivo_csv:
             lector_csv = csv.DictReader(archivo_csv, delimiter=";")
 
             for fila in lector_csv:
