@@ -12,7 +12,7 @@ socios = common.readjson(filename="socios")
 
 conclavewifi = []
 
-with open("actividades.csv") as f:
+with open("actividades.csv", encoding="iso-8859-1") as f:
     for line in f:
         if line.strip() and not line.startswith("#"):
             parts = line.strip().split(";")
