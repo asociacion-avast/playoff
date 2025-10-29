@@ -312,7 +312,24 @@ for socio in socios:
         ):
             targetcategorias.append(common.categorias["sincarnetyactividades"])
 
-        edad = today.year - year - ((today.month, fechadia) < (month, day))
+        # Determinar mes de corte
+        if today.day >= 25:
+            # Pasamos al mes siguiente
+            if today.month == 12:
+                corte_year = today.year + 1
+                corte_month = 1
+            else:
+                corte_year = today.year
+                corte_month = today.month + 1
+        else:
+            corte_year = today.year
+            corte_month = today.month
+
+        # Último día del mes de corte
+        corte_fechadia = calendar.monthrange(corte_year, corte_month)[1]
+
+        # Calcular edad
+        edad = corte_year - year - ((corte_month, corte_fechadia) < (month, day))
 
         # Add target category for +13/+15
         if edad in range(13, 15):
