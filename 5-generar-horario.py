@@ -137,82 +137,112 @@ def generar_html_tabla(
     html_output += """
     <script>
     (function() {
-      const tabla = document.querySelector("table");
-      if (!tabla) return; // seguridad
+    const tabla = document.querySelector("table");
+    if (!tabla) return; // seguridad
 
-      // Crear contenedor del filtro
-      const filtroDiv = document.createElement("div");
-      filtroDiv.style.margin = "1em 0";
-      filtroDiv.style.textAlign = "center";
+    // Crear contenedor del filtro
+    const filtroDiv = document.createElement("div");
+    filtroDiv.style.margin = "1em 0";
+    filtroDiv.style.textAlign = "center";
 
-      filtroDiv.innerHTML = `
-        <label for="filtroAnio">Filtrar por grupo: </label>
-        <select id="filtroAnio">
-          <option value="">-- Mostrar todos --</option>
-          <option value="2003-2010">2003-2010</option>
-          <option value="2011-2013">2011-2013</option>
-          <option value="2014-2016">2014-2016</option>
-          <option value="2017-2020">2017-2020</option>
-          <option value="TUTORES">TUTORES</option>
-          <option value="ADULTOS">ADULTOS</option>
-        </select>
-        <button id="btnFiltro">Seleccionar</button>
-      `;
+    filtroDiv.innerHTML = `
+            <label for="filtroAnio">Filtrar por grupo: </label>
+            <select id="filtroAnio">
+            <option value="">-- Mostrar todos --</option>
+            <option value="2003-2010">2003-2010</option>
+            <option value="2011-2013">2011-2013</option>
+            <option value="2014-2016">2014-2016</option>
+            <option value="2017-2020">2017-2020</option>
+            <option value="TUTORES">TUTORES</option>
+            <option value="ADULTOS">ADULTOS</option>
+            </select>
+    <label for="filtroTexto" style="margin-left:1em;">Filtrar por texto: </label>
+    <input type="text" id="filtroTexto" placeholder="Buscar..." style="width: 180px;" />
+    <button id="btnLimpiar" title="Limpiar filtro de texto" style="margin-left:0.5em;">✕</button>
+    <button id="btnFiltro">Seleccionar</button>
+        `;
 
-      // Insertar antes de la tabla
-      tabla.parentNode.insertBefore(filtroDiv, tabla);
+    // Insertar antes de la tabla
+    tabla.parentNode.insertBefore(filtroDiv, tabla);
 
-      // Guardar contenido original de cada celda
-      const filas = tabla.rows;
-      for (let i = 0; i < filas.length; i++) {
+    // Guardar contenido original de cada celda
+    const filas = tabla.rows;
+    for (let i = 0; i < filas.length; i++) {
         const celdas = filas[i].cells;
         for (let j = 0; j < celdas.length; j++) {
-          celdas[j].dataset.original = celdas[j].innerHTML;
+        celdas[j].dataset.original = celdas[j].innerHTML;
+        celdas[j].dataset.texto = celdas[j].textContent;
         }
-      }
+    }
 
-      // Función de filtrado
-      function aplicarFiltro() {
+    // Función de filtrado
+    function aplicarFiltro() {
         const anio = document.getElementById("filtroAnio").value.toUpperCase();
+        const textoFiltro = document.getElementById("filtroTexto").value;
+
+        // Función para normalizar texto (quita acentos y espacios)
+        function normalizar(str) {
+        return str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\\s+/g, "")
+            .toUpperCase();
+        }
+        const textoFiltroNorm = normalizar(textoFiltro);
 
         for (let i = 0; i < filas.length; i++) {
-          const celdas = filas[i].cells;
-          let tieneContenido = false; // para saber si alguna celda queda visible (aparte de descanso)
+        const celdas = filas[i].cells;
+        let tieneContenido = false; // para saber si alguna celda queda visible (aparte de descanso)
 
-          for (let j = 0; j < celdas.length; j++) {
+        for (let j = 0; j < celdas.length; j++) {
             // Mantener siempre cabecera y ubicación
             if (i === 0 || j === 0) {
-              celdas[j].innerHTML = celdas[j].dataset.original;
-              continue;
+            celdas[j].innerHTML = celdas[j].dataset.original;
+            continue;
             }
 
-            const textoOriginal = celdas[j].dataset.original;
+            const htmlOriginal = celdas[j].dataset.original;
+            const textoOriginal = celdas[j].dataset.texto;
             const textoMayus = textoOriginal.toUpperCase();
+            const textoNorm = normalizar(textoOriginal);
 
-            if (anio === "" || textoMayus.includes(anio)) {
-              celdas[j].innerHTML = textoOriginal;
-              if (textoMayus.trim() !== "DESCANSO") {
+            // Filtrado por grupo y texto
+            const coincideGrupo = (anio === "" || textoMayus.includes(anio));
+            const coincideTexto = (textoFiltroNorm === "" || textoNorm.includes(textoFiltroNorm));
+
+            if (coincideGrupo && coincideTexto) {
+            celdas[j].innerHTML = htmlOriginal;
+            if (textoMayus.trim() !== "DESCANSO") {
                 tieneContenido = true;
-              }
-            } else {
-              // mantener descanso aunque no coincida
-              if (textoMayus.trim() === "DESCANSO") {
-                celdas[j].innerHTML = textoOriginal;
-              } else {
-                celdas[j].innerHTML = "";
-              }
             }
-          }
-
-          // Ocultar fila si solo tiene ubicación + descansos (sin actividades)
-          if (i !== 0) {
-            filas[i].style.display = tieneContenido ? "" : "none";
-          }
+            } else {
+            // mantener descanso aunque no coincida
+            if (textoMayus.trim() === "DESCANSO") {
+                celdas[j].innerHTML = htmlOriginal;
+            } else {
+                celdas[j].innerHTML = "";
+            }
+            }
         }
-      }
 
-      // Conectar botón
-      document.getElementById("btnFiltro").addEventListener("click", aplicarFiltro);
+        // Ocultar fila si solo tiene ubicación + descansos (sin actividades)
+        if (i !== 0) {
+            filas[i].style.display = tieneContenido ? "" : "none";
+        }
+        }
+    }
+
+    // Conectar botón
+    document.getElementById("btnFiltro").addEventListener("click", aplicarFiltro);
+    document.getElementById("filtroTexto").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+        aplicarFiltro();
+        }
+    });
+    document.getElementById("btnLimpiar").addEventListener("click", function () {
+        document.getElementById("filtroTexto").value = "";
+        aplicarFiltro();
+    });
     })();
     </script>
     </body>
@@ -481,6 +511,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             print(
                 f"❌ Error: El archivo CSV no contiene las siguientes columnas requeridas: {', '.join(missing_cols)}"
             )
+            print(df.columns)
             return
 
         for col in required_cols:
