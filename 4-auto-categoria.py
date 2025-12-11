@@ -145,7 +145,7 @@ for socio in socios:
         reverseagrupaciones=True,
     ):
         # Default for each member
-        targetcategorias = [common.categorias["socioactivo"]]
+        targetcategorias = []
         removecategorias = [common.categorias["informevalidado"]]
         adulto = False
 
@@ -197,10 +197,10 @@ for socio in socios:
             removecategorias.append(common.categorias["carnettutorduplicado"])
 
         # Probar código postal
-        try:
-            cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
-        except Exception:
-            cp = 0
+        # try:
+        #     cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
+        # except Exception:
+        #     cp = 0
 
         # Asociar categoria DANA o no
         # if cp in codigos_postales_dana:
@@ -252,21 +252,25 @@ for socio in socios:
 
             if "Socio Adulto Actividades".lower() in agrupacionom:
                 adulto = True
+                targetcategorias.append(common.categorias["socioactivo"])
                 targetcategorias.append(common.categorias["actividades"])
                 removecategorias.append(common.categorias["sinactividades"])
                 targetcategorias.append(common.categorias["adultosconysin"])
 
             if "Socio Adulto SIN Actividades".lower() in agrupacionom:
                 adulto = True
+                targetcategorias.append(common.categorias["socioactivo"])
                 targetcategorias.append(common.categorias["sinactividades"])
                 removecategorias.append(common.categorias["actividades"])
                 targetcategorias.append(common.categorias["adultosconysin"])
 
             if "Socio Actividades".lower() in agrupacionom:
+                targetcategorias.append(common.categorias["socioactivo"])
                 targetcategorias.append(common.categorias["actividades"])
                 removecategorias.append(common.categorias["sinactividades"])
 
             if "Socio SIN Actividades".lower() in agrupacionom:
+                targetcategorias.append(common.categorias["socioactivo"])
                 targetcategorias.append(common.categorias["sinactividades"])
                 removecategorias.append(common.categorias["actividades"])
 
@@ -408,27 +412,28 @@ for socio in socios:
             targetcategorias.append(common.categorias["acogida"])
 
         # Add or remove categories
-        for modalitat in sorted(set(targetcategorias)):
-            if modalitat not in categoriassocio:
-                print(
-                    "IFF",
-                    f"{common.sociobase}{socioid}",
-                    modalitat,
-                    categoriassocio,
-                    modalitat in categoriassocio,
-                )
-                if modalitat != common.categorias["socioactivo"]:
-                    response = common.addcategoria(token, socioid, modalitat)
-                else:
-                    response = common.addcategoria(
-                        token,
-                        socioid,
+        if common.categorias["socioactivo"] in targetcategorias:
+            for modalitat in sorted(set(targetcategorias)):
+                if modalitat not in categoriassocio:
+                    print(
+                        "IFF",
+                        f"{common.sociobase}{socioid}",
                         modalitat,
-                        extra={
-                            "tipusperiodicitat": extras[modalitat],
-                            "dataProperaGeneracio": fechacambiosocio,
-                        },
+                        categoriassocio,
+                        modalitat in categoriassocio,
                     )
+                    if modalitat != common.categorias["socioactivo"]:
+                        response = common.addcategoria(token, socioid, modalitat)
+                    else:
+                        response = common.addcategoria(
+                            token,
+                            socioid,
+                            modalitat,
+                            extra={
+                                "tipusperiodicitat": extras[modalitat],
+                                "dataProperaGeneracio": fechacambiosocio,
+                            },
+                        )
 
         for modalitat in sorted(set(removecategorias)):
             if modalitat in categoriassocio:
