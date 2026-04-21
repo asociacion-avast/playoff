@@ -395,7 +395,7 @@ def updateactividad(token, idactividad):
 
     headers = {"Authorization": f"Bearer {token}"}
     users = requests.get(
-        usersurl, auth=BearerAuth(token), headers=headers, timeout=15
+        usersurl, auth=BearerAuth(token), headers=headers, timeout=30
     ).json()
 
     writejson(filename=f"{idactividad}", data=users)
@@ -435,24 +435,24 @@ def create_inscripcio(token, idActivitat, idColegiat):
         auth=BearerAuth(token),
         headers=headers,
         allow_redirects=False,
-        timeout=15,
+        timeout=30,
     )
 
 
 def anula_inscripcio(token, inscripcion, comunica=False):
     url = f"{apiurl}/inscripcions/{inscripcion}/anular"
-    response = requests.patch(url, headers=headers, auth=BearerAuth(token), timeout=15)
+    response = requests.patch(url, headers=headers, auth=BearerAuth(token), timeout=30)
 
     if comunica:
         url = f"{apiurl}/inscripcions/{inscripcion}/comunicar_anulacio"
-        requests.post(url, headers=headers, auth=BearerAuth(token), timeout=15)
+        requests.post(url, headers=headers, auth=BearerAuth(token), timeout=30)
 
     return response
 
 
 def delete_inscripcio(token, inscripcion):
     url = f"{apiurl}/inscripcions?idInscripcio={inscripcion}"
-    response = requests.delete(url, headers=headers, auth=BearerAuth(token), timeout=15)
+    response = requests.delete(url, headers=headers, auth=BearerAuth(token), timeout=30)
 
     return response
 
@@ -708,7 +708,7 @@ def createactividad(
         headers=headers,
         auth=BearerAuth(token),
         data=json.dumps(payload),
-        timeout=15,
+        timeout=30,
     )
     with contextlib.suppress(Exception):
         output = json.loads(output)
@@ -734,7 +734,7 @@ def editaactividad(token, idActivitat, override):
     url = f"{apiurl}/activitats/{idActivitat}"
 
     # Obtener json de  la actividad
-    actividad = requests.get(url, headers=headers, auth=BearerAuth(token), timeout=15)
+    actividad = requests.get(url, headers=headers, auth=BearerAuth(token), timeout=30)
 
     actividad = json.loads(actividad.text)
 
@@ -747,7 +747,7 @@ def editaactividad(token, idActivitat, override):
         headers=headers,
         auth=BearerAuth(token),
         data=json.dumps(payload),
-        timeout=15,
+        timeout=30,
     )
     with contextlib.suppress(Exception):
         output = json.loads(output.text)
