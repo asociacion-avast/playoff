@@ -11,15 +11,15 @@ print("Procesando socios...")
 count = 0
 
 for socio in socios:
-    idcolegiat = socio["idColegiat"]
-    if isinstance(socio["campsDinamics"], dict):
-        for field in common.telegramfields:
-            if field in socio["campsDinamics"]:
-                if common.validasocio(
-                    socio,
-                    estado="COLESTVAL",
-                    estatcolegiat="ESTALTA",
-                ):
+    if common.validasocio(
+        socio,
+        estado="COLESTVAL",
+        estatcolegiat="ESTALTA",
+    ):
+        idcolegiat = socio["idColegiat"]
+        if isinstance(socio["campsDinamics"], dict):
+            for field in common.telegramfields:
+                if field in socio["campsDinamics"]:
                     idsocio = f"{socio['campsDinamics'][field]}"
                     newidsocio = "None"
 

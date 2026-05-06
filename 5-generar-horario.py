@@ -326,9 +326,9 @@ def generar_horario_para_anio(
         # --- Lógica de ordenamiento de rangos de edad ---
         rangos_ordenados = sorted(
             COLORES.items(),
-            key=lambda item: item[0][0]
-            if isinstance(item[0][0], int)
-            else float("inf"),
+            key=lambda item: (
+                item[0][0] if isinstance(item[0][0], int) else float("inf")
+            ),
         )
 
         rangos_ajustados_html = []
@@ -628,9 +628,9 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 # --- Lógica de ordenamiento de rangos de edad ---
                 rangos_ordenados = sorted(
                     COLORES.items(),
-                    key=lambda item: item[0][0]
-                    if isinstance(item[0][0], int)
-                    else float("inf"),
+                    key=lambda item: (
+                        item[0][0] if isinstance(item[0][0], int) else float("inf")
+                    ),
                 )
 
                 rangos_ajustados_html = []

@@ -92,7 +92,7 @@ def validate_and_clean_telegram_fields(socio, token):
                 cleaned_count += 1
 
             # Check if telegram ID is invalid (not a positive number)
-            elif not is_valid_telegram_id(field_value):
+            if not is_valid_telegram_id(field_value):
                 print(
                     f"    {field_name}: Clearing field - invalid telegram ID ({field_value})"
                 )

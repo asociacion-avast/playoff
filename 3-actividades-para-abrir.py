@@ -42,7 +42,7 @@ for actividad in actividades:
             print(
                 myid,
                 nombre,
-                "{:.2f}%".format(porcentaje * 100),
+                f"{porcentaje * 100:.2f}%",
                 actividad["maxPlaces"],
                 inscritos,
                 actividad["placesLliures"],
