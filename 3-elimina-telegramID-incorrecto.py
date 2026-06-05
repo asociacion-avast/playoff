@@ -6,6 +6,7 @@ import os
 import re
 
 import common
+import sync_store
 
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
@@ -13,11 +14,19 @@ config.read(os.path.expanduser("~/.avast.ini"))
 
 socios = common.readjson("socios")
 
+# Build index for fast lookups (OPTIMIZATION)
+socios_by_id = {s["idColegiat"]: s for s in socios}
 
 token = common.gettoken(
     user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
 )
 headers = {"Authorization": f"Bearer {token}"}
+
+# Read outbox once at start (OPTIMIZATION)
+outbox_entries_global = sync_store.read_outbox()
+
+# Pre-compile regex patterns (OPTIMIZATION - Phase 2D)
+_DIGITS_ONLY_PATTERN = re.compile(r"\D+")
 
 
 def is_valid_telegram_id(value):
@@ -44,7 +53,8 @@ def is_valid_telegram_id(value):
 
 
 def _only_digits(value):
-    return re.sub(r"\D+", "", str(value or ""))
+    """Remove all non-digit characters using pre-compiled pattern (OPTIMIZATION)"""
+    return _DIGITS_ONLY_PATTERN.sub("", str(value or ""))
 
 
 def socio_phone_digit_variants(socio):
@@ -103,6 +113,39 @@ def clear_telegram_field(
         return 0
 
     idcolegiat = socio["idColegiat"]
+
+    # Check if already cleared in cache
+    cached_socio = common.read_entity_colegiat(idcolegiat)
+    if cached_socio:
+        cached_value = cached_socio.get("campsDinamics", {}).get(field_id)
+        if not cached_value or cached_value == "":
+            print(f"    {field_name}: Already cleared in cache (skipping)")
+            cleared_field_ids.add(field_id)
+            # Update local state to match cache
+            socio["campsDinamics"][field_id] = ""
+            if values:
+                if field_id == common.tutor1:
+                    values["tutor1"] = ""
+                elif field_id == common.tutor2:
+                    values["tutor2"] = ""
+                elif field_id == common.socioid:
+                    values["socioid"] = ""
+            return 0
+
+    # Check if already in outbox (use global outbox - OPTIMIZED)
+    already_queued = any(
+        e.get("op") == "escribecampo"
+        and str(e.get("entity_id")) == str(idcolegiat)
+        and e.get("payload", {}).get("campo") == field_id
+        and e.get("payload", {}).get("valor", "X") == ""
+        and e.get("status") in ["pending", "synced"]
+        for e in outbox_entries_global
+    )
+    if already_queued:
+        print(f"    {field_name}: Already queued for clearing (skipping)")
+        cleared_field_ids.add(field_id)
+        return 0
+
     print(f"    {field_name}: Clearing field - {reason} ({field_value})")
     response = common.escribecampo(token, idcolegiat, field_id, "")
     print(f"    Response: {response}")
@@ -191,15 +234,27 @@ def dedupe_telegram_values(socio, token, values):
     idcolegiat = socio["idColegiat"]
     cleaned_count = 0
 
+    # Get current cached values to check if already cleared
+    cached_socio = common.read_entity_colegiat(idcolegiat)
+    cached_campos = cached_socio.get("campsDinamics", {}) if cached_socio else {}
+
     if values["tutor1"] == values["tutor2"] and values["tutor1"] != "":
-        common.escribecampo(token, idcolegiat, common.tutor2, "")
-        cleaned_count += 1
+        # Check cache first
+        if cached_campos.get(common.tutor2, "X") == "":
+            print("    TUTOR2 duplicate already cleared in cache (skipping)")
+        else:
+            common.escribecampo(token, idcolegiat, common.tutor2, "")
+            cleaned_count += 1
 
     if (values["tutor1"] == values["socioid"] and values["tutor1"] != "") or (
         values["tutor2"] == values["socioid"] and values["tutor2"] != ""
     ):
-        common.escribecampo(token, idcolegiat, common.socioid, "")
-        cleaned_count += 1
+        # Check cache first
+        if cached_campos.get(common.socioid, "X") == "":
+            print("    SOCIO_ID duplicate already cleared in cache (skipping)")
+        else:
+            common.escribecampo(token, idcolegiat, common.socioid, "")
+            cleaned_count += 1
 
     return cleaned_count
 
@@ -260,8 +315,26 @@ def validate_and_clean_telegram_fields(socio, token):
 
 print("Procesando socios")
 
+# Progress tracking
+total_socios = len(socios)
+processed = 0
+cleaned_count = 0
+progress_interval = max(1, total_socios // 20)  # Show progress every 5%
 
 for socio in socios:
+    processed += 1
+
+    # Show progress every 5%
+    if (
+        processed == 1
+        or processed % progress_interval == 0
+        or processed == total_socios
+    ):
+        pct = int(100 * processed / total_socios)
+        print(
+            f"Procesando: {processed}/{total_socios} ({pct}%) - Limpiados: {cleaned_count}",
+            flush=True,
+        )
     idcolegiat = socio["idColegiat"]
     if isinstance(socio["campsDinamics"], dict):
         # Check if any telegram fields exist for this socio
@@ -273,7 +346,8 @@ for socio in socios:
             cleaned_fields = validate_and_clean_telegram_fields(socio, token)
 
             if cleaned_fields != 0:
-                print(f"{common.sociobase}{idcolegiat}")
+                cleaned_count += cleaned_fields
+                print(f"\n{common.sociobase}{idcolegiat}")
     # else:
     #     # No custom fields populated writing wrong ID.... then cleaning it up
 

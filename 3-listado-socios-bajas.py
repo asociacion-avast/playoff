@@ -51,24 +51,13 @@ resultids = {
 
 for socio in socios:
     id_socio = socio["idColegiat"]
-    if common.validasocio(
-        socio,
-        estado="COLESTVAL",
-        estatcolegiat="ESTBAIXA",
-    ):
+
+    # OPTIMIZATION Phase 2C: Use pre-computed validation
+    if socio.get("_valid_baja", False):
         sociosbaja.append(id_socio)
 
-    if common.validasocio(
-        socio,
-        estado="COLESTVAL",
-        estatcolegiat="ESTALTA",
-        agrupaciones=["PREINSCRIPCIÓN"],
-        reverseagrupaciones=True,
-    ) or common.validasocio(
-        socio,
-        estado="COLESTPRE",
-        estatcolegiat="ESTALTA",
-    ):
+    # OPTIMIZATION Phase 2C: Use pre-computed validation
+    if socio.get("_valid_alta_or_preinscripcion", False):
         if "colegiatHasModalitats" in socio:
             # Iterate over all categories for the user
             for modalitat in socio["colegiatHasModalitats"]:

@@ -2,12 +2,19 @@
 
 import configparser
 import contextlib
-import json
 import os
 from datetime import date
 
+# Use ujson (ultra-fast) if available, fallback to standard json (OPTIMIZATION)
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 import dateutil.parser
 import requests
+
+import sync_store
 
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
@@ -185,6 +192,11 @@ headers = {"Content-Type": "application/json", "content-encoding": "gzip"}
 endpoint = config["auth"]["endpoint"]
 sociobase = f"https://{endpoint}.playoffinformatica.com/FormAssociat.php?idColegiat="
 
+# HTTP Session for connection pooling (OPTIMIZATION - Phase 2E)
+# Reuses TCP connections instead of creating new ones for each request
+_http_session = requests.Session()
+_http_session.headers.update(headers)
+
 
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
@@ -202,7 +214,9 @@ def gettoken(user=config["auth"]["username"], password=config["auth"]["password"
 
     data = {"username": user, "password": password}
 
-    result = requests.post(loginurl, data=json.dumps(data), headers=headers)
+    result = _http_session.post(
+        loginurl, data=json.dumps(data)
+    )  # Use session (OPTIMIZATION)
 
     return result.json()["access_token"]
 
@@ -215,73 +229,212 @@ def writejson(filename, data):
 
 def readjson(filename):
     with open(f"data/{filename}.json", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    if filename == "socios" and isinstance(data, list):
+        for socio in data:
+            sync_store.enrich_socio_modalitats(socio)
+
+            # PRE-COMPUTE categories and cache on object (OPTIMIZATION - Phase 2A)
+            categorias = []
+            modalitats = socio.get("colegiatHasModalitats", [])
+            if isinstance(modalitats, list):
+                for m in modalitats:
+                    if isinstance(m, dict) and "idModalitat" in m:
+                        try:
+                            categorias.append(int(m["idModalitat"]))
+                        except (ValueError, TypeError):
+                            pass
+            socio["_cached_categorias"] = categorias
+
+            # PRE-COMPUTE common validations (OPTIMIZATION - Phase 2B)
+            socio["_valid_alta"] = validasocio(
+                socio,
+                estado="COLESTVAL",
+                estatcolegiat="ESTALTA",
+                agrupaciones=["PREINSCRIPCIÓN"],
+                reverseagrupaciones=True,
+            )
+            socio["_valid_preinscripcion"] = validasocio(
+                socio, estado="COLESTPRE", estatcolegiat="ESTALTA"
+            )
+            socio["_valid_baja"] = validasocio(
+                socio, estado="COLESTVAL", estatcolegiat="ESTBAIXA"
+            )
+            socio["_valid_alta_or_preinscripcion"] = (
+                socio["_valid_alta"] or socio["_valid_preinscripcion"]
+            )
+    return data
+
+
+def is_online():
+    return sync_store.is_online(apiurl)
+
+
+def mutate(op, entity, entity_id, payload, token, *, dry_run=False, offline=False):
+    """Apply optimistic local patch; call API if online, else queue mutation."""
+    if dry_run:
+        return None
+
+    sync_store.apply_patch(op, entity, entity_id, payload)
+
+    if offline or not is_online():
+        sync_store.enqueue_mutation(op, entity, entity_id, payload)
+        return None
+
+    response = _execute_mutation(op, token, payload)
+    if response is None or (
+        hasattr(response, "status_code") and response.status_code >= 400
+    ):
+        sync_store.enqueue_mutation(op, entity, entity_id, payload)
+    return response
+
+
+def _execute_mutation(op, token, payload):
+    if op == "addcategoria":
+        return _addcategoria_api(
+            token,
+            payload["socio"],
+            payload["categoria"],
+            payload.get("extra") or False,
+        )
+    if op == "delcategoria":
+        return _delcategoria_api(token, payload["socio"], payload["categoria"])
+    if op == "escribecampo":
+        return _escribecampo_api(
+            token, payload["socioid"], payload["campo"], payload.get("valor", "")
+        )
+    if op == "create_inscripcio":
+        return _create_inscripcio_api(
+            token, payload["idActivitat"], payload["idColegiat"]
+        )
+    if op == "anula_inscripcio":
+        return _anula_inscripcio_api(
+            token, payload["inscripcion"], payload.get("comunica", False)
+        )
+    if op == "delete_inscripcio":
+        return _delete_inscripcio_api(token, payload["inscripcion"])
+    if op == "enviacomunicado":
+        return _enviacomunicado_api(token, payload["data"])
+    return None
+
+
+def flush_outbox(token):
+    entries = sync_store.read_outbox()
+    results = {"synced": 0, "failed": 0}
+    for entry in entries:
+        if entry.get("status") != "pending":
+            continue
+        response = _execute_mutation(entry["op"], token, entry["payload"])
+        if response is None or (
+            hasattr(response, "status_code") and response.status_code >= 400
+        ):
+            entry["status"] = "failed"
+            entry["retries"] = entry.get("retries", 0) + 1
+            if hasattr(response, "text"):
+                entry["last_error"] = response.text[:500]
+            else:
+                entry["last_error"] = "request failed"
+            results["failed"] += 1
+        else:
+            entry["status"] = "synced"
+            entry["last_error"] = None
+            results["synced"] += 1
+    sync_store.write_outbox(entries)
+    return results
+
+
+def read_entity_colegiat(socio_id, token=None):
+    def fetch(sid):
+        if token is None:
+            return None
+        url = f"{apiurl}/colegiats/{sid}"
+        response = requests.get(
+            url, auth=BearerAuth(token), headers=headers, timeout=15
+        )
+        if response.status_code == 200:
+            return response.json()
+        return None
+
+    return sync_store.read_entity(
+        "colegiat", socio_id, fetch_fn=fetch if token else None
+    )
+
+
+def read_entity_rebuts(socio_id, token):
+    def fetch(sid):
+        url = f"{apiurl}/colegiats/rebuts?idColegiat={sid}&limit=1000"
+        response = requests.get(
+            url, headers=headers, auth=BearerAuth(token), timeout=15
+        )
+        if response.status_code == 200:
+            return response.json()
+        return None
+
+    return sync_store.read_subresource("colegiat", socio_id, "rebuts", fetch_fn=fetch)
+
+
+def read_entity_familia(socio_id, token):
+    def fetch(sid):
+        url = f"{apiurl}/colegiats/{sid}/familia"
+        response = requests.get(
+            url, headers=headers, auth=BearerAuth(token), timeout=15
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return data if data else []
+        return None
+
+    return sync_store.read_subresource("colegiat", socio_id, "familia", fetch_fn=fetch)
+
+
+def _addcategoria_api(token, socio, categoria, extra=False):
+    auth_headers = {"Authorization": f"Bearer {token}"}
+    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats"
+    data = {"idModalitat": categoria}
+    if extra:
+        data.update(extra)
+    return _http_session.request(
+        "POST", categoriaurl, headers=auth_headers, data=data, files=[]
+    )  # Use session (OPTIMIZATION)
 
 
 def addcategoria(token, socio, categoria, extra=False):
-    """Adds categoria to socio
+    """Adds categoria to socio."""
+    payload = {
+        "socio": socio,
+        "categoria": categoria,
+        "extra": extra if extra else None,
+    }
+    return mutate("addcategoria", "colegiat", socio, payload, token)
 
-    Args:
-        extra:
-        token (str): token for accessing API (RW)
-        socio (int): Socio identifier
-        categoria (int): ID for category to modify
-    """
 
-    headers = {"Authorization": f"Bearer {token}"}
-    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats"
-
-    data = {"idModalitat": categoria}
-
-    if extra:
-        data.update(extra)
-    files = []
-
-    return requests.request(
-        "POST", categoriaurl, headers=headers, data=data, files=files
+def _delcategoria_api(token, socio, categoria):
+    auth_headers = {"Authorization": f"Bearer {token}"}
+    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats/{categoria}"
+    return _http_session.request(  # Use session (OPTIMIZATION)
+        "DELETE", categoriaurl, headers=auth_headers, data={}, files=[]
     )
 
 
 def delcategoria(token, socio, categoria):
-    """Removes categoria from socio
+    """Removes categoria from socio."""
+    payload = {"socio": socio, "categoria": categoria}
+    return mutate("delcategoria", "colegiat", socio, payload, token)
 
-    Args:
-        token (str): token for accessing API (RW)
-        socio (int): Socio identifier
-        categoria (int): ID for category to modify
-    """
 
-    headers = {"Authorization": f"Bearer {token}"}
-    categoriaurl = f"{apiurl}/colegiats/{socio}/modalitats/{categoria}"
-
-    data = {}
-    files = []
-
-    return requests.request(
-        "DELETE", categoriaurl, headers=headers, data=data, files=files
-    )
+def _escribecampo_api(token, socioid, campo, valor=""):
+    comurl = f"{apiurl}/colegiats/{socioid}/campsdinamics"
+    auth_headers = {"Authorization": f"Bearer {token}"}
+    data = {f"{campo}": f"{valor}"}
+    return _http_session.request(
+        "PUT", comurl, headers=auth_headers, data=data, files=[]
+    )  # Use session (OPTIMIZATION)
 
 
 def escribecampo(token, socioid, campo, valor=""):
-    """Escribe campo personalizado de socio
-
-    Args:
-        token (_type_): Token para operaciones
-        socioid (_type_): idAssociat
-        campo (_type_): Campo personalizado
-        valor (_type_): Valor a establecer o vacío para borrar
-
-    Returns:
-        _type_: _description_
-    """
-
-    comurl = f"{apiurl}/colegiats/{socioid}/campsdinamics"
-
-    headers = {"Authorization": f"Bearer {token}"}
-    data = {f"{campo}": f"{valor}"}
-
-    files = []
-    return requests.request("PUT", comurl, headers=headers, data=data, files=files)
+    """Escribe campo personalizado de socio."""
+    payload = {"socioid": socioid, "campo": campo, "valor": valor}
+    return mutate("escribecampo", "colegiat", socioid, payload, token)
 
 
 def calcular_proximo_recibo(fecha):
@@ -388,20 +541,66 @@ def validasocio(
     return False
 
 
-def updateactividad(token, idactividad):
-    "Update Users for actividad using token and actividadID"
-    # get users
+def updateactividad(token, idactividad, *, force=False):
+    """Fetch inscripciones for actividad; fall back to local cache on failure."""
     usersurl = f"{apiurl}/inscripcions?idActivitat={idactividad}"
+    cache_path = f"data/{idactividad}.json"
+    error = None
 
-    headers = {"Authorization": f"Bearer {token}"}
-    users = requests.get(
-        usersurl, auth=BearerAuth(token), headers=headers, timeout=30
-    ).json()
+    if force or is_online():
+        try:
+            print(
+                f"Fetching inscripciones for actividad {idactividad}...",
+                flush=True,
+            )
+            response = requests.get(
+                usersurl,
+                auth=BearerAuth(token),
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=60,
+            )
+            response.raise_for_status()
+            users = response.json()
+            writejson(filename=f"{idactividad}", data=users)
+            print(
+                f"Saved {len(users)} inscripciones for actividad {idactividad}",
+                flush=True,
+            )
+            return users
+        except requests.RequestException as exc:
+            error = exc
+            print(
+                f"API fetch failed for actividad {idactividad}: {exc}",
+                flush=True,
+            )
+    else:
+        print(
+            f"Offline: skipping API fetch for actividad {idactividad}",
+            flush=True,
+        )
 
-    writejson(filename=f"{idactividad}", data=users)
+    if os.path.exists(cache_path):
+        users = readjson(filename=f"{idactividad}")
+        return users
+
+    if error is not None:
+        raise RuntimeError(
+            f"No cached inscripciones for actividad {idactividad} "
+            f"and API request failed"
+        ) from error
+    raise FileNotFoundError(f"No cached inscripciones for actividad {idactividad}")
 
 
-def create_inscripcio(token, idActivitat, idColegiat):
+def read_inscripciones_actividad(token, idactividad, *, refresh=False):
+    """Load inscripciones for an actividad (cache first, else API with fallback)."""
+    cache_path = f"data/{idactividad}.json"
+    if not refresh and os.path.exists(cache_path):
+        inscritos = readjson(filename=f"{idactividad}")
+        return inscritos
+    return updateactividad(token, idactividad, force=refresh)
+
+
+def _create_inscripcio_api(token, idActivitat, idColegiat):
     url = f"{apiurl}/inscripcions/public"
 
     if idColegiat is not None:
@@ -435,54 +634,59 @@ def create_inscripcio(token, idActivitat, idColegiat):
         auth=BearerAuth(token),
         headers=headers,
         allow_redirects=False,
-        timeout=30,
+        timeout=60,
     )
 
 
-def anula_inscripcio(token, inscripcion, comunica=False):
+def create_inscripcio(token, idActivitat, idColegiat):
+    payload = {"idActivitat": idActivitat, "idColegiat": idColegiat}
+    return mutate("create_inscripcio", "inscripcio", idColegiat, payload, token)
+
+
+def _anula_inscripcio_api(token, inscripcion, comunica=False):
     url = f"{apiurl}/inscripcions/{inscripcion}/anular"
-    response = requests.patch(url, headers=headers, auth=BearerAuth(token), timeout=30)
+    response = _http_session.patch(
+        url, headers=headers, auth=BearerAuth(token), timeout=60
+    )  # Use session (OPTIMIZATION)
 
     if comunica:
         url = f"{apiurl}/inscripcions/{inscripcion}/comunicar_anulacio"
-        requests.post(url, headers=headers, auth=BearerAuth(token), timeout=30)
+        _http_session.post(
+            url, headers=headers, auth=BearerAuth(token), timeout=60
+        )  # Use session (OPTIMIZATION)
 
     return response
 
 
-def delete_inscripcio(token, inscripcion):
+def anula_inscripcio(token, inscripcion, comunica=False, idActivitat=None):
+    payload = {
+        "inscripcion": inscripcion,
+        "comunica": comunica,
+        "idActivitat": idActivitat,
+    }
+    return mutate("anula_inscripcio", "inscripcio", inscripcion, payload, token)
+
+
+def _delete_inscripcio_api(token, inscripcion):
     url = f"{apiurl}/inscripcions?idInscripcio={inscripcion}"
-    response = requests.delete(url, headers=headers, auth=BearerAuth(token), timeout=30)
+    return _http_session.delete(
+        url, headers=headers, auth=BearerAuth(token), timeout=60
+    )  # Use session (OPTIMIZATION)
 
-    return response
+
+def delete_inscripcio(token, inscripcion, idActivitat=None):
+    payload = {"inscripcion": inscripcion, "idActivitat": idActivitat}
+    return mutate("delete_inscripcio", "inscripcio", inscripcion, payload, token)
 
 
 def get_colegiat_json(idColegiat=False):
-    """
-    Gets json for colegiat in full
-    """
-    socios = readjson("socios")
-
-    for socio in socios:
-        if int(socio["idColegiat"]) == int(idColegiat):
-            return socio
+    """Gets json for colegiat in full."""
+    return read_entity_colegiat(idColegiat)
 
 
 def get_colegiat_data(idColegiat=False):
-    """Get colegiat data for adding inscriptions
-
-    Args:
-        idColegiat (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        _type_: _description_
-    """
-    socios = readjson("socios")
-    mydata = False
-
-    for socio in socios:
-        if int(socio["idColegiat"]) == int(idColegiat):
-            mydata = socio
+    """Get colegiat data for adding inscriptions."""
+    mydata = read_entity_colegiat(idColegiat)
 
     # Tenemos el socio
     # Tenemos que prepararlo al formato que usa la inscripción
@@ -708,7 +912,7 @@ def createactividad(
         headers=headers,
         auth=BearerAuth(token),
         data=json.dumps(payload),
-        timeout=30,
+        timeout=60,
     )
     with contextlib.suppress(Exception):
         output = json.loads(output)
@@ -734,7 +938,7 @@ def editaactividad(token, idActivitat, override):
     url = f"{apiurl}/activitats/{idActivitat}"
 
     # Obtener json de  la actividad
-    actividad = requests.get(url, headers=headers, auth=BearerAuth(token), timeout=30)
+    actividad = requests.get(url, headers=headers, auth=BearerAuth(token), timeout=60)
 
     actividad = json.loads(actividad.text)
 
@@ -747,7 +951,7 @@ def editaactividad(token, idActivitat, override):
         headers=headers,
         auth=BearerAuth(token),
         data=json.dumps(payload),
-        timeout=30,
+        timeout=60,
     )
     with contextlib.suppress(Exception):
         output = json.loads(output.text)
@@ -782,6 +986,13 @@ def mes_proximo_bimestre(fecha=None):
 
 
 def getcategoriassocio(socio):
+    """Get categories for a socio (uses pre-computed cache if available - OPTIMIZATION)"""
+
+    # Use pre-computed cache if available (FAST PATH - Phase 2A)
+    if socio and isinstance(socio, dict) and "_cached_categorias" in socio:
+        return socio["_cached_categorias"]
+
+    # Fallback to original logic (for backward compatibility)
     categorias = []
     if (
         socio
@@ -797,23 +1008,18 @@ def getcategoriassocio(socio):
     return categorias
 
 
-def enviacomunicado(token, data):
-    """Sends a communication email notification using the provided token and data.
-
-    This function posts a notification email to the API endpoint using the given authentication token and data payload.
-
-    Args:
-        token (str, optional): Authentication token for the API. Defaults to the global token.
-        data (dict): Data payload to be sent in the notification.
-
-    Returns:
-        requests.Response: The response object from the API request.
-    """
-
+def _enviacomunicado_api(token, data):
     comurl = f"{apiurl}/comunicats/emails_notificacions"
-    headers = {"Authorization": f"Bearer {token}"}
-    files = []
-    return requests.request("POST", comurl, headers=headers, data=data, files=files)
+    auth_headers = {"Authorization": f"Bearer {token}"}
+    return _http_session.request(
+        "POST", comurl, headers=auth_headers, data=data, files=[]
+    )  # Use session (OPTIMIZATION)
+
+
+def enviacomunicado(token, data):
+    """Sends a communication email notification."""
+    payload = {"data": data}
+    return mutate("enviacomunicado", "comunicat", 0, payload, token)
 
 
 def getcomunicadotutor(associat):

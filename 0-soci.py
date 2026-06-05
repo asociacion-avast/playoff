@@ -7,6 +7,7 @@ import os
 import requests
 
 import common
+import sync_store
 
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
@@ -35,8 +36,10 @@ while tanda == -1 or len(tanda) >= pagesize:
         tanda = []
     socios.extend(tanda)
 
-print("Saving file to disk")
+print("Saving socios.json to disk (%s records)" % len(socios), flush=True)
 common.writejson(filename="socios", data=socios)
+print("Saving per-entity cache", flush=True)
+sync_store.split_entities_from_snapshot("colegiat", socios, "idColegiat")
 
 
 validids = []
@@ -47,13 +50,8 @@ for socio in socios:
     if isinstance(socio["campsDinamics"], dict):
         for field in common.telegramfields:
             if field in socio["campsDinamics"]:
-                if common.validasocio(
-                    socio,
-                    estado="COLESTVAL",
-                    estatcolegiat="ESTALTA",
-                    agrupaciones=["PREINSCRIPCIÓN"],
-                    reverseagrupaciones=True,
-                ):
+                # OPTIMIZATION Phase 2C: Use pre-computed validation
+                if socio.get("_valid_alta", False):
                     validids.append(f"{socio['campsDinamics'][field]}")
                 else:
                     invalidids.append(f"{socio['campsDinamics'][field]}")

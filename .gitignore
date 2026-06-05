@@ -1,4 +1,7 @@
 data/*.json
+data/entities/
+data/_meta.json
+data/outbox.json
 sorteo/*.txt
 *.csv
 .codegpt

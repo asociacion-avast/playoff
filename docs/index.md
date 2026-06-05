@@ -6,6 +6,24 @@ Entre los scripts, hay algunos de obtención de datos, que descargan los datos a
 
 > Al modificar categorías, los usuarios se han modificado en la web, pero nuestra copia local es de 'antes', por lo que si volvemos a ejecutar el script de categorías, volverá a mandar los cambios. Sin embargo, si tras ejecutarlo, descargamos de nuevo el listado de socios, al volver a ejecutar el script de categorías, no debería modificar nada por ver en los datos locales que las categorías ya estaban presentes.
 
+## Sincronización offline
+
+Los scripts de modificación (`4-*`, `5-*`) utilizan una capa de sincronización en `common.py` y `sync_store.py`:
+
+- Las mutaciones actualizan la copia local de forma optimista (parche en `data/entities/` y en `data/socios.json` si existe).
+- Si no hay conexión, las operaciones se encolan en `data/outbox.json`.
+- Cuando vuelve la red, ejecutar `python sync.py push` para enviar los cambios pendientes al API.
+- `python sync.py pull` descarga solo socios cuyos datos han cambiado (comparación por hash).
+- `python sync.py status` muestra el estado de la cola y la caché.
+
+Ejemplo de flujo offline:
+
+```bash
+python 4-auto-categoria.py   # parchea local + encola si no hay red
+python sync.py push          # envía cola al API cuando hay red
+python sync.py pull          # actualiza solo registros modificados
+```
+
 # Configuración
 
 Los scripts necesitan autentificación, y los scripts utilizan dos tipos:

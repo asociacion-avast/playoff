@@ -53,13 +53,8 @@ for socio in socios:
     # ID Socio
     socioid = socio["idColegiat"]
 
-    if common.validasocio(
-        socio,
-        estado="COLESTVAL",
-        estatcolegiat="ESTALTA",
-        agrupaciones=["PREINSCRIPCIÓN"],
-        reverseagrupaciones=True,
-    ):
+    # OPTIMIZATION Phase 2C: Use pre-computed validation
+    if socio.get("_valid_alta", False):
         if isinstance(socio["campsDinamics"], dict):
             for field in [common.fechacambio]:
                 if field in socio["campsDinamics"]:

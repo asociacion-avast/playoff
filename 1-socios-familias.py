@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import configparser
-import json
 import os
-
-import requests
 
 import common
 
@@ -65,23 +62,18 @@ for socio in socios:
             familias["procesados"].append(socioid)
 
             print(f"Actualizando familia del socio {socioid}")
-            url = f"{common.apiurl}/colegiats/{socioid}/familia"
-            response = requests.get(
-                url, headers=common.headers, auth=common.BearerAuth(token), timeout=15
-            )
-            if response.status_code == 200:
-                family = json.loads(response.text)
-                if family != []:
-                    for miembro in family["familiars"]:
-                        miembroid = int(miembro["idColegiat"])
-                        if miembroid != socioid:
-                            if miembroid not in familias["miembros"]:
-                                familias["miembros"][miembroid] = []
-                            familias["miembros"][socioid].append(miembroid)
-                            familias["miembros"][miembroid].append(socioid)
+            family = common.read_entity_familia(socioid, token)
+            if family and family != []:
+                for miembro in family["familiars"]:
+                    miembroid = int(miembro["idColegiat"])
+                    if miembroid != socioid:
+                        if miembroid not in familias["miembros"]:
+                            familias["miembros"][miembroid] = []
+                        familias["miembros"][socioid].append(miembroid)
+                        familias["miembros"][miembroid].append(socioid)
 
-                            if miembro["isBancCapFamilia"] == "1":
-                                familias["capfamilias"].append(miembroid)
+                        if miembro["isBancCapFamilia"] == "1":
+                            familias["capfamilias"].append(miembroid)
     else:
         # Socio no válido
         if socioid in familias["miembros"]:

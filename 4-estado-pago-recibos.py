@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import configparser
-import json
 import os
-
-import requests
 
 import common
 
@@ -34,12 +31,7 @@ for socio in socios:
         print(f"Procesando socio {socioid}")
         categoriassocio = common.getcategoriassocio(socio=socio)
 
-        url = f"{common.apiurl}/colegiats/rebuts?idColegiat={socioid}&limit=1000"
-        response = json.loads(
-            requests.get(
-                url, headers=common.headers, auth=common.BearerAuth(token), timeout=15
-            ).text
-        )
+        response = common.read_entity_rebuts(socioid, token) or []
 
         targetcategorias = []
         removecategorias = []
