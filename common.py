@@ -4,6 +4,7 @@ import configparser
 import contextlib
 import os
 from datetime import date
+from functools import lru_cache
 
 # Use ujson (ultra-fast) if available, fallback to standard json (OPTIMIZATION)
 try:
@@ -179,6 +180,7 @@ nombremes = {
 }
 
 
+@lru_cache(maxsize=512)  # OPTIMIZATION Phase 3: Cache translation lookups
 def traduce(id):
     if id in diccionario:
         text = f"ID {id} ({diccionario[id]})"
@@ -1212,3 +1214,39 @@ def getcomunicado(associat, title, descripcio):
         "destinatarisContacte": "[]",
     }
     return data
+
+
+# OPTIMIZATION Phase 4: Parallel processing helper
+def process_socios_parallel(socios, worker_func, max_workers=None):
+    """
+    Process socios in parallel using multiprocessing.
+
+    Args:
+        socios: List of socio dictionaries
+        worker_func: Function to apply to each socio (must be picklable)
+        max_workers: Number of worker processes (default: CPU count - 1)
+
+    Returns:
+        List of results in the same order as input socios
+
+    Example:
+        def classify_socio(socio):
+            if socio.get("_valid_alta", False):
+                return ("alta", socio["idColegiat"])
+            return ("other", socio["idColegiat"])
+
+        results = process_socios_parallel(socios, classify_socio)
+    """
+    from multiprocessing import Pool, cpu_count
+
+    if max_workers is None:
+        max_workers = max(1, cpu_count() - 1)
+
+    # For small datasets, parallel overhead isn't worth it
+    if len(socios) < 100:
+        return [worker_func(s) for s in socios]
+
+    with Pool(processes=max_workers) as pool:
+        results = pool.map(worker_func, socios)
+
+    return results

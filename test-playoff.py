@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from playoff import Playoff
 
 idColegiat = "3543"  # manolo el del bombo
