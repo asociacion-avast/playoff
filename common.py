@@ -316,7 +316,7 @@ def _execute_mutation(op, token, payload):
     if op == "delete_inscripcio":
         return _delete_inscripcio_api(token, payload["inscripcion"])
     if op == "enviacomunicado":
-        return _enviacomunicado_api(token, payload["data"])
+        return _enviacomunicado_api(token, payload.get("data"))
     return None
 
 
@@ -1012,10 +1012,10 @@ def getcategoriassocio(socio):
 
 def _enviacomunicado_api(token, data):
     comurl = f"{apiurl}/comunicats/emails_notificacions"
+    # Don't use session here - this endpoint needs form data, not JSON
+    # Session has Content-Type: application/json which breaks this API
     auth_headers = {"Authorization": f"Bearer {token}"}
-    return _http_session.request(
-        "POST", comurl, headers=auth_headers, data=data, files=[]
-    )  # Use session (OPTIMIZATION)
+    return requests.request("POST", comurl, headers=auth_headers, data=data, files=[])
 
 
 def enviacomunicado(token, data):

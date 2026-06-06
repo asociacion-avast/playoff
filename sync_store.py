@@ -392,6 +392,9 @@ def apply_patch(op, entity, entity_id, payload):
         )
     elif op == "delete_inscripcio":
         _patch_delete_inscripcion(payload.get("idActivitat"), payload["inscripcion"])
+    elif op == "enviacomunicado":
+        # Comunicados don't modify local state, skip patch
+        pass
 
 
 def split_entities_from_snapshot(entity_type, records, id_field, show_progress=True):
