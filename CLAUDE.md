@@ -81,6 +81,45 @@ Supported operations:
 - `create_inscripcio` / `anula_inscripcio` / `delete_inscripcio`: Enrollment operations
 - `enviacomunicado`: Send email notifications
 
+### sync_store.py - Offline-First Infrastructure
+
+**Purpose**: Low-level persistence layer for offline-first sync. This is a **library module**, not a user-facing script.
+
+**Do not modify this file** unless you understand the offline-first architecture. Most scripts should use `common.py` functions which internally use sync_store.
+
+**Key Functions** (for reference, used internally by common.py):
+
+**Outbox Management:**
+
+- `read_outbox()` → list - Read pending mutations queue
+- `write_outbox(entries)` - Write mutations queue
+- `enqueue_mutation(op, entity, entity_id, payload)` - Queue a mutation for later sync
+- `outbox_counts()` → dict - Count mutations by status (pending, failed, synced)
+
+**Entity Cache:**
+
+- `read_entity(type, id, fetch_fn=None)` → dict - Read entity from cache, optionally fetch from API
+- `save_entity(type, id, data)` - Save entity to cache
+- `read_subresource(type, id, resource, fetch_fn=None)` → dict - Read entity sub-resource
+
+**Optimistic Updates:**
+
+- `apply_patch(op, entity, entity_id, payload)` - Apply mutation to local cache before API sync
+- `patch_addcategoria(socio_id, categoria)` - Add category to cached socio
+- `patch_delcategoria(socio_id, categoria)` - Remove category from cached socio
+
+**Utilities:**
+
+- `is_online(apiurl, timeout=5)` → bool - Check API connectivity (cached for 30s)
+- `read_meta()` / `write_meta(meta)` - Cache metadata management
+- `split_entities_from_snapshot(type, items, id_field)` - Split bulk data into per-entity files
+- `pull_entities(apiurl, token, headers, auth_class)` → int - Sync changed entities from API
+
+**When to use sync_store directly:**
+
+- **Don't** - Use `common.py` functions instead
+- Only use sync_store directly when implementing new low-level sync features
+
 ### Performance Optimizations
 
 The codebase has been heavily optimized (50-1000x improvements):

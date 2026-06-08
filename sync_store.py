@@ -1,6 +1,31 @@
 #!/usr/bin/env python
 
-"""Offline sync layer: entity cache, mutation outbox, optimistic patches."""
+"""Offline sync layer: entity cache, mutation outbox, optimistic patches.
+
+This module provides the low-level infrastructure for offline-first data sync:
+
+OUTBOX SYSTEM:
+- Queues mutations when offline or when API calls fail
+- Stores pending mutations in data/outbox.json
+- Tracks mutation status: pending, failed, synced
+
+ENTITY CACHE:
+- Per-entity storage in data/entities/{type}/{id}.json
+- Metadata tracking (_meta.json) for sync state
+- Supports optimistic updates before API confirmation
+
+OPTIMISTIC UPDATES:
+- apply_patch() updates local cache immediately
+- Mutations queued for background sync
+- Local changes visible instantly, sync happens async
+
+USAGE:
+- Most code should use common.py functions, not sync_store directly
+- sync_store is imported by common.py for mutation handling
+- sync.py CLI tool uses sync_store for outbox inspection
+
+Do not modify this module unless implementing new sync infrastructure.
+"""
 
 import hashlib
 import time
