@@ -189,15 +189,24 @@ tox -e html_upload      # Upload HTML to WordPress (requires ANIO env var)
 **All sync operations should use the unified `sync.py` command.** Do not create separate scripts for sync-related functionality unless explicitly required for a specific business need.
 
 ```bash
-./sync.py status        # Check cache freshness, outbox, connectivity
-./sync.py download      # Download fresh data from Playoff API
-./sync.py push          # Upload pending mutations to API
-./sync.py clean         # Remove stale mutations for deleted socios
-./sync.py check         # Detailed outbox inspection
-./sync.py retry-failed  # Retry failed mutations
-./sync.py pull          # Pull changed member entities from API
-./sync.py evict         # Remove stale entity cache files
+./sync.py status           # Check cache freshness, outbox, connectivity
+./sync.py download         # Download fresh data from Playoff API
+./sync.py push             # Upload pending mutations to API
+./sync.py clean [--yes]    # Remove stale mutations for deleted socios
+./sync.py check            # Detailed outbox inspection
+./sync.py retry-failed [-y] # Retry failed mutations (e.g., addcategoria errors)
+./sync.py clear-failed [-y] # Remove failed mutations from outbox
+./sync.py pull             # Pull changed member entities from API
+./sync.py evict [--days N] # Remove stale entity cache files
 ```
+
+**Handling Failed Mutations:**
+
+When mutations fail (e.g., API errors when adding categories), they remain in the outbox with status "failed". You have two options:
+
+1. **Retry**: `./sync.py retry-failed` - Resets failed mutations to "pending" and attempts to sync again. Use when the API issue was temporary.
+
+2. **Clear**: `./sync.py clear-failed` - Permanently removes failed mutations from the outbox. Use when mutations are no longer needed or will never succeed.
 
 Use `./sync.py --help` for complete usage information.
 

@@ -97,17 +97,73 @@ def cmd_push(_args):
     print(f"Synced: {results['synced']}, failed: {results['failed']}")
 
 
-def cmd_retry_failed(_args):
+def cmd_retry_failed(args):
+    """Retry failed mutations."""
     entries = sync_store.read_outbox()
+    failed = [e for e in entries if e.get("status") == "failed"]
+
+    if not failed:
+        print("No failed mutations to retry")
+        return
+
+    print(f"Found {len(failed)} failed mutations:\n")
+    for i, e in enumerate(failed):
+        socio = e.get("payload", {}).get("socio", "?")
+        cat = e.get("payload", {}).get("categoria", "?")
+        op = e.get("op")
+        retries = e.get("retries", 0)
+        error = e.get("last_error", "")[:80]
+        print(f"{i + 1}. {op} socio={socio}, cat={cat} (retries: {retries})")
+        print(f"   Error: {error}")
+
+    if not args.yes:
+        response = input("\nRetry all failed mutations? (yes/no): ")
+        if response.lower() not in ["yes", "y"]:
+            print("Cancelled")
+            return
+
+    # Reset to pending and retry
     reset = 0
     for entry in entries:
         if entry.get("status") == "failed":
             entry["status"] = "pending"
             reset += 1
     sync_store.write_outbox(entries)
-    print(f"Reset {reset} failed entries to pending")
-    if reset:
-        cmd_push(_args)
+
+    print(f"\nReset {reset} failed entries to pending")
+    print("Retrying...")
+    cmd_push(args)
+
+
+def cmd_clear_failed(args):
+    """Remove failed mutations from outbox."""
+    entries = sync_store.read_outbox()
+    failed = [e for e in entries if e.get("status") == "failed"]
+
+    if not failed:
+        print("No failed mutations to clear")
+        return
+
+    print(f"Found {len(failed)} failed mutations:\n")
+    for i, e in enumerate(failed):
+        socio = e.get("payload", {}).get("socio", "?")
+        cat = e.get("payload", {}).get("categoria", "?")
+        op = e.get("op")
+        retries = e.get("retries", 0)
+        print(f"{i + 1}. {op} socio={socio}, cat={cat} (retries: {retries})")
+
+    if not args.yes:
+        response = input("\nPermanently remove these failed mutations? (yes/no): ")
+        if response.lower() not in ["yes", "y"]:
+            print("Cancelled")
+            return
+
+    # Remove failed entries
+    valid_entries = [e for e in entries if e.get("status") != "failed"]
+    sync_store.write_outbox(valid_entries)
+
+    print(f"\n✓ Removed {len(failed)} failed mutations")
+    print(f"  Remaining: {len(valid_entries)} entries")
 
 
 def cmd_pull(_args):
@@ -280,7 +336,8 @@ Examples:
   ./sync.py push                   Upload pending mutations to API
   ./sync.py clean --yes            Remove stale mutations (auto-confirm)
   ./sync.py check                  Detailed outbox inspection
-  ./sync.py retry-failed           Retry failed mutations
+  ./sync.py retry-failed --yes     Retry failed mutations (auto-confirm)
+  ./sync.py clear-failed           Remove failed mutations from outbox
   ./sync.py pull                   Pull changed member entities from API
         """,
     )
@@ -302,9 +359,15 @@ Examples:
     sub.add_parser("check", help="Detailed outbox inspection").set_defaults(
         func=cmd_check
     )
-    sub.add_parser("retry-failed", help="Retry failed outbox entries").set_defaults(
-        func=cmd_retry_failed
-    )
+
+    retry_parser = sub.add_parser("retry-failed", help="Retry failed mutations")
+    retry_parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm")
+    retry_parser.set_defaults(func=cmd_retry_failed)
+
+    clear_parser = sub.add_parser("clear-failed", help="Remove failed mutations")
+    clear_parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm")
+    clear_parser.set_defaults(func=cmd_clear_failed)
+
     sub.add_parser("pull", help="Pull changed colegiats from API").set_defaults(
         func=cmd_pull
     )
