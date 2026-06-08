@@ -130,12 +130,12 @@ Scripts are numbered by phase:
 No automated test suite. Manual testing via:
 
 ```bash
-# Verify optimizations (benchmarks)
-./test-optimizations.sh
-python test-phase2-optimizations.py
-
 # Lint and format (pre-commit hooks)
 pre-commit run --all-files
+
+# Test data sync
+./sync.py status
+./sync.py check
 ```
 
 Tox environments:
@@ -145,7 +145,26 @@ tox -e py3              # Generate full schedule + web descriptions
 tox -e html_upload      # Upload HTML to WordPress (requires ANIO env var)
 ```
 
+### Data Sync Management
+
+**All sync operations should use the unified `sync.py` command.** Do not create separate scripts for sync-related functionality unless explicitly required for a specific business need.
+
+```bash
+./sync.py status        # Check cache freshness, outbox, connectivity
+./sync.py download      # Download fresh data from Playoff API
+./sync.py push          # Upload pending mutations to API
+./sync.py clean         # Remove stale mutations for deleted socios
+./sync.py check         # Detailed outbox inspection
+./sync.py retry-failed  # Retry failed mutations
+./sync.py pull          # Pull changed member entities from API
+./sync.py evict         # Remove stale entity cache files
+```
+
+Use `./sync.py --help` for complete usage information.
+
 ### Adding a New Script
+
+**Important**: Do not create new utility scripts for data sync operations. Use `sync.py` subcommands instead. Only create new scripts for business logic (category automation, reporting, data processing).
 
 1. Start with shebang `#!/usr/bin/env python` and imports from `common`
 2. Read config: `config = configparser.ConfigParser(); config.read(os.path.expanduser("~/.avast.ini"))`
@@ -156,6 +175,7 @@ tox -e html_upload      # Upload HTML to WordPress (requires ANIO env var)
 5. Use `common.validasocio()` for member state checks
 6. Use `common.getcategoriassocio(socio)` to get category IDs (uses cache)
 7. For mutations, use `common.addcategoria()`, `common.delcategoria()`, etc. (not the `_api` versions)
+8. All mutations automatically use the offline-first mechanism via `common.mutate()`
 
 ### Working with Enrollment Data
 
