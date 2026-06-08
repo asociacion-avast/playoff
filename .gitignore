@@ -9,3 +9,6 @@ __pycache__/
 .idea/
 .trunk/
 .wordpressauth.json
+.venv/
+.vscode/
+node_modules/
