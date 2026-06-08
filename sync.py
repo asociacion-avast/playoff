@@ -128,7 +128,15 @@ def cmd_clean(args):
     print("Analyzing outbox for stale mutations...")
 
     socios = common.readjson("socios")
-    socio_ids = {s.get("id") for s in socios}
+    # Build set of IDs, handling both string and int
+    socio_ids = set()
+    for s in socios:
+        sid = s.get("idColegiat")
+        if sid:
+            socio_ids.add(sid)  # Add as-is (string or int)
+            socio_ids.add(str(sid))  # Add string version
+            if isinstance(sid, str) and sid.isdigit():
+                socio_ids.add(int(sid))  # Add int version
 
     entries = sync_store.read_outbox()
     print(f"Total entries: {len(entries)}")
@@ -147,7 +155,17 @@ def cmd_clean(args):
         op = entry.get("op")
         if op in ["addcategoria", "delcategoria", "escribecampo"]:
             socio_id = entry.get("payload", {}).get("socio")
-            if socio_id and socio_id not in socio_ids:
+            # Check both as-is and converted types
+            exists = (
+                socio_id in socio_ids
+                or str(socio_id) in socio_ids
+                or (
+                    isinstance(socio_id, str)
+                    and socio_id.isdigit()
+                    and int(socio_id) in socio_ids
+                )
+            )
+            if not exists:
                 stale_entries.append(entry)
                 continue
 
