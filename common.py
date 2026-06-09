@@ -197,7 +197,8 @@ sociobase = f"https://{endpoint}.playoffinformatica.com/FormAssociat.php?idColeg
 # HTTP Session for connection pooling (OPTIMIZATION - Phase 2E)
 # Reuses TCP connections instead of creating new ones for each request
 _http_session = requests.Session()
-_http_session.headers.update(headers)
+# Don't set Content-Type globally - some endpoints need form data, some need JSON
+_http_session.headers.update({"content-encoding": "gzip"})
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -217,7 +218,9 @@ def gettoken(user=config["auth"]["username"], password=config["auth"]["password"
     data = {"username": user, "password": password}
 
     result = _http_session.post(
-        loginurl, data=json.dumps(data)
+        loginurl,
+        data=json.dumps(data),
+        headers={"Content-Type": "application/json"},
     )  # Use session (OPTIMIZATION)
 
     return result.json()["access_token"]
