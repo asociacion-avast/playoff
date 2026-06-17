@@ -25,8 +25,16 @@ today = datetime.date.today()
 
 
 print("Actualizando actividades ID TELEGRAM")
+cache_por_actividad = {}
 for actividadid in [815, 816]:
     common.updateactividad(token=token, idactividad=actividadid)
+    # Pre-load and cache activity inscriptions (OPTIMIZATION)
+    inscritos = common.readjson(filename=f"{actividadid}")
+    cache_por_actividad[actividadid] = {
+        str(i["idInscripcio"])
+        for i in inscritos
+        if i.get("estat") in ["INSCRESTANU", "anulada"]
+    }
 
 # Read outbox once before processing (OPTIMIZATION)
 outbox_entries_global = sync_store.read_outbox()
@@ -36,15 +44,6 @@ outbox_anuladas = {
     if e.get("op") == "anula_inscripcio" and e.get("status") in ["pending", "synced"]
 }
 
-# Pre-load and cache activity inscriptions (OPTIMIZATION)
-cache_por_actividad = {}
-for actividadid in [815, 816]:
-    inscritos = common.readjson(filename=f"{actividadid}")
-    cache_por_actividad[actividadid] = {
-        str(i["idInscripcio"])
-        for i in inscritos
-        if i.get("estat") in ["INSCRESTANU", "anulada"]
-    }
 
 print("Procesando socios...")
 
@@ -79,6 +78,7 @@ for actividadid in [815, 816]:
             for inscrito in inscritos:
                 if int(inscrito["colegiat"]["idColegiat"]) == socioid:
                     inscripciones.append(inscrito["idInscripcio"])
+
                     if inscrito["estat"] == "INSCRESTNOVA":
                         socios_matched += 1
                         print(f"\n{common.sociobase}{socioid}#tab=CATEGORIES")
@@ -100,26 +100,25 @@ for actividadid in [815, 816]:
                             print(response)
                             print(response.text)
 
-                            # Borra inscripciones a las actividades
-                            print("Borrando inscripciones a actividades ID Telegram")
-                            for inscripcion in inscripciones:
-                                # O(1) lookups using pre-loaded cache (OPTIMIZED)
-                                cancelled_cache = cache_por_actividad.get(
-                                    actividadid, set()
-                                )
+    # Borra inscripciones a las actividades
+    print(f"Borrando inscripciones a actividades ID Telegram {actividadid}")
+    for inscripcion in inscripciones:
+        # O(1) lookups using pre-loaded cache (OPTIMIZED)
+        cancelled_cache = cache_por_actividad.get(actividadid, set())
 
-                                if (
-                                    str(inscripcion) in cancelled_cache
-                                    or str(inscripcion) in outbox_anuladas
-                                ):
-                                    print(
-                                        f"  Inscripción {inscripcion} ya procesada (skipping)"
-                                    )
-                                    continue
+        if str(inscripcion) in cancelled_cache or str(inscripcion) in outbox_anuladas:
+            print(f"  Inscripción {inscripcion} ya procesada (skipping)")
+            continue
 
-                                response = common.anula_inscripcio(
-                                    token=token,
-                                    inscripcion=inscripcion,
-                                    comunica=False,
-                                    idActivitat=actividadid,
-                                )
+        response = common.anula_inscripcio(
+            token=token,
+            inscripcion=inscripcion,
+            comunica=False,
+            idActivitat=actividadid,
+        )
+
+        response = common.delete_inscripcio(
+            token=token,
+            inscripcion=inscripcion,
+            idActivitat=actividadid,
+        )
