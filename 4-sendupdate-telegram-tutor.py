@@ -21,16 +21,19 @@ headers = {"Authorization": f"Bearer {token}"}
 
 
 if len(sys.argv) < 2:
-    print("Missing argument: idAssociat  for sending the message")
+    print("Missing argument: idAssociat for sending the message")
     sys.exit(-1)
 
-associat = int(sys.argv[1])
+for arg in sys.argv[1:]:
+    try:
+        associat = int(arg)
+    except ValueError:
+        print(f"Invalid idAssociat: {arg}")
+        continue
 
-
-print("Enviando comunicado")
-
-
-response = common.enviacomunicado(token=token, data=common.getcomunicadotutor(associat))
-
-print(response)
-print(response.text)
+    print(f"Enviando comunicado para idAssociat={associat}")
+    response = common.enviacomunicado(
+        token=token, data=common.getcomunicadotutor(associat)
+    )
+    print(response)
+    print(response.text)
