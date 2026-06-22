@@ -4,6 +4,7 @@
 import configparser
 import datetime
 import os
+import sys
 
 import dateutil.parser
 
@@ -143,6 +144,12 @@ for socio in socios:
                                         token, socioid, categoria
                                     )
                                 print(response.text)
+                                if "error" in response.text:
+                                    if (
+                                        response.text["error"]
+                                        == "Invalid token: Invalid token: Expired token"
+                                    ):
+                                        sys.exit(0)
 
                                 print("Vaciando fecha cambio")
                                 print(
