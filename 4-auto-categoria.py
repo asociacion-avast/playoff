@@ -24,6 +24,14 @@ headers = {"Authorization": f"Bearer {token}"}
 # Periodicidad (bimensual: 5, anual: 3)
 extras = {82: 3}
 
+# OPTIMIZATION Item 7: Cache category constants (O(1) lookup)
+_cat_informevalidado = common.categorias["informevalidado"]
+_cat_carnetpendiente = common.categorias["carnetpendiente"]
+_cat_notienecarnet = common.categorias["notienecarnet"]
+_cat_carnetincorrecto = common.categorias["carnetincorrecto"]
+_cat_carnettutorduplicado = common.categorias["carnettutorduplicado"]
+_cat_dana = common.categorias["dana"]
+
 codigos_postales_dana = {
     46000,
     46012,

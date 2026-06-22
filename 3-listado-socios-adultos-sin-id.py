@@ -15,64 +15,57 @@ print("Loading file from disk")
 socios = common.readjson(filename="socios")
 
 
-print("Procesando actividades...")
+print("Procesando adultos sin ID...")
 
-usuariosyactividad = {}
-actividadyusuarios = {}
-usuariosyhorarios = {}
-usuarioseinscripciones = {}
-usuariosyhorariosinscripciones = {}
-
-sociosbaja = []
+# OPTIMIZATION Item 7: Cache category constants locally for loop performance
+cat_adulto_actividades = "Socio Adulto Actividades".lower()
+cat_adulto_sin_actividades = "Socio Adulto SIN Actividades".lower()
 
 
-resultids = {
-    "adult": [],  # Adultos
-}
+# OPTIMIZATION Item 6: Accumulate results in one pass (generator-ready)
+def process_socios_sin_id():
+    for socio in socios:
+        id_socio = socio["idColegiat"]
 
+        # OPTIMIZATION Item 3: Use pre-computed validation
+        if not (
+            socio.get("_valid_alta", False) or socio.get("_valid_preinscripcion", False)
+        ):
+            continue
 
-for socio in socios:
-    id_socio = socio["idColegiat"]
-
-    if common.validasocio(
-        socio,
-        estado="COLESTVAL",
-        estatcolegiat="ESTALTA",
-        agrupaciones=["PREINSCRIPCIÓN"],
-        reverseagrupaciones=True,
-    ) or common.validasocio(
-        socio,
-        estado="COLESTPRE",
-        estatcolegiat="ESTALTA",
-    ):
         procesa = False
-        recuerda = False
+        # Check modalitats for adult categories
         if "colegiatHasModalitats" in socio:
-            # Iterate over all categories for the user
             for modalitat in socio["colegiatHasModalitats"]:
                 if "modalitat" in modalitat:
-                    # Save name for comparing the ones we target
-                    agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
-                    modalitatnom = modalitat["modalitat"]["nom"].lower()
+                    m_data = modalitat["modalitat"]
+                    # OPTIMIZATION Item 4: Use pre-normalized names
+                    agrupacionom = (
+                        m_data.get("agrupacio", {}).get("_nom_lower")
+                        or m_data.get("agrupacio", {}).get("nom", "").lower()
+                    )
 
-                    if "Socio Adulto Actividades".lower() in agrupacionom:
-                        resultids["adult"].append(id_socio)
+                    if (
+                        cat_adulto_actividades in agrupacionom
+                        or cat_adulto_sin_actividades in agrupacionom
+                    ):
                         procesa = True
+                        break
 
-                    if "Socio Adulto SIN Actividades".lower() in agrupacionom:
-                        resultids["adult"].append(id_socio)
-                        procesa = True
+        if procesa:
+            # OPTIMIZATION Item 2: Use cached dynamic fields
+            cached_campos = socio.get("_cached_campos", {})
+            has_telegram_id = any(
+                cached_campos.get(field) for field in common.telegramfields
+            )
 
-        if procesa and isinstance(socio["campsDinamics"], dict):
-            alguno = False
-            for field in common.telegramfields:
-                if field in socio["campsDinamics"]:
-                    idtelegramencampo = f"{socio['campsDinamics'][field]}"
+            if not has_telegram_id:
+                yield id_socio
 
-                    if idtelegramencampo is not None or idtelegramencampo != "":
-                        alguno = True
-            if not alguno:
-                print(f"{common.sociobase}{id_socio}")
+
+# Print results from generator (OPTIMIZATION Item 6)
+for socio_id in process_socios_sin_id():
+    print(f"{common.sociobase}{socio_id}")
 
 
 token = common.gettoken(

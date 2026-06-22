@@ -9,180 +9,146 @@ socios = common.readjson(filename="socios")
 
 print("Procesando socios...")
 
+# OPTIMIZATION Item 7: Cache constants for fast lookups
+_cat_adulto_actividades = "Socio Adulto Actividades".lower()
+_cat_adulto_sin_actividades = "Socio Adulto SIN Actividades".lower()
+_cat_socio_actividades = "Socio Actividades".lower()
+_cat_socio_sin_actividades = "Socio SIN Actividades".lower()
+_cat_avast15 = "avast15".lower()
+_cat_avast13 = "avast13".lower()
+_cat_avast18 = "avast18".lower()
+_cat_candidato = "Candidato a".lower()
+
 
 def classifymembers(socios):
+    # OPTIMIZATION Item 9: Use sets for O(1) membership checks
     resultids = {
-        "activ": [],  # Con actividades
-        "adult": [],  # Adultos
-        "adultactiv": [],  # Adultos con actividades
-        "adultsinactiv": [],  # Adultos sin actividades
-        "invalid": [],  # Socios sin ALTA activa
-        "kids-and-parents": [],  # Niños y tutores
-        "kids": [],  # Niños (CON y SIN)
-        "kidsactiv-and-parents": [],  # Niños CON Actividades y tutores
-        "kidsactiv": [],  # Niños CON Actividades
-        "kidsinactiv-and-parents": [],  # Niños SIN Actividades y tutores
-        "kidsinactiv": [],  # Niños SIN actividades
-        "preinscripcion": [],  # Socios preinscritos
-        "profesores": [],  # Profesores
-        "sociohermano": [],  # Socios hermanos (con actividades)
-        "teen13-and-parents": [],  # Niños y tutores [13-15)
-        "teen13": [],  # Niños [13-15)
-        "teen15-and-parents": [],  # Niños y tutores [15-24]
-        "teen15": [],  # Niños [15-24]
-        "teen18-and-parents": [],  # Niños y tutores [18-29]
-        "teen18": [],  # Niños [18-29]
-        "tutor": [],  # Tutores
-        "valid": [],  # Cualquiera con relación avast
+        "activ": set(),
+        "adult": set(),
+        "adultactiv": set(),
+        "adultsinactiv": set(),
+        "invalid": set(),
+        "kids-and-parents": set(),
+        "kids": set(),
+        "kidsactiv-and-parents": set(),
+        "kidsactiv": set(),
+        "kidsinactiv-and-parents": set(),
+        "kidsinactiv": set(),
+        "preinscripcion": set(),
+        "profesores": set(),
+        "sociohermano": set(),
+        "teen13-and-parents": set(),
+        "teen13": set(),
+        "teen15-and-parents": set(),
+        "teen15": set(),
+        "teen18-and-parents": set(),
+        "teen18": set(),
+        "tutor": set(),
+        "valid": set(),
     }
 
-    # For each user check the custom fields that store the telegram ID for each tutor
+    # OPTIMIZATION Item 6: Single pass accumulation
     for socio in socios:
-        # try:
-        #     fecha = dateutil.parser.parse(user["persona"]["dataNaixement"])
-        # except Exception:
-        #     fecha = False
+        # OPTIMIZATION Item 2: Use cached dynamic fields
+        cached_campos = socio.get("_cached_campos", {})
 
-        if isinstance(socio["campsDinamics"], dict):
-            for field in common.telegramfields:
-                if field in socio["campsDinamics"]:
-                    try:
-                        userid = socio["campsDinamics"][field]
-                    except:
-                        userid = False
+        for field in common.telegramfields:
+            userid = cached_campos.get(field)
+            if not userid:
+                continue
 
-                    if userid:
-                        if not (
-                            common.validasocio(
-                                socio,
-                                estado="COLESTVAL",
-                                estatcolegiat="ESTALTA",
-                            )
-                        ):
-                            if common.validasocio(
-                                socio,
-                                estado="COLESTVAL",
-                                estatcolegiat="ESTPERLAB",
-                            ):
-                                # We've ID but it's not in good status
-                                resultids["profesores"].append(userid)
-                            else:
-                                # We've ID but it's not in good status
+            # OPTIMIZATION Item 3: Use pre-computed validations
+            if not socio.get("_valid_alta", False):
+                if common.validasocio(
+                    socio,
+                    estado="COLESTVAL",
+                    estatcolegiat="ESTPERLAB",
+                ):
+                    resultids["profesores"].add(userid)
+                else:
+                    resultids["invalid"].add(userid)
+            else:
+                resultids["valid"].add(userid)
 
-                                resultids["invalid"].append(userid)
+                if "colegiatHasModalitats" in socio:
+                    for modalitat in socio["colegiatHasModalitats"]:
+                        if "modalitat" not in modalitat:
+                            continue
 
-                        else:
-                            resultids["valid"].append(userid)
-                            # if fecha:
-                            #     year, month, day = fecha.year, fecha.month, fecha.day
-                            #     edad = (
-                            #         today.year
-                            #         - year
-                            #         - ((today.month, today.day) < (month, day))
-                            #     )
-                            # else:
-                            #     edad = False
+                        m_data = modalitat["modalitat"]
+                        agrupacio = m_data.get("agrupacio", {})
 
-                            if "colegiatHasModalitats" in socio:
-                                # Iterate over all categories for the user
-                                for modalitat in socio["colegiatHasModalitats"]:
-                                    if "modalitat" in modalitat:
-                                        # Save name for comparing the ones we target
-                                        agrupacionom = modalitat["modalitat"][
-                                            "agrupacio"
-                                        ]["nom"].lower()
-                                        modalitatnom = modalitat["modalitat"][
-                                            "nom"
-                                        ].lower()
-                                        idmodalitat = int(
-                                            modalitat["modalitat"]["idModalitat"]
-                                        )
+                        # OPTIMIZATION Item 4: Use pre-normalized names
+                        agrupacionom = (
+                            agrupacio.get("_nom_lower")
+                            or agrupacio.get("nom", "").lower()
+                        )
+                        modalitatnom = (
+                            m_data.get("_nom_lower") or m_data.get("nom", "").lower()
+                        )
+                        idmodalitat = int(m_data.get("idModalitat", 0))
 
-                                        if "profesores".lower() in agrupacionom:
-                                            resultids["profesores"].append(userid)
+                        if "profesores".lower() in agrupacionom:
+                            resultids["profesores"].add(userid)
 
-                                        if field != socios:
-                                            # Si no es socio, añadir a tutores
-                                            resultids["tutor"].append(userid)
+                        if field != common.socioid:
+                            resultids["tutor"].add(userid)
 
-                                        if (
-                                            "Socio Adulto Actividades".lower()
-                                            in agrupacionom
-                                        ):
-                                            resultids["adult"].append(userid)
-                                            resultids["adultactiv"].append(userid)
-                                            resultids["activ"].append(userid)
-                                            resultids["tutor"].append(userid)
+                        if _cat_adulto_actividades in agrupacionom:
+                            resultids["adult"].add(userid)
+                            resultids["adultactiv"].add(userid)
+                            resultids["activ"].add(userid)
+                            resultids["tutor"].add(userid)
 
-                                        if (
-                                            "Socio Adulto SIN Actividades".lower()
-                                            in agrupacionom
-                                        ):
-                                            resultids["adult"].append(userid)
-                                            resultids["adultsinactiv"].append(userid)
-                                            resultids["tutor"].append(userid)
+                        if _cat_adulto_sin_actividades in agrupacionom:
+                            resultids["adult"].add(userid)
+                            resultids["adultsinactiv"].add(userid)
+                            resultids["tutor"].add(userid)
 
-                                        if "Socio Actividades".lower() in agrupacionom:
-                                            if field == common.socioid:
-                                                resultids["kids"].append(userid)
-                                                resultids["kidsactiv"].append(userid)
-                                            resultids["activ"].append(userid)
-                                            resultids["kidsactiv-and-parents"].append(
-                                                userid
-                                            )
+                        if _cat_socio_actividades in agrupacionom:
+                            if field == common.socioid:
+                                resultids["kids"].add(userid)
+                                resultids["kidsactiv"].add(userid)
+                            resultids["activ"].add(userid)
+                            resultids["kidsactiv-and-parents"].add(userid)
 
-                                        if idmodalitat == 13:
-                                            resultids["sociohermano"].append(userid)
+                        if idmodalitat == 13:
+                            resultids["sociohermano"].add(userid)
 
-                                        if (
-                                            "Socio SIN Actividades".lower()
-                                            in agrupacionom
-                                        ):
-                                            if field == common.socioid:
-                                                resultids["kids"].append(userid)
-                                                resultids["kidsinactiv"].append(userid)
-                                            resultids["kids-and-parents"].append(userid)
-                                            resultids["kidsinactiv-and-parents"].append(
-                                                userid
-                                            )
+                        if _cat_socio_sin_actividades in agrupacionom:
+                            if field == common.socioid:
+                                resultids["kids"].add(userid)
+                                resultids["kidsinactiv"].add(userid)
+                            resultids["kids-and-parents"].add(userid)
+                            resultids["kidsinactiv-and-parents"].add(userid)
 
-                                        if "avast15".lower() in modalitatnom:
-                                            if field == common.socioid:
-                                                resultids["teen15"].append(userid)
-                                            resultids["teen15-and-parents"].append(
-                                                userid
-                                            )
+                        if _cat_avast15 in modalitatnom:
+                            if field == common.socioid:
+                                resultids["teen15"].add(userid)
+                            resultids["teen15-and-parents"].add(userid)
 
-                                        if "avast13".lower() in modalitatnom:
-                                            if field == common.socioid:
-                                                resultids["teen13"].append(userid)
+                        if _cat_avast13 in modalitatnom:
+                            if field == common.socioid:
+                                resultids["teen13"].add(userid)
+                            resultids["teen13-and-parents"].add(userid)
 
-                                            resultids["teen13-and-parents"].append(
-                                                userid
-                                            )
+                        if _cat_avast18 in modalitatnom:
+                            if field == common.socioid:
+                                resultids["teen18"].add(userid)
+                            resultids["teen18-and-parents"].add(userid)
 
-                                        if "avast18".lower() in modalitatnom:
-                                            if field == common.socioid:
-                                                resultids["teen18"].append(userid)
-                                            resultids["teen18-and-parents"].append(
-                                                userid
-                                            )
+                        if _cat_candidato in modalitatnom:
+                            resultids["preinscripcion"].add(userid)
 
-                                        if "Candidato a".lower() in modalitatnom:
-                                            resultids["preinscripcion"].append(userid)
+    # OPTIMIZATION Item 9: Remove candidates in preinscripcion efficiently
+    preinscripcion_ids = resultids["preinscripcion"]
+    for categoria in resultids:
+        if categoria != "preinscripcion":
+            resultids[categoria] -= preinscripcion_ids
 
-    # Remove candidates in preinscripcion
-    for uid in resultids["preinscripcion"]:
-        for categoria in resultids:
-            if categoria != "preinscripcion":
-                if uid in resultids[categoria]:
-                    resultids[categoria].remove(uid)
-
-    # Remove duplicates
+    # Convert sets back to sorted lists
     for item in resultids:
-        resultids[item] = sorted(set(resultids[item]))
-
-    # pprint.pprint(resultids)
+        resultids[item] = sorted(list(resultids[item]))
 
     return resultids
 

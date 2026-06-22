@@ -249,9 +249,30 @@ def readjson(filename):
                             categorias.append(int(m["idModalitat"]))
                         except (ValueError, TypeError):
                             pass
+                    # PRE-NORMALIZE modalitat names for faster comparisons (OPTIMIZATION - Item 4)
+                    if isinstance(m, dict) and "modalitat" in m:
+                        m_data = m["modalitat"]
+                        if isinstance(m_data, dict):
+                            if "nom" in m_data:
+                                m_data["_nom_lower"] = m_data["nom"].lower()
+                            if "agrupacio" in m_data and isinstance(
+                                m_data["agrupacio"], dict
+                            ):
+                                if "nom" in m_data["agrupacio"]:
+                                    m_data["agrupacio"]["_nom_lower"] = m_data[
+                                        "agrupacio"
+                                    ]["nom"].lower()
             socio["_cached_categorias"] = categorias
 
-            # PRE-COMPUTE common validations (OPTIMIZATION - Phase 2B)
+            # PRE-CACHE dynamic fields for faster lookups (OPTIMIZATION - Item 2)
+            if isinstance(socio.get("campsDinamics"), dict):
+                socio["_cached_campos"] = {
+                    field: socio["campsDinamics"].get(field) for field in telegramfields
+                }
+            else:
+                socio["_cached_campos"] = {field: None for field in telegramfields}
+
+            # PRE-COMPUTE common validations (OPTIMIZATION - Phase 2B/Item 3)
             socio["_valid_alta"] = validasocio(
                 socio,
                 estado="COLESTVAL",
@@ -267,6 +288,9 @@ def readjson(filename):
             )
             socio["_valid_alta_or_preinscripcion"] = (
                 socio["_valid_alta"] or socio["_valid_preinscripcion"]
+            )
+            socio["_valid_adulto_alta"] = socio["_valid_alta"] and any(
+                c in [53, 60] for c in socio["_cached_categorias"]
             )
     return data
 
@@ -558,7 +582,8 @@ def updateactividad(token, idactividad, *, force=False):
                 f"Fetching inscripciones for actividad {idactividad}...",
                 flush=True,
             )
-            response = requests.get(
+            # OPTIMIZATION Item 5: Use _http_session for connection pooling
+            response = _http_session.get(
                 usersurl,
                 auth=BearerAuth(token),
                 headers={"Authorization": f"Bearer {token}"},
@@ -988,6 +1013,31 @@ def mes_proximo_bimestre(fecha=None):
 
     # Fallback por si algo falla
     return 7
+
+
+def build_category_name_map(socios):
+    """Build O(1) lookup map for category names to IDs (OPTIMIZATION - Item 1).
+    Returns dict: {agrupacio_lower: {nom_lower: idModalitat}}
+    """
+    category_map = {}
+    if not isinstance(socios, list):
+        return category_map
+    for socio in socios:
+        if "colegiatHasModalitats" in socio:
+            for modalitat in socio["colegiatHasModalitats"]:
+                if "modalitat" in modalitat:
+                    m_data = modalitat["modalitat"]
+                    if "agrupacio" in m_data and "nom" in m_data:
+                        agrupacio_lower = (
+                            m_data["agrupacio"].get("_nom_lower")
+                            or m_data["agrupacio"]["nom"].lower()
+                        )
+                        nom_lower = m_data.get("_nom_lower") or m_data["nom"].lower()
+                        idModalitat = int(m_data.get("idModalitat", 0))
+                        if agrupacio_lower not in category_map:
+                            category_map[agrupacio_lower] = {}
+                        category_map[agrupacio_lower][nom_lower] = idModalitat
+    return category_map
 
 
 def getcategoriassocio(socio):
