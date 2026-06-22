@@ -36,15 +36,25 @@ outbox_anuladas = {
     if e.get("op") == "anula_inscripcio" and e.get("status") in ["pending", "synced"]
 }
 
-# Pre-load and cache activity inscriptions (OPTIMIZATION)
+# Pre-load and cache activity inscriptions + reverse lookups (OPTIMIZATION)
 cache_por_actividad = {}
+inscripcion_to_actividad = {}  # Map inscripcion ID → activity ID for O(1) lookup
+cached_inscritos_por_actividad = {}  # Cache all inscription data to avoid re-reads
+
 for actividadid in [781, 782]:
     inscritos = common.readjson(filename=f"{actividadid}")
+    cached_inscritos_por_actividad[actividadid] = inscritos
+
+    # Cache cancelled inscriptions by state
     cache_por_actividad[actividadid] = {
         str(i["idInscripcio"])
         for i in inscritos
         if i.get("estat") in ["INSCRESTANU", "anulada"]
     }
+
+    # Build reverse lookup: inscripcion ID → activity ID
+    for inscrito in inscritos:
+        inscripcion_to_actividad[str(inscrito["idInscripcio"])] = actividadid
 
 print("Procesando socios...")
 
@@ -70,9 +80,6 @@ for socio in socios:
             flush=True,
         )
     activasocio = False
-    cambiaactividades = False
-    targetcategorias = []
-    removecategorias = []
     targetprogramada = []
 
     # OPTIMIZATION Phase 2C: Use pre-computed validation
@@ -86,8 +93,9 @@ for socio in socios:
         saltarsocio = any(cambio in categoriassocio for cambio in [78, 79, 80, 81, 87])
 
         if not saltarsocio:
+            # Use pre-cached inscription data instead of reading again (OPTIMIZATION)
             for actividadid in [781, 782]:
-                inscritos = common.readjson(filename=f"{actividadid}")
+                inscritos = cached_inscritos_por_actividad[actividadid]
                 for inscrito in inscritos:
                     if int(inscrito["colegiat"]["idColegiat"]) == socioid:
                         inscripciones.append(inscrito["idInscripcio"])
@@ -106,14 +114,12 @@ for socio in socios:
                                     common.categorias["adultosinactividades"]
                                     in categoriassocio
                                 ):
-                                    cambiaactividades = True
                                     targetprogramada.append(79)
 
                                 if (
                                     common.categorias["sociosinactividades"]
                                     in categoriassocio
                                 ):
-                                    cambiaactividades = True
                                     targetprogramada.append(81)
 
                             elif actividadid == 782:
@@ -157,30 +163,19 @@ for socio in socios:
             # Borra inscripciones a las actividades
             print("Borrando inscripciones a actividades AUTO-CAMBIO")
             for inscripcion in inscripciones:
-                # Check across both activities using pre-loaded cache (OPTIMIZED)
-                already_processed = False
-                idActivitat = None
-
-                for actividadid in [781, 782]:
-                    cancelled_cache = cache_por_actividad.get(actividadid, set())
-                    if str(inscripcion) in cancelled_cache:
-                        already_processed = True
-                        idActivitat = actividadid
-                        break
-                    # Also check which activity this belongs to
-                    inscritos_data = common.readjson(filename=f"{actividadid}")
-                    if any(
-                        str(i.get("idInscripcio")) == str(inscripcion)
-                        for i in inscritos_data
-                    ):
-                        idActivitat = actividadid
-
-                # Check outbox (O(1) lookup - OPTIMIZED)
-                if not already_processed and str(inscripcion) in outbox_anuladas:
-                    already_processed = True
-
-                if already_processed:
+                # Check outbox first (O(1) lookup - OPTIMIZED)
+                if str(inscripcion) in outbox_anuladas:
                     print(f"  Inscripción {inscripcion} ya procesada (skipping)")
+                    continue
+
+                # Use reverse lookup to find activity ID (O(1) - OPTIMIZED)
+                idActivitat = inscripcion_to_actividad.get(str(inscripcion))
+
+                # Check if already cancelled in our cache (O(1) - OPTIMIZED)
+                if idActivitat and str(inscripcion) in cache_por_actividad.get(
+                    idActivitat, set()
+                ):
+                    print(f"  Inscripción {inscripcion} ya cancelada (skipping)")
                     continue
 
                 response = common.anula_inscripcio(
