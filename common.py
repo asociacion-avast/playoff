@@ -570,9 +570,74 @@ def validasocio(
     return False
 
 
-def updateactividad(token, idactividad, *, force=False):
+def _fetch_inscripciones_page(token, idactividad, page, page_size=100, attempts=3):
+    url = f"{apiurl}/inscripcions?idActivitat={idactividad}&page={page}&pageSize={page_size}"
+    for attempt in range(1, attempts + 1):
+        try:
+            response = _http_session.get(
+                url,
+                auth=BearerAuth(token),
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as exc:
+            print(
+                f"Page fetch failed for actividad {idactividad} page {page} "
+                f"(attempt {attempt}/{attempts}): {exc}",
+                flush=True,
+            )
+            if attempt == attempts:
+                raise
+
+
+def _fetch_all_inscripciones(token, idactividad, *, page_size=100, max_pages=100):
+    users = []
+    seen_ids = set()
+    page = 0
+
+    while page < max_pages:
+        print(
+            f"Fetching inscripciones page {page} for actividad {idactividad}...",
+            flush=True,
+        )
+        page_users = _fetch_inscripciones_page(
+            token,
+            idactividad,
+            page,
+            page_size,
+        )
+
+        if not isinstance(page_users, list):
+            raise RuntimeError(
+                f"Unexpected response format for actividad {idactividad} page {page}"
+            )
+
+        if page == 0 and not page_users:
+            return []
+
+        added = False
+        for inscripcion in page_users:
+            inscripcion_id = str(inscripcion.get("idInscripcio"))
+            if inscripcion_id and inscripcion_id not in seen_ids:
+                seen_ids.add(inscripcion_id)
+                users.append(inscripcion)
+                added = True
+
+        if not added:
+            break
+
+        if len(page_users) < page_size:
+            break
+
+        page += 1
+
+    return users
+
+
+def updateactividad(token, idactividad, *, force=False, require_fresh=False):
     """Fetch inscripciones for actividad; fall back to local cache on failure."""
-    usersurl = f"{apiurl}/inscripcions?idActivitat={idactividad}"
     cache_path = f"data/{idactividad}.json"
     error = None
 
@@ -582,15 +647,13 @@ def updateactividad(token, idactividad, *, force=False):
                 f"Fetching inscripciones for actividad {idactividad}...",
                 flush=True,
             )
-            # OPTIMIZATION Item 5: Use _http_session for connection pooling
-            response = _http_session.get(
-                usersurl,
-                auth=BearerAuth(token),
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=30,
-            )
-            response.raise_for_status()
-            users = response.json()
+            users = _fetch_all_inscripciones(token, idactividad)
+
+            if require_fresh and not users:
+                raise RuntimeError(
+                    f"Actividad {idactividad} returned no inscripciones on fresh fetch"
+                )
+
             writejson(filename=f"{idactividad}", data=users)
             print(
                 f"Saved {len(users)} inscripciones for actividad {idactividad}",
@@ -603,13 +666,19 @@ def updateactividad(token, idactividad, *, force=False):
                 f"API fetch failed for actividad {idactividad}: {exc}",
                 flush=True,
             )
+        except RuntimeError as exc:
+            error = exc
+            print(
+                f"Actividad fetch failed for actividad {idactividad}: {exc}",
+                flush=True,
+            )
     else:
         print(
             f"Offline: skipping API fetch for actividad {idactividad}",
             flush=True,
         )
 
-    if os.path.exists(cache_path):
+    if os.path.exists(cache_path) and not require_fresh:
         users = readjson(filename=f"{idactividad}")
         return users
 
@@ -618,16 +687,36 @@ def updateactividad(token, idactividad, *, force=False):
             f"No cached inscripciones for actividad {idactividad} "
             f"and API request failed"
         ) from error
-    raise FileNotFoundError(f"No cached inscripciones for actividad {idactividad}")
+    raise RuntimeError(
+        f"No cached inscripciones for actividad {idactividad} and API fetch was skipped"
+    )
 
 
-def read_inscripciones_actividad(token, idactividad, *, refresh=False):
+def read_inscripciones_actividad(
+    token,
+    idactividad,
+    *,
+    refresh=False,
+    require_fresh=False,
+):
     """Load inscripciones for an actividad (cache first, else API with fallback)."""
     cache_path = f"data/{idactividad}.json"
     if not refresh and os.path.exists(cache_path):
+        if require_fresh:
+            return updateactividad(
+                token,
+                idactividad,
+                force=True,
+                require_fresh=True,
+            )
         inscritos = readjson(filename=f"{idactividad}")
         return inscritos
-    return updateactividad(token, idactividad, force=refresh)
+    return updateactividad(
+        token,
+        idactividad,
+        force=refresh,
+        require_fresh=require_fresh,
+    )
 
 
 def _create_inscripcio_api(token, idActivitat, idColegiat):
