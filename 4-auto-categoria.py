@@ -158,35 +158,35 @@ for socio in socios:
         adulto = False
 
         # Carnet de socio
-        if common.categorias["carnetpendiente"] not in categoriassocio:
-            if "persona" in socio and "residencia" in socio["persona"]:
-                if (
-                    socio["persona"]["residencia"] == ""
-                    or socio["persona"]["residencia"] == "-"
-                ):
+        if common.categorias["carnetpendiente"] not in categoriassocio and (
+            "persona" in socio and "residencia" in socio["persona"]
+        ):
+            if socio["persona"]["residencia"] in ["", "-"]:
+                targetcategorias.append(common.categorias["notienecarnet"])
+            else:
+                removecategorias.append(common.categorias["notienecarnet"])
+
+            if (
+                "ANULADO".lower() in socio["persona"]["residencia"].lower()
+                or "ANUAL".lower() in socio["persona"]["residencia"].lower()
+                or socio["persona"]["residencia"] == "null"
+            ):
+                targetcategorias.append(common.categorias["carnetincorrecto"])
+
+                # Forzar marcar que no tiene carnet
+                if common.categorias["notienecarnet"] in removecategorias:
+                    removecategorias.remove(common.categorias["notienecarnet"])
                     targetcategorias.append(common.categorias["notienecarnet"])
-                else:
-                    removecategorias.append(common.categorias["notienecarnet"])
 
-                if (
-                    "ANULADO".lower() in socio["persona"]["residencia"].lower()
-                    or "ANUAL".lower() in socio["persona"]["residencia"].lower()
-                    or socio["persona"]["residencia"] == "null"
-                ):
-                    targetcategorias.append(common.categorias["carnetincorrecto"])
-
-                    # Forzar marcar que no tiene carnet
-                    if common.categorias["notienecarnet"] in removecategorias:
-                        removecategorias.remove(common.categorias["notienecarnet"])
-                        targetcategorias.append(common.categorias["notienecarnet"])
-
-                else:
-                    removecategorias.append(common.categorias["carnetincorrecto"])
+            else:
+                removecategorias.append(common.categorias["carnetincorrecto"])
 
         # Carnet tutores
         carnetsocio = []
 
-        for tutor in ["tutor1", "tutor2"]:
+        carnetsocio.extend(
+            socio[tutor]["residencia"]
+            for tutor in ["tutor1", "tutor2"]
             if (
                 tutor in socio
                 and socio[tutor] is not None
@@ -195,9 +195,8 @@ for socio in socios:
                 and "ANULADO".lower() not in socio[tutor]["residencia"].lower()
                 and "ANUAL".lower() not in socio[tutor]["residencia"].lower()
                 and socio[tutor]["residencia"] != "null"
-            ):
-                carnetsocio.append(socio[tutor]["residencia"])
-
+            )
+        )
         # Detectar si el carnet de tutor está indicado para ambos tutores
         if len(carnetsocio) > len(sorted(set(carnetsocio))):
             targetcategorias.append(common.categorias["carnettutorduplicado"])
@@ -238,13 +237,11 @@ for socio in socios:
             except Exception:
                 myyear = False
 
-            if myyear and year:
-                if myyear != year:
-                    print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
-                    common.delcategoria(token, socioid, idcategoria)
-
-            # Attempt to find categories for a year
-
+            if myyear and year and myyear != year:
+                print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
+            if myyear and year and myyear != year:
+                print(f"ERROR: AÑO INCORRECTO para socio ID: {socioid}")
+                common.delcategoria(token, socioid, idcategoria)
             for categoria in categorias:
                 nombre = categoria["nom"]
 
@@ -374,36 +371,35 @@ for socio in socios:
                 removecategorias.remove(common.categorias["impagoanual"])
 
         # Classify acogida
-        if common.categorias["acogidacolab"] not in categoriassocio:
+        if common.categorias["acogidacolab"] not in categoriassocio and (
+            common.categorias["acogida"] in categoriassocio
+            or common.categorias["acogida"] in targetcategorias
+        ):
             if (
-                common.categorias["acogida"] in categoriassocio
-                or common.categorias["acogida"] in targetcategorias
+                common.categorias["adultoconactividades"] in categoriassocio
+                or common.categorias["adultoconactividades"] in targetcategorias
             ):
-                if (
-                    common.categorias["adultoconactividades"] in categoriassocio
-                    or common.categorias["adultoconactividades"] in targetcategorias
-                ):
-                    targetcategorias.append(common.categorias["acogidaadultactiv"])
-                if (
-                    common.categorias["adultosinactividades"] in categoriassocio
-                    or common.categorias["adultosinactividades"] in targetcategorias
-                ):
-                    targetcategorias.append(common.categorias["acogidaadultsinactiv"])
-                if (
-                    common.categorias["socioactividades"] in categoriassocio
-                    or common.categorias["socioactividades"] in targetcategorias
-                ):
-                    targetcategorias.append(common.categorias["acogidaconactiv"])
-                if (
-                    common.categorias["sociosinactividades"] in categoriassocio
-                    or common.categorias["sociosinactividades"] in targetcategorias
-                ):
-                    targetcategorias.append(common.categorias["acogidasinactiv"])
-                if (
-                    common.categorias["sociohermanoactividades"] in categoriassocio
-                    or common.categorias["sociohermanoactividades"] in targetcategorias
-                ):
-                    targetcategorias.append(common.categorias["acogidaconactiv"])
+                targetcategorias.append(common.categorias["acogidaadultactiv"])
+            if (
+                common.categorias["adultosinactividades"] in categoriassocio
+                or common.categorias["adultosinactividades"] in targetcategorias
+            ):
+                targetcategorias.append(common.categorias["acogidaadultsinactiv"])
+            if (
+                common.categorias["socioactividades"] in categoriassocio
+                or common.categorias["socioactividades"] in targetcategorias
+            ):
+                targetcategorias.append(common.categorias["acogidaconactiv"])
+            if (
+                common.categorias["sociosinactividades"] in categoriassocio
+                or common.categorias["sociosinactividades"] in targetcategorias
+            ):
+                targetcategorias.append(common.categorias["acogidasinactiv"])
+            if (
+                common.categorias["sociohermanoactividades"] in categoriassocio
+                or common.categorias["sociohermanoactividades"] in targetcategorias
+            ):
+                targetcategorias.append(common.categorias["acogidaconactiv"])
 
         if (
             common.categorias["acogida"] not in categoriassocio

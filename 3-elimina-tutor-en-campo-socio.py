@@ -31,21 +31,22 @@ count = 0
 idsociotoclean = []
 
 for socio in socios:
-    if isinstance(socio["campsDinamics"], dict):
-        if common.socioid in socio["campsDinamics"]:
-            mysocio = socio["campsDinamics"][common.socioid]
-            for field in [common.tutor1, common.tutor2]:
-                if field in socio["campsDinamics"]:
-                    if mysocio == socio["campsDinamics"][field]:
-                        idsociotoclean.append(socio["idColegiat"])
-
+    if (
+        isinstance(socio["campsDinamics"], dict)
+        and common.socioid in socio["campsDinamics"]
+    ):
+        mysocio = socio["campsDinamics"][common.socioid]
+        idsociotoclean.extend(
+            socio["idColegiat"]
+            for field in [common.tutor1, common.tutor2]
+            if field in socio["campsDinamics"]
+            and mysocio == socio["campsDinamics"][field]
+        )
 for idcolegiat in sorted(set(idsociotoclean)):
     count = count + 1
     print(f"{count:04} {common.sociobase}{idcolegiat}")
 
-    # Check if already cleared in cache
-    cached_socio = common.read_entity_colegiat(idcolegiat)
-    if cached_socio:
+    if cached_socio := common.read_entity_colegiat(idcolegiat):
         cached_value = cached_socio.get("campsDinamics", {}).get(common.socioid)
         if not cached_value or cached_value == "":
             print("    SOCIO_ID: Already cleared in cache (skipping)")

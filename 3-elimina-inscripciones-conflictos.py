@@ -4,8 +4,6 @@ import datetime
 import os
 from collections import defaultdict
 
-import dateutil.parser
-
 import common
 import sync_store
 
@@ -33,54 +31,35 @@ ahora = datetime.datetime.now()
 
 for actividad in actividades:
     myid = actividad["idActivitat"]
-    nombre = actividad["nom"]
-
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    horario = common.actividad_horario(actividad)
 
     if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         inscritos = common.read_inscripciones_actividad(token_ro, myid)
-
         actividadyusuarios[myid] = []
 
         for inscrito in inscritos:
             colegiat = inscrito["colegiat"]["idColegiat"]
-            fecha = inscrito["dataIntroduccio"]
-            try:
-                fecha = dateutil.parser.parse(fecha)
+            fecha = common.parse_date(inscrito["dataIntroduccio"])
 
-            except Exception:
-                fecha = False
+            if fecha is None:
+                continue
 
-            if ahora - fecha > datetime.timedelta(hours=1, minutes=30):
-                if inscrito["estat"] == "INSCRESTNOVA":
-                    actividadyusuarios[myid].append(colegiat)
-                    inscripcion = inscrito["idInscripcio"]
-                    inscripcion_actividad[inscripcion] = myid
+            if ahora - fecha <= datetime.timedelta(hours=1, minutes=30):
+                continue
 
-                    if colegiat not in usuariosyactividad:
-                        usuariosyactividad[colegiat] = []
+            if inscrito["estat"] != "INSCRESTNOVA":
+                continue
 
-                    if colegiat not in usuariosyhorarios:
-                        usuariosyhorarios[colegiat] = []
+            actividadyusuarios[myid].append(colegiat)
+            inscripcion = inscrito["idInscripcio"]
+            inscripcion_actividad[inscripcion] = myid
 
-                    if colegiat not in usuariosyhorariosinscripciones:
-                        usuariosyhorariosinscripciones[colegiat] = {}
-
-                    if horario not in usuariosyhorariosinscripciones[colegiat]:
-                        usuariosyhorariosinscripciones[colegiat][horario] = []
-
-                    if colegiat not in usuarioseinscripciones:
-                        usuarioseinscripciones[colegiat] = []
-
-                    usuariosyactividad[colegiat].append(myid)
-                    usuariosyhorarios[colegiat].append(horario)
-                    usuariosyhorariosinscripciones[colegiat][horario].append(
-                        inscripcion
-                    )
-                    usuarioseinscripciones[colegiat].append(inscripcion)
+            usuariosyactividad.setdefault(colegiat, []).append(myid)
+            usuariosyhorarios.setdefault(colegiat, []).append(horario)
+            usuariosyhorariosinscripciones.setdefault(colegiat, {}).setdefault(
+                horario, []
+            ).append(inscripcion)
+            usuarioseinscripciones.setdefault(colegiat, []).append(inscripcion)
 
 
 token = common.gettoken(
@@ -104,8 +83,7 @@ for usuario, value in usuariosyhorarios.items():
         for horario in usuariosyhorariosinscripciones[usuario]:
             if len(usuariosyhorariosinscripciones[usuario][horario]) > 1:
                 for inscripcion in usuariosyhorariosinscripciones[usuario][horario]:
-                    idActivitat = inscripcion_actividad.get(inscripcion)
-                    if idActivitat:
+                    if idActivitat := inscripcion_actividad.get(inscripcion):
                         inscripciones_por_actividad[idActivitat].append(
                             (usuario, horario, inscripcion)
                         )
@@ -168,11 +146,7 @@ print(
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    horario = common.actividad_horario(actividad)
 
     if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         inscritos = common.read_inscripciones_actividad(token_ro, myid)

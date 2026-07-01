@@ -60,11 +60,9 @@ for actividadid in [815, 816]:
     inscritos = common.readjson(filename=f"{actividadid}")
     inscripciones = []
 
-    processed = 0
     progress_interval = max(1, total_socios // 20)
 
-    for socio in socios:
-        processed += 1
+    for processed, socio in enumerate(socios, start=1):
         if processed % progress_interval == 0 or processed == total_socios:
             pct = int(100 * processed / total_socios)
             print(
@@ -93,7 +91,7 @@ for actividadid in [815, 816]:
                             data = common.getcomunicadosocio(socioid)
 
                         if not data:
-                            print("Error procesando inscripcion de socio: %s" % socioid)
+                            print(f"Error procesando inscripcion de socio: {socioid}")
                         else:
                             print("Enviando comunicado")
                             response = common.enviacomunicado(token=token, data=data)

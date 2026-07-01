@@ -57,61 +57,62 @@ for socio in socios:
         sociosbaja.append(id_socio)
 
     # OPTIMIZATION Phase 2C: Use pre-computed validation
-    if socio.get("_valid_alta_or_preinscripcion", False):
-        if "colegiatHasModalitats" in socio:
-            # Iterate over all categories for the user
-            for modalitat in socio["colegiatHasModalitats"]:
-                if "modalitat" in modalitat:
-                    # Save name for comparing the ones we target
-                    agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
-                    modalitatnom = modalitat["modalitat"]["nom"].lower()
+    if not socio.get("_valid_alta_or_preinscripcion", False):
+        continue
 
-                    # "activ": [], # Con actividades
-                    # "adult": [], # Adultos
-                    # "adultactiv": [], # Adultos con actividades
-                    # "adultsinactiv": [], # Adultos sin actividades
-                    # "invalid": [], # Socios sin ALTA activa
-                    # "kid-and-parents": [], # Niños y tutores
-                    # "kid": [], # Niños (CON y SIN)
-                    # "kidactiv-and-parents": [], # Niños CON Actividades y tutores
-                    # "kidactiv": [], # Niños CON Actividades
-                    # "kidsinactiv-and-parents": [], # Niños SIN Actividades y tutores
-                    # "kidsinactiv": [], # Niños SIN actividades
-                    # "profesores": [], # Profesores
-                    # "teen13-and-parents": [], # Niños y tutores [13-15)
-                    # "teen13": [], # Niños [13-15)
-                    # "teen15-and-parents": [], # Niños y tutores [15-24]
-                    # "teen15": [], # Niños [15-24]
-                    # "tutor": [], # Tutores
-                    # "valid": [], # Cualquiera con relación avast
+    for modalitat in socio.get("colegiatHasModalitats", []):
+        if "modalitat" not in modalitat:
+            continue
 
-                    if "profesores".lower() in agrupacionom:
-                        resultids["profesores"].append(id_socio)
+        agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
+        modalitatnom = modalitat["modalitat"]["nom"].lower()
 
-                    if "Socio Adulto Actividades".lower() in agrupacionom:
-                        resultids["adult"].append(id_socio)
-                        resultids["adultactiv"].append(id_socio)
-                        resultids["activ"].append(id_socio)
-                        resultids["tutor"].append(id_socio)
+        # "activ": [], # Con actividades
+        # "adult": [], # Adultos
+        # "adultactiv": [], # Adultos con actividades
+        # "adultsinactiv": [], # Adultos sin actividades
+        # "invalid": [], # Socios sin ALTA activa
+        # "kid-and-parents": [], # Niños y tutores
+        # "kid": [], # Niños (CON y SIN)
+        # "kidactiv-and-parents": [], # Niños CON Actividades y tutores
+        # "kidactiv": [], # Niños CON Actividades
+        # "kidsinactiv-and-parents": [], # Niños SIN Actividades y tutores
+        # "kidsinactiv": [], # Niños SIN actividades
+        # "profesores": [], # Profesores
+        # "teen13-and-parents": [], # Niños y tutores [13-15)
+        # "teen13": [], # Niños [13-15)
+        # "teen15-and-parents": [], # Niños y tutores [15-24]
+        # "teen15": [], # Niños [15-24]
+        # "tutor": [], # Tutores
+        # "valid": [], # Cualquiera con relación avast
 
-                    if "Socio Adulto SIN Actividades".lower() in agrupacionom:
-                        resultids["adult"].append(id_socio)
-                        resultids["adultsinactiv"].append(id_socio)
-                        resultids["tutor"].append(id_socio)
+        if "profesores".lower() in agrupacionom:
+            resultids["profesores"].append(id_socio)
 
-                    if "Socio Actividades".lower() in agrupacionom:
-                        resultids["activ"].append(id_socio)
-                        resultids["kidsactiv-and-parents"].append(id_socio)
+        if "Socio Adulto Actividades".lower() in agrupacionom:
+            resultids["adult"].append(id_socio)
+            resultids["adultactiv"].append(id_socio)
+            resultids["activ"].append(id_socio)
+            resultids["tutor"].append(id_socio)
 
-                    if "Socio SIN Actividades".lower() in agrupacionom:
-                        resultids["kids-and-parents"].append(id_socio)
-                        resultids["kidsinactiv-and-parents"].append(id_socio)
+        if "Socio Adulto SIN Actividades".lower() in agrupacionom:
+            resultids["adult"].append(id_socio)
+            resultids["adultsinactiv"].append(id_socio)
+            resultids["tutor"].append(id_socio)
 
-                    if "avast15".lower() in modalitatnom:
-                        resultids["teen15-and-parents"].append(id_socio)
+        if "Socio Actividades".lower() in agrupacionom:
+            resultids["activ"].append(id_socio)
+            resultids["kidsactiv-and-parents"].append(id_socio)
 
-                    if "avast13".lower() in modalitatnom:
-                        resultids["teen13-and-parents"].append(id_socio)
+        if "Socio SIN Actividades".lower() in agrupacionom:
+            resultids["kids-and-parents"].append(id_socio)
+            resultids["kidsinactiv-and-parents"].append(id_socio)
+
+        if "avast15".lower() in modalitatnom:
+            resultids["teen15-and-parents"].append(id_socio)
+
+        if "avast13".lower() in modalitatnom:
+            resultids["teen13-and-parents"].append(id_socio)
     if id_socio not in resultids["activ"]:
         # El socio no tiene actividades, ni de adulto ni de niño
 
@@ -121,11 +122,7 @@ for socio in socios:
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    horario = common.actividad_horario(actividad)
 
     if horario in {7, 8, 9, 10}:
         inscritos = common.readjson(filename=f"{myid}")
@@ -140,27 +137,12 @@ for actividad in actividades:
                 inscripcion = inscrito["idInscripcio"]
 
                 if inscrito["estat"] == "INSCRESTNOVA":
-                    if colegiat not in usuariosyactividad:
-                        usuariosyactividad[colegiat] = []
-
-                    if colegiat not in usuariosyhorarios:
-                        usuariosyhorarios[colegiat] = []
-
-                    if colegiat not in usuariosyhorariosinscripciones:
-                        usuariosyhorariosinscripciones[colegiat] = {}
-
-                    if horario not in usuariosyhorariosinscripciones[colegiat]:
-                        usuariosyhorariosinscripciones[colegiat][horario] = []
-
-                    if colegiat not in usuarioseinscripciones:
-                        usuarioseinscripciones[colegiat] = []
-
-                    usuariosyactividad[colegiat].append(myid)
-                    usuariosyhorarios[colegiat].append(horario)
-                    usuariosyhorariosinscripciones[colegiat][horario].append(
-                        inscripcion
-                    )
-                    usuarioseinscripciones[colegiat].append(inscripcion)
+                    usuariosyactividad.setdefault(colegiat, []).append(myid)
+                    usuariosyhorarios.setdefault(colegiat, []).append(horario)
+                    usuariosyhorariosinscripciones.setdefault(colegiat, {}).setdefault(
+                        horario, []
+                    ).append(inscripcion)
+                    usuarioseinscripciones.setdefault(colegiat, []).append(inscripcion)
 
 
 token = common.gettoken(
@@ -195,11 +177,7 @@ print(
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    horario = common.actividad_horario(actividad)
 
     if horario in {7, 8, 9, 10}:
         inscritos = common.readjson(filename=f"{myid}")

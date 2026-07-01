@@ -24,7 +24,7 @@ pagesize = 100
 
 while tanda == -1 or len(tanda) >= pagesize:
     page += 1
-    print("Obteniendo listado de socios, page: %s" % page)
+    print(f"Obteniendo listado de socios, page: {page}")
     sociosurl = f"{common.apiurl}/colegiats?page={page}&pageSize={pagesize}"
     result = requests.get(
         sociosurl, auth=common.BearerAuth(token), headers=common.headers, timeout=15
@@ -36,7 +36,7 @@ while tanda == -1 or len(tanda) >= pagesize:
         tanda = []
     socios.extend(tanda)
 
-print("Saving socios.json to disk (%s records)" % len(socios), flush=True)
+print(f"Saving socios.json to disk ({len(socios)} records)", flush=True)
 common.writejson(filename="socios", data=socios)
 print("Saving per-entity cache", flush=True)
 sync_store.split_entities_from_snapshot("colegiat", socios, "idColegiat")
@@ -61,4 +61,4 @@ print("Valid ID's")
 print(sorted(set(validids)))
 print("Invalid ID's")
 print(sorted(set(invalidids)))
-print("Total socios: %s" % len(socios))
+print(f"Total socios: {len(socios)}")

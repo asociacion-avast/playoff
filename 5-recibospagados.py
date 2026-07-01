@@ -61,24 +61,25 @@ for recibo in response:
     try:
         datapagament = dateutil.parser.parse(recibo["dataPagament"])
     except:
-        print("Error procesando %s" % recibo["dataPagament"])
+        print(f"Error procesando {recibo['dataPagament']}")
         continue
 
-    if datapagament >= datetime.datetime(
-        year - 1, 9, 1
-    ) and datapagament <= datetime.datetime(year, 6, 30):
-        if "ACTIV" in recibo["concepte"]:
-            estado = ""
-            if recibo["estat"] == "REBESTRET":
-                estado = "DEVUELTO"
-            if recibo["estat"] == "REBESTEME":
-                estado = "PAGADO"
-                total = total + float(recibo["base"])
-            print(recibo["base"], recibo["concepte"], recibo["dataPagament"], estado)
-            receiptfound = True
-            # Append to texto the line for the new receipt
+    if (
+        datapagament >= datetime.datetime(year - 1, 9, 1)
+        and datapagament <= datetime.datetime(year, 6, 30)
+        and "ACTIV" in recibo["concepte"]
+    ):
+        estado = ""
+        if recibo["estat"] == "REBESTRET":
+            estado = "DEVUELTO"
+        if recibo["estat"] == "REBESTEME":
+            estado = "PAGADO"
+            total = total + float(recibo["base"])
+        print(recibo["base"], recibo["concepte"], recibo["dataPagament"], estado)
+        receiptfound = True
+        # Append to texto the line for the new receipt
 
-            texto += f"<tr><td>{recibo['base']}</td><td>{recibo['concepte']}</td><td>{recibo['dataPagament']}</td><td>{estado}</td></tr>"
+        texto += f"<tr><td>{recibo['base']}</td><td>{recibo['concepte']}</td><td>{recibo['dataPagament']}</td><td>{estado}</td></tr>"
 
 texto += "</table>"
 texto += "<small>* Las actividades se han realizado los sábados alternos de cada mes en horario matinal durante el periodo escolar. Y para que conste y surta los efectos oportunos expido el presente documento.</small><p>"

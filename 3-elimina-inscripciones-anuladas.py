@@ -20,37 +20,24 @@ actividades = common.readjson(filename="actividades")
 
 print("Procesando actividades...")
 
-usuariosyactividad = {}
-actividadyusuarios = {}
-
-
 anuladas = []
 inscripcion_actividad = {}
 
 print("Procesando inscripciones")
 for actividad in actividades:
     myid = actividad["idActivitat"]
-    nombre = actividad["nom"]
+    horario = common.actividad_horario(actividad)
 
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
-
-    if horario in [7, 8, 9, 10]:
+    if horario in {7, 8, 9, 10}:
         inscritos = common.read_inscripciones_actividad(token_ro, myid)
 
-        actividadyusuarios[myid] = []
-
         for inscrito in inscritos:
-            colegiat = inscrito["colegiat"]["idColegiat"]
-            actividadyusuarios[myid].append(colegiat)
+            if inscrito["estat"] != "INSCRESTANULADA":
+                continue
 
-            if inscrito["estat"] == "INSCRESTANULADA":
-                ID = inscrito["idInscripcio"]
-                anuladas.append(ID)
-                # Populate inscripcion_actividad mapping for cache updates
-                inscripcion_actividad[ID] = myid
+            ID = inscrito["idInscripcio"]
+            anuladas.append(ID)
+            inscripcion_actividad[ID] = myid
 
 
 anuladas = sorted(set(anuladas))
@@ -73,13 +60,12 @@ outbox_anuladas = {
 # Group by activity and build cache sets (OPTIMIZATION)
 anuladas_por_actividad = defaultdict(list)
 for anulada in anuladas:
-    idActivitat = inscripcion_actividad.get(anulada)
-    if idActivitat:
+    if idActivitat := inscripcion_actividad.get(anulada):
         anuladas_por_actividad[idActivitat].append(anulada)
 
 # Read each activity file once and build cache set (OPTIMIZATION)
 cache_por_actividad = {}
-for idActivitat in anuladas_por_actividad.keys():
+for idActivitat in anuladas_por_actividad:
     inscritos = common.readjson(filename=f"{idActivitat}")
     cache_por_actividad[idActivitat] = {
         str(i["idInscripcio"])

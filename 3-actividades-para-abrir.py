@@ -29,29 +29,26 @@ valido = 0.6
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
+    horario = common.actividad_horario(actividad)
 
-    inscritos = int(actividad["maxPlaces"]) - int(actividad["placesLliures"])
-    porcentaje = (inscritos) / int(actividad["maxPlaces"])
+    max_places = common.safe_int(actividad.get("maxPlaces"), 0)
+    inscritos = max_places - common.safe_int(actividad.get("placesLliures"), 0)
+    porcentaje = inscritos / common.safe_int(actividad.get("maxPlaces"), 1)
 
-    if porcentaje <= valido:
-        if horario in [7, 8, 9, 10, 19, 20, 21, 22]:
-            print(
-                myid,
-                nombre,
-                f"{porcentaje * 100:.2f}%",
-                actividad["maxPlaces"],
-                inscritos,
-                actividad["placesLliures"],
-            )
+    if porcentaje <= valido and horario in {7, 8, 9, 10, 19, 20, 21, 22}:
+        print(
+            myid,
+            nombre,
+            f"{porcentaje * 100:.2f}%",
+            actividad["maxPlaces"],
+            inscritos,
+            actividad["placesLliures"],
+        )
 
-            print("Haciendo llamada API")
+        print("Haciendo llamada API")
 
-            override = {
-                "dataLimit": "2026-03-02 00:00",
-            }
+        override = {
+            "dataLimit": "2026-03-02 00:00",
+        }
 
-            pprint.pprint(common.editaactividad(token, myid, override))
+        pprint.pprint(common.editaactividad(token, myid, override))

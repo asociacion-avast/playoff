@@ -27,6 +27,9 @@ socioid = "0_16_20241120130245"
 telegramfields = [tutor1, tutor2, socioid]
 fechacambio = "0_17_20250221121130"
 
+# In-memory cache for JSON file loads and token requests
+_json_cache = {}
+_token_cache = {}
 
 categorias = {
     "acogida": 74,
@@ -182,11 +185,11 @@ nombremes = {
 
 @lru_cache(maxsize=512)  # OPTIMIZATION Phase 3: Cache translation lookups
 def traduce(id):
-    if id in diccionario:
-        text = f"ID {id} ({diccionario[id]})"
-    else:
-        text = "ID %s no encontrado en diccionario" % id
-    return text
+    return (
+        f"ID {id} ({diccionario[id]})"
+        if id in diccionario
+        else f"ID {id} no encontrado en diccionario"
+    )
 
 
 apiurl = f"https://{config['auth']['endpoint']}.playoffinformatica.com/api.php/api/v1.0"
@@ -211,10 +214,11 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 def gettoken(user=config["auth"]["username"], password=config["auth"]["password"]):
-    # get token
+    cache_key = (user, password)
+    if cache_key in _token_cache:
+        return _token_cache[cache_key]
 
     loginurl = f"{apiurl}/login/colegi"
-
     data = {"username": user, "password": password}
 
     result = _http_session.post(
@@ -223,42 +227,50 @@ def gettoken(user=config["auth"]["username"], password=config["auth"]["password"
         headers={"Content-Type": "application/json"},
     )  # Use session (OPTIMIZATION)
 
-    return result.json()["access_token"]
+    token = result.json()["access_token"]
+    _token_cache[cache_key] = token
+    return token
 
 
 def writejson(filename, data):
     with open(f"data/{filename}.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-        return True
+    _json_cache[filename] = data
+    return True
 
 
-def readjson(filename):
+def readjson(filename, refresh=False):
+    if refresh and filename in _json_cache:
+        del _json_cache[filename]
+    if filename in _json_cache:
+        return _json_cache[filename]
+
     with open(f"data/{filename}.json", encoding="utf-8") as f:
         data = json.load(f)
+    _json_cache[filename] = data
     if filename == "socios" and isinstance(data, list):
         for socio in data:
             sync_store.enrich_socio_modalitats(socio)
 
-            # PRE-COMPUTE categories and cache on object (OPTIMIZATION - Phase 2A)
-            categorias = []
             modalitats = socio.get("colegiatHasModalitats", [])
+            categorias = []
             if isinstance(modalitats, list):
+                # PRE-COMPUTE categories and cache on object (OPTIMIZATION - Phase 2A)
                 for m in modalitats:
-                    if isinstance(m, dict) and "idModalitat" in m:
-                        try:
-                            categorias.append(int(m["idModalitat"]))
-                        except (ValueError, TypeError):
-                            pass
-                    # PRE-NORMALIZE modalitat names for faster comparisons (OPTIMIZATION - Item 4)
-                    if isinstance(m, dict) and "modalitat" in m:
-                        m_data = m["modalitat"]
-                        if isinstance(m_data, dict):
-                            if "nom" in m_data:
-                                m_data["_nom_lower"] = m_data["nom"].lower()
-                            if "agrupacio" in m_data and isinstance(
-                                m_data["agrupacio"], dict
-                            ):
-                                if "nom" in m_data["agrupacio"]:
+                    if isinstance(m, dict):
+                        if "idModalitat" in m:
+                            with contextlib.suppress(ValueError, TypeError):
+                                categorias.append(int(m["idModalitat"]))
+                        if "modalitat" in m:
+                            m_data = m["modalitat"]
+                            if isinstance(m_data, dict):
+                                if "nom" in m_data:
+                                    m_data["_nom_lower"] = m_data["nom"].lower()
+                                if (
+                                    "agrupacio" in m_data
+                                    and isinstance(m_data["agrupacio"], dict)
+                                    and "nom" in m_data["agrupacio"]
+                                ):
                                     m_data["agrupacio"]["_nom_lower"] = m_data[
                                         "agrupacio"
                                     ]["nom"].lower()
@@ -290,9 +302,51 @@ def readjson(filename):
                 socio["_valid_alta"] or socio["_valid_preinscripcion"]
             )
             socio["_valid_adulto_alta"] = socio["_valid_alta"] and any(
-                c in [53, 60] for c in socio["_cached_categorias"]
+                c in [53, 60] for c in socio.get("_cached_categorias", [])
             )
     return data
+
+
+def actividad_horario(actividad):
+    """Return the integer horario for an actividad, using 0 when missing."""
+    nivel = actividad.get("idNivell")
+    if nivel and nivel != "null":
+        try:
+            return int(nivel)
+        except (TypeError, ValueError):
+            return 0
+    return 0
+
+
+def parse_date(value):
+    """Parse a date string safely, returning None when invalid."""
+    if not value:
+        return None
+    try:
+        return dateutil.parser.parse(value)
+    except Exception:
+        return None
+
+
+def safe_int(value, default=0):
+    """Convert a value to int if possible, otherwise return default."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def is_socio_baja(socio):
+    """Detect if a socio should be treated as baja for activity cleanup."""
+    if socio.get("_valid_baja", False):
+        return True
+    if socio.get("_valid_alta_or_preinscripcion", False):
+        categoriassocio = socio.get("_cached_categorias", [])
+        return (
+            categorias["actividades"] not in categoriassocio
+            and categorias["impagoanual"] not in categoriassocio
+        )
+    return False
 
 
 def is_online():
@@ -380,9 +434,7 @@ def read_entity_colegiat(socio_id, token=None):
         response = requests.get(
             url, auth=BearerAuth(token), headers=headers, timeout=15
         )
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return response.json() if response.status_code == 200 else None
 
     return sync_store.read_entity(
         "colegiat", socio_id, fetch_fn=fetch if token else None
@@ -395,9 +447,7 @@ def read_entity_rebuts(socio_id, token):
         response = requests.get(
             url, headers=headers, auth=BearerAuth(token), timeout=15
         )
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return response.json() if response.status_code == 200 else None
 
     return sync_store.read_subresource("colegiat", socio_id, "rebuts", fetch_fn=fetch)
 
@@ -410,7 +460,7 @@ def read_entity_familia(socio_id, token):
         )
         if response.status_code == 200:
             data = response.json()
-            return data if data else []
+            return data or []
         return None
 
     return sync_store.read_subresource("colegiat", socio_id, "familia", fetch_fn=fetch)
@@ -432,7 +482,7 @@ def addcategoria(token, socio, categoria, extra=False):
     payload = {
         "socio": socio,
         "categoria": categoria,
-        "extra": extra if extra else None,
+        "extra": extra or None,
     }
     return mutate("addcategoria", "colegiat", socio, payload, token)
 
@@ -484,21 +534,13 @@ def calcular_proximo_recibo(fecha):
     mes = fecha.month
     año = fecha.year
 
-    if dia < 5:
-        if mes in meses_cobro:
-            return f"05/{mes:02d}/{año}"
-        else:
-            mes_cobro = next((m for m in meses_cobro if m > mes), None)
-            if mes_cobro is None:
-                mes_cobro = meses_cobro[0]
-                año += 1
-            return f"05/{mes_cobro:02d}/{año}"
-    else:
-        mes_cobro = next((m for m in meses_cobro if m > mes), None)
-        if mes_cobro is None:
-            mes_cobro = meses_cobro[0]
-            año += 1
-        return f"05/{mes_cobro:02d}/{año}"
+    if dia < 5 and mes in meses_cobro:
+        return f"05/{mes:02d}/{año}"
+    mes_cobro = next((m for m in meses_cobro if m > mes), None)
+    if mes_cobro is None:
+        mes_cobro = meses_cobro[0]
+        año += 1
+    return f"05/{mes_cobro:02d}/{año}"
 
 
 def validasocio(
@@ -530,43 +572,46 @@ def validasocio(
         and "estatColegiat" in socio
         and socio["estatColegiat"]["nom"] == estatcolegiat
     ):
-        if not agrupaciones and not subcategorias:
-            return True
-        else:
-            if "colegiatHasModalitats" in socio:
-                # Iterate over all categories for the user
-                for modalitat in socio["colegiatHasModalitats"]:
-                    if "modalitat" in modalitat:
-                        # Save name for comparing the ones we target
-                        agrupacionom = modalitat["modalitat"]["agrupacio"][
-                            "nom"
-                        ].lower()
-                        modalitatnom = modalitat["modalitat"]["nom"].lower()
+        if (
+            agrupaciones
+            and "colegiatHasModalitats" in socio
+            or not agrupaciones
+            and subcategorias
+            and "colegiatHasModalitats" in socio
+        ):
+            # Iterate over all categories for the user
+            for modalitat in socio["colegiatHasModalitats"]:
+                if "modalitat" in modalitat:
+                    # Save name for comparing the ones we target
+                    agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
+                    modalitatnom = modalitat["modalitat"]["nom"].lower()
 
-                        if agrupaciones:
-                            if not reverseagrupaciones:
-                                rc = False
-                                for agrupacion in agrupaciones:
-                                    if agrupacionom == agrupacion.lower():
-                                        rc = True
-                            else:
-                                rc = True
-                                for agrupacion in agrupaciones:
-                                    if agrupacionom == agrupacion.lower():
-                                        rc = False
-                            return rc
-                        if subcategorias:
-                            if not reversesubcategorias:
-                                rc = False
-                                for categoria in subcategorias:
-                                    if modalitatnom == categoria.lower():
-                                        rc = True
-                            else:
-                                rc = True
-                                for categoria in subcategorias:
-                                    if modalitatnom == categoria.lower():
-                                        rc = False
-                            return rc
+                    if agrupaciones:
+                        if not reverseagrupaciones:
+                            rc = False
+                            for agrupacion in agrupaciones:
+                                if agrupacionom == agrupacion.lower():
+                                    rc = True
+                        else:
+                            rc = True
+                            for agrupacion in agrupaciones:
+                                if agrupacionom == agrupacion.lower():
+                                    rc = False
+                        return rc
+                    if subcategorias:
+                        if not reversesubcategorias:
+                            rc = False
+                            for categoria in subcategorias:
+                                if modalitatnom == categoria.lower():
+                                    rc = True
+                        else:
+                            rc = True
+                            for categoria in subcategorias:
+                                if modalitatnom == categoria.lower():
+                                    rc = False
+                        return rc
+        elif not agrupaciones and not subcategorias:
+            return True
     return False
 
 
@@ -643,33 +688,14 @@ def updateactividad(token, idactividad, *, force=False, require_fresh=False):
 
     if force or is_online():
         try:
-            print(
-                f"Fetching inscripciones for actividad {idactividad}...",
-                flush=True,
-            )
-            users = _fetch_all_inscripciones(token, idactividad)
-
-            if require_fresh and not users:
-                raise RuntimeError(
-                    f"Actividad {idactividad} returned no inscripciones on fresh fetch"
-                )
-
-            writejson(filename=f"{idactividad}", data=users)
-            print(
-                f"Saved {len(users)} inscripciones for actividad {idactividad}",
-                flush=True,
-            )
-            return users
+            return _extracted_from_updateactividad_8(idactividad, token, require_fresh)
         except requests.RequestException as exc:
             error = exc
-            print(
-                f"API fetch failed for actividad {idactividad}: {exc}",
-                flush=True,
-            )
+            print(f"API fetch failed for actividad {idactividad}: {error}", flush=True)
         except RuntimeError as exc:
             error = exc
             print(
-                f"Actividad fetch failed for actividad {idactividad}: {exc}",
+                f"Actividad fetch failed for actividad {idactividad}: {error}",
                 flush=True,
             )
     else:
@@ -679,9 +705,7 @@ def updateactividad(token, idactividad, *, force=False, require_fresh=False):
         )
 
     if os.path.exists(cache_path) and not require_fresh:
-        users = readjson(filename=f"{idactividad}")
-        return users
-
+        return readjson(filename=f"{idactividad}")
     if error is not None:
         raise RuntimeError(
             f"No cached inscripciones for actividad {idactividad} "
@@ -690,6 +714,27 @@ def updateactividad(token, idactividad, *, force=False, require_fresh=False):
     raise RuntimeError(
         f"No cached inscripciones for actividad {idactividad} and API fetch was skipped"
     )
+
+
+# TODO Rename this here and in `updateactividad`
+def _extracted_from_updateactividad_8(idactividad, token, require_fresh):
+    print(
+        f"Fetching inscripciones for actividad {idactividad}...",
+        flush=True,
+    )
+    users = _fetch_all_inscripciones(token, idactividad)
+
+    if require_fresh and not users:
+        raise RuntimeError(
+            f"Actividad {idactividad} returned no inscripciones on fresh fetch"
+        )
+
+    writejson(filename=f"{idactividad}", data=users)
+    print(
+        f"Saved {len(users)} inscripciones for actividad {idactividad}",
+        flush=True,
+    )
+    return users
 
 
 def read_inscripciones_actividad(
@@ -709,8 +754,7 @@ def read_inscripciones_actividad(
                 force=True,
                 require_fresh=True,
             )
-        inscritos = readjson(filename=f"{idactividad}")
-        return inscritos
+        return readjson(filename=f"{idactividad}")
     return updateactividad(
         token,
         idactividad,
@@ -805,12 +849,7 @@ def get_colegiat_json(idColegiat=False):
 
 def get_colegiat_data(idColegiat=False):
     """Get colegiat data for adding inscriptions."""
-    mydata = read_entity_colegiat(idColegiat)
-
-    # Tenemos el socio
-    # Tenemos que prepararlo al formato que usa la inscripción
-
-    if mydata:
+    if mydata := read_entity_colegiat(idColegiat):
         return {
             "": None,
             "idColegiat": mydata["idColegiat"],
@@ -947,7 +986,7 @@ def createactividad(
         "idConfiguracioComunicat": "",
         "idConfiguracioImprimirPdf": "",
         "idConfiguracioImprimirEntrada": "",
-        "idNivell": "%s" % horario,
+        "idNivell": f"{horario}",
         "isMultiplesDescomptes": True,
         "isAplicarConfiguracioQuotesPerAgrupacio": False,
         "isAplicarConfiguracioQuotesPerAgrupacioOpcionals": False,
@@ -981,10 +1020,10 @@ def createactividad(
         "isVisiblePlacesActivitat": True,
         "isDescripcioPublica": True,
         "iva": 0,
-        "llocActivitat": "%s" % lloc,
-        "maxPlaces": "%s" % maxplaces,
-        "minPlaces": "%s" % minplaces,
-        "nom": "%s" % nom,
+        "llocActivitat": f"{lloc}",
+        "maxPlaces": f"{maxplaces}",
+        "minPlaces": f"{minplaces}",
+        "nom": f"{nom}",
         "ordre": "",
         "pagamentDiferitActivat": False,
         "pagamentDomiciliatActivat": "",
@@ -1092,14 +1131,9 @@ def mes_proximo_bimestre(fecha=None):
 
     # Buscar a qué bimestre pertenece el mes actual
     for i, (m1, m2) in enumerate(bimestres):
-        if mes == m1 or mes == m2:
+        if mes in [m1, m2]:
             next_index = (i + 1) % len(bimestres)
-            if next_index == 0:
-                return 7
-            return bimestres[next_index][
-                0
-            ]  # Devolver primer mes del siguiente bimestre
-
+            return 7 if next_index == 0 else bimestres[next_index][0]
     # Fallback por si algo falla
     return 7
 
@@ -1170,7 +1204,7 @@ def getcomunicadotutor(associat):
     true = True
     null = ""
 
-    data = {
+    return {
         "comunicat": json.dumps(
             {
                 "idComunicat": 0,
@@ -1227,14 +1261,13 @@ def getcomunicadotutor(associat):
         "destinatarisPatrocinador": "[]",
         "destinatarisContacte": "[]",
     }
-    return data
 
 
 def getcomunicadosocio(associat):
     true = True
     null = ""
 
-    data = {
+    return {
         "comunicat": json.dumps(
             {
                 "idComunicat": 0,
@@ -1291,14 +1324,13 @@ def getcomunicadosocio(associat):
         "destinatarisPatrocinador": "[]",
         "destinatarisContacte": "[]",
     }
-    return data
 
 
 def getcomunicado(associat, title, descripcio):
     true = True
     null = ""
 
-    data = {
+    return {
         "comunicat": json.dumps(
             {
                 "idComunicat": 0,
@@ -1355,7 +1387,6 @@ def getcomunicado(associat, title, descripcio):
         "destinatarisPatrocinador": "[]",
         "destinatarisContacte": "[]",
     }
-    return data
 
 
 # OPTIMIZATION Phase 4: Parallel processing helper

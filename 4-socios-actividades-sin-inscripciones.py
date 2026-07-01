@@ -28,21 +28,16 @@ token = common.gettoken(
 print("Procesando actividades...")
 for actividad in actividades:
     myid = actividad["idActivitat"]
+    horario = common.actividad_horario(actividad)
 
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
+    if horario in {7, 8, 9, 10}:
+        inscritos = common.readjson(filename=f"{myid}")
 
-        if horario in {7, 8, 9, 10}:
-            inscritos = common.readjson(filename=f"{myid}")
+        for inscrito in inscritos:
+            colegiat = inscrito["colegiat"]["idColegiat"]
 
-            for inscrito in inscritos:
-                colegiat = inscrito["colegiat"]["idColegiat"]
-
-                if inscrito["estat"] == "INSCRESTNOVA":
-                    if colegiat not in usuariosyactividad:
-                        usuariosyactividad[colegiat] = []
-
-                    usuariosyactividad[colegiat].append(myid)
+            if inscrito["estat"] == "INSCRESTNOVA":
+                usuariosyactividad.setdefault(colegiat, []).append(myid)
 
 print("Procesando socios...")
 for socio in socios:
@@ -78,27 +73,22 @@ for socio in socios:
                         id_socio,
                         common.categorias["conactividadessininscripciones"],
                     )
-                else:
-                    if (
-                        common.categorias["conactividadessininscripciones"]
-                        in categoriassocio
-                    ):
-                        print(f"Socio {id_socio} ha resulto la situacion")
-                        common.delcategoria(
-                            token,
-                            id_socio,
-                            common.categorias["conactividadessininscripciones"],
-                        )
+            elif common.categorias["conactividadessininscripciones"] in categoriassocio:
+                print(f"Socio {id_socio} ha resulto la situacion")
+                common.delcategoria(
+                    token,
+                    id_socio,
+                    common.categorias["conactividadessininscripciones"],
+                )
 
         if (
             common.categorias["sinactividades"] in categoriassocio
             or common.categorias["cambiosociosin"] in categoriassocio
-        ):
-            if common.categorias["conactividadessininscripciones"] in categoriassocio:
-                print(f"Socio {id_socio} ha resuelto la situacion")
-                resultado = common.delcategoria(
-                    token=token,
-                    socio=id_socio,
-                    categoria=common.categorias["conactividadessininscripciones"],
-                )
-                print(resultado.text)
+        ) and common.categorias["conactividadessininscripciones"] in categoriassocio:
+            print(f"Socio {id_socio} ha resuelto la situacion")
+            resultado = common.delcategoria(
+                token=token,
+                socio=id_socio,
+                categoria=common.categorias["conactividadessininscripciones"],
+            )
+            print(resultado.text)

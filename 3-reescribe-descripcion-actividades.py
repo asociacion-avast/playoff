@@ -40,16 +40,11 @@ data = {"descripcio": ""}
 for actividad in actividades:
     myid = actividad["idActivitat"]
     nombre = actividad["nom"]
+    horario = common.actividad_horario(actividad)
 
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
-
-    if horario in {7, 8, 9, 10}:
-        if int(myid) == 714:
-            url = f"{common.apiurl}/activitats/{myid}/descripcio"
-            response = requests.patch(
-                url, headers=common.headers, auth=common.BearerAuth(token), data=data
-            )
-            print(response)
+    if horario in {7, 8, 9, 10} and common.safe_int(myid, 0) == 714:
+        url = f"{common.apiurl}/activitats/{myid}/descripcio"
+        response = requests.patch(
+            url, headers=common.headers, auth=common.BearerAuth(token), data=data
+        )
+        print(response)

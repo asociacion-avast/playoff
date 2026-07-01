@@ -16,32 +16,20 @@ usuariosyhorarios = {}
 
 for actividad in actividades:
     myid = actividad["idActivitat"]
-    nombre = actividad["nom"]
+    horario = common.actividad_horario(actividad)
 
-    if actividad["idNivell"] and actividad["idNivell"] != "null":
-        horario = int(actividad["idNivell"])
-    else:
-        horario = 0
-
-    if horario in [7, 8, 9, 10, 19, 20, 21, 22]:
+    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
         actividadyusuarios[myid] = []
-
-        inscritos = common.readjson(filename="%s" % myid)
+        inscritos = common.readjson(filename=f"{myid}")
 
         for inscrito in inscritos:
+            if inscrito["estat"] != "INSCRESTNOVA":
+                continue
+
             colegiat = inscrito["colegiat"]["idColegiat"]
-
-            if inscrito["estat"] == "INSCRESTNOVA":
-                actividadyusuarios[myid].append(colegiat)
-
-                if colegiat not in usuariosyactividad:
-                    usuariosyactividad[colegiat] = []
-
-                if colegiat not in usuariosyhorarios:
-                    usuariosyhorarios[colegiat] = []
-
-                usuariosyactividad[colegiat].append(myid)
-                usuariosyhorarios[colegiat].append(horario)
+            actividadyusuarios[myid].append(colegiat)
+            usuariosyactividad.setdefault(colegiat, []).append(myid)
+            usuariosyhorarios.setdefault(colegiat, []).append(horario)
 
 
 for usuario in usuariosyhorarios:
