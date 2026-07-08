@@ -24,11 +24,28 @@ if len(sys.argv) < 2:
     print("Missing argument: idAssociat for sending the message")
     sys.exit(-1)
 
+socios = common.readjson(filename="socios")
+socios_por_id = {
+    int(socio["idColegiat"]): socio
+    for socio in socios
+    if "idColegiat" in socio and socio.get("idColegiat") is not None
+}
+
 for arg in sys.argv[1:]:
     try:
         associat = int(arg)
     except ValueError:
         print(f"Invalid idAssociat: {arg}")
+        continue
+
+    socio = socios_por_id.get(associat)
+    if not socio:
+        print(f"No se encontró el socio {associat}; se omite")
+        continue
+    if not common.es_socio_anual_activo(socio):
+        print(
+            f"Se omite idAssociat={associat}: no tiene la categoría de socio anual activa"
+        )
         continue
 
     print(f"Enviando comunicado para idAssociat={associat}")

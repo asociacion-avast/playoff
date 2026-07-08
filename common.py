@@ -1186,6 +1186,13 @@ def getcategoriassocio(socio):
     return categorias
 
 
+def es_socio_anual_activo(socio):
+    """Check whether a socio has the active annual membership category."""
+    if not socio or not isinstance(socio, dict):
+        return False
+    return categorias["socioactivo"] in getcategoriassocio(socio)
+
+
 def _enviacomunicado_api(token, data):
     comurl = f"{apiurl}/comunicats/emails_notificacions"
     # Don't use session here - this endpoint needs form data, not JSON
