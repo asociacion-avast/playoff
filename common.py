@@ -12,7 +12,44 @@ try:
 except ImportError:
     import json
 
-import dateutil.parser
+try:
+    import dateutil.parser
+except ImportError:
+    import types
+    from datetime import datetime
+
+    class _SimpleDateParser:
+        @staticmethod
+        def parse(value):
+            if isinstance(value, date):
+                return datetime(value.year, value.month, value.day)
+            if isinstance(value, datetime):
+                return value
+            if not isinstance(value, str):
+                raise TypeError("Expected string or date")
+
+            value = value.strip()
+            if not value:
+                raise ValueError("Empty date")
+
+            if value.endswith("Z"):
+                value = value[:-1] + "+00:00"
+
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                pass
+
+            for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(value, fmt)
+                except ValueError:
+                    continue
+
+            raise ValueError(f"Unsupported date format: {value}")
+
+    dateutil = types.SimpleNamespace(parser=_SimpleDateParser())
+
 import requests
 
 import sync_store

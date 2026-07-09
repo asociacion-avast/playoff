@@ -8,23 +8,6 @@ import re
 import common
 import sync_store
 
-config = configparser.ConfigParser()
-config.read(os.path.expanduser("~/.avast.ini"))
-
-
-socios = common.readjson("socios")
-
-# Build index for fast lookups (OPTIMIZATION)
-socios_by_id = {s["idColegiat"]: s for s in socios}
-
-token = common.gettoken(
-    user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
-)
-headers = {"Authorization": f"Bearer {token}"}
-
-# Read outbox once at start (OPTIMIZATION)
-outbox_entries_global = sync_store.read_outbox()
-
 # Pre-compile regex patterns (OPTIMIZATION - Phase 2D)
 _DIGITS_ONLY_PATTERN = re.compile(r"\D+")
 
@@ -57,6 +40,27 @@ def _only_digits(value):
     return _DIGITS_ONLY_PATTERN.sub("", str(value or ""))
 
 
+def _register_phone_variants(variants, phone_value, prefix_value=None):
+    phone_digits = _only_digits(phone_value)
+    if not phone_digits:
+        return
+
+    prefix_digits = _only_digits(prefix_value)
+
+    variants.add(phone_digits)
+
+    if prefix_digits:
+        variants.add(prefix_digits + phone_digits)
+
+    if prefix_digits and phone_digits.startswith(prefix_digits):
+        local = phone_digits[len(prefix_digits) :]
+        if local:
+            variants.add(local)
+
+    if len(phone_digits) > 9:
+        variants.add(phone_digits[-9:])
+
+
 def socio_phone_digit_variants(socio):
     """
     Build a set of digit-only variants for the socio phone numbers.
@@ -67,6 +71,18 @@ def socio_phone_digit_variants(socio):
     variants = set()
 
     persona = socio.get("persona") or {}
+
+    # Direct phone fields on the persona object (common in some exports)
+    for phone_key, prefix_key in (
+        ("telefonPrincipal", "prefixTelefonPrincipal"),
+        ("telefonSecundari", "prefixTelefonSecundari"),
+        ("telefon", "prefixTelefon"),
+        ("mobil", "prefixMobil"),
+    ):
+        _register_phone_variants(
+            variants, persona.get(phone_key), persona.get(prefix_key)
+        )
+
     adreces = persona.get("adreces") or []
     if not isinstance(adreces, list):
         return variants
@@ -78,36 +94,26 @@ def socio_phone_digit_variants(socio):
         for phone_key, prefix_key in (
             ("telefonPrincipal", "prefixTelefonPrincipal"),
             ("telefonSecundari", "prefixTelefonSecundari"),
+            ("telefon", "prefixTelefon"),
+            ("mobil", "prefixMobil"),
         ):
-            phone_digits = _only_digits(addr.get(phone_key))
-            if not phone_digits:
-                continue
-
-            prefix_digits = _only_digits(addr.get(prefix_key))
-
-            # raw phone as stored
-            variants.add(phone_digits)
-
-            # prefix + phone (e.g. +34 + 612345678 -> 34612345678)
-            if prefix_digits:
-                variants.add(prefix_digits + phone_digits)
-
-            # If the stored phone already includes the prefix (common copy/paste),
-            # also include a "local" form by stripping it.
-            if prefix_digits and phone_digits.startswith(prefix_digits):
-                local = phone_digits[len(prefix_digits) :]
-                if local:
-                    variants.add(local)
-
-            # Heuristic: if it's long, keep the last 9 digits (ES local length)
-            if len(phone_digits) > 9:
-                variants.add(phone_digits[-9:])
+            _register_phone_variants(
+                variants, addr.get(phone_key), addr.get(prefix_key)
+            )
 
     return variants
 
 
 def clear_telegram_field(
-    token, socio, field_id, field_name, field_value, reason, values, cleared_field_ids
+    token,
+    socio,
+    field_id,
+    field_name,
+    field_value,
+    reason,
+    values,
+    cleared_field_ids,
+    outbox_entries=None,
 ):
     if field_id in cleared_field_ids:
         return 0
@@ -132,14 +138,15 @@ def clear_telegram_field(
                     values["socioid"] = ""
             return 0
 
-    # Check if already in outbox (use global outbox - OPTIMIZED)
+    # Check if already in outbox (use provided outbox entries or global state)
+    outbox_entries = outbox_entries or []
     already_queued = any(
         e.get("op") == "escribecampo"
         and str(e.get("entity_id")) == str(idcolegiat)
         and e.get("payload", {}).get("campo") == field_id
         and e.get("payload", {}).get("valor", "X") == ""
         and e.get("status") in ["pending", "synced"]
-        for e in outbox_entries_global
+        for e in outbox_entries
     )
     if already_queued:
         print(f"    {field_name}: Already queued for clearing (skipping)")
@@ -174,6 +181,7 @@ def clean_single_telegram_field(
     phone_variants,
     values,
     cleared_field_ids,
+    outbox_entries=None,
 ):
     # Skip empty/None values (they are valid)
     if not field_value:
@@ -190,6 +198,7 @@ def clean_single_telegram_field(
             "telegram ID equals member number",
             values,
             cleared_field_ids,
+            outbox_entries=outbox_entries,
         )
 
     # NEW: clear if telegram value is actually a phone number representation
@@ -205,6 +214,7 @@ def clean_single_telegram_field(
             "telegram value matches socio phone number",
             values,
             cleared_field_ids,
+            outbox_entries=outbox_entries,
         )
 
     # Check if telegram ID is invalid (not a positive number)
@@ -218,6 +228,7 @@ def clean_single_telegram_field(
             "invalid telegram ID",
             values,
             cleared_field_ids,
+            outbox_entries=outbox_entries,
         )
 
     return 0
@@ -259,7 +270,7 @@ def dedupe_telegram_values(socio, token, values):
     return cleaned_count
 
 
-def validate_and_clean_telegram_fields(socio, token):
+def validate_and_clean_telegram_fields(socio, token, outbox_entries=None):
     """
     Validate and clean all telegram fields for a socio
     Returns number of fields that were cleaned
@@ -306,6 +317,7 @@ def validate_and_clean_telegram_fields(socio, token):
                 phone_variants,
                 values,
                 cleared_field_ids,
+                outbox_entries=outbox_entries,
             )
 
     cleaned_count += dedupe_telegram_values(socio, token, values)
@@ -313,43 +325,62 @@ def validate_and_clean_telegram_fields(socio, token):
     return cleaned_count
 
 
-print("Procesando socios")
+def main():
+    config = configparser.ConfigParser()
+    config.read(os.path.expanduser("~/.avast.ini"))
 
-# Progress tracking
-total_socios = len(socios)
-processed = 0
-cleaned_count = 0
-progress_interval = max(1, total_socios // 20)  # Show progress every 5%
+    socios = common.readjson("socios")
+    token = common.gettoken(
+        user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
+    )
+    outbox_entries_global = sync_store.read_outbox()
 
-for socio in socios:
-    processed += 1
+    print("Procesando socios")
 
-    # Show progress every 5%
-    if (
-        processed == 1
-        or processed % progress_interval == 0
-        or processed == total_socios
-    ):
-        pct = int(100 * processed / total_socios)
-        print(
-            f"Procesando: {processed}/{total_socios} ({pct}%) - Limpiados: {cleaned_count}",
-            flush=True,
-        )
-    idcolegiat = socio["idColegiat"]
-    if isinstance(socio["campsDinamics"], dict):
-        # Check if any telegram fields exist for this socio
-        telegram_fields_present = any(
-            field in socio["campsDinamics"] for field in common.telegramfields
-        )
+    # Progress tracking
+    total_socios = len(socios)
+    processed = 0
+    cleaned_count = 0
+    progress_interval = max(1, total_socios // 20)  # Show progress every 5%
 
-        if telegram_fields_present:
-            cleaned_fields = validate_and_clean_telegram_fields(socio, token)
+    for socio in socios:
+        processed += 1
 
-            if cleaned_fields != 0:
-                cleaned_count += cleaned_fields
-                print(f"\n{common.sociobase}{idcolegiat}")
-    # else:
-    #     # No custom fields populated writing wrong ID.... then cleaning it up
+        # Show progress every 5%
+        if (
+            processed == 1
+            or processed % progress_interval == 0
+            or processed == total_socios
+        ):
+            pct = int(100 * processed / total_socios)
+            print(
+                f"Procesando: {processed}/{total_socios} ({pct}%) - Limpiados: {cleaned_count}",
+                flush=True,
+            )
 
-    #     response = common.escribecampo(token, idcolegiat, common.socioid, "algo")
-    #     response = common.escribecampo(token, idcolegiat, common.socioid, "")
+        idcolegiat = socio["idColegiat"]
+        if isinstance(socio["campsDinamics"], dict):
+            # Check if any telegram fields exist for this socio
+            telegram_fields_present = any(
+                field in socio["campsDinamics"] for field in common.telegramfields
+            )
+
+            if telegram_fields_present:
+                cleaned_fields = validate_and_clean_telegram_fields(
+                    socio, token, outbox_entries=outbox_entries_global
+                )
+
+                if cleaned_fields != 0:
+                    cleaned_count += cleaned_fields
+                    print(f"\n{common.sociobase}{idcolegiat}")
+        # else:
+        #     # No custom fields populated writing wrong ID.... then cleaning it up
+
+        #     response = common.escribecampo(token, idcolegiat, common.socioid, "algo")
+        #     response = common.escribecampo(token, idcolegiat, common.socioid, "")
+
+    return cleaned_count
+
+
+if __name__ == "__main__":
+    main()
