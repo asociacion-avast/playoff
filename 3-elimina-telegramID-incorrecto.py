@@ -36,6 +36,9 @@ def is_valid_telegram_id(value):
     if not _DIGITS_ONLY_VALUE_PATTERN.fullmatch(value_str):
         return False
 
+    if len(value_str) > 1 and value_str.startswith("0"):
+        return False
+
     try:
         telegram_id = int(value_str, 10)
     except (ValueError, TypeError):

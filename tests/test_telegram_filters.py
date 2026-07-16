@@ -127,6 +127,8 @@ class TelegramFilterTests(unittest.TestCase):
         self.assertTrue(script.is_valid_telegram_id("123456789"))
         self.assertFalse(script.is_valid_telegram_id("0"))
         self.assertFalse(script.is_valid_telegram_id("1"))
+        self.assertFalse(script.is_valid_telegram_id("010"))
+        self.assertFalse(script.is_valid_telegram_id("00123"))
         self.assertFalse(script.is_valid_telegram_id("+123"))
         self.assertFalse(script.is_valid_telegram_id("-123"))
         self.assertFalse(script.is_valid_telegram_id("123.45"))
