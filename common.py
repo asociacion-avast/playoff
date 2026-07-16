@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+import base64
 import configparser
 import contextlib
+import hashlib
+import hmac
+import json
 import os
-from datetime import date
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 
 # Use ujson (ultra-fast) if available, fallback to standard json (OPTIMIZATION)
@@ -57,12 +61,33 @@ import sync_store
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
 
-# Telegramfields
+# Campos de Telegram en PlayOff
 tutor1 = "0_13_20231012041710"
 tutor2 = "0_14_20231012045321"
 socioid = "0_16_20241120130245"
 telegramfields = [tutor1, tutor2, socioid]
 fechacambio = "0_17_20250221121130"
+
+# Campos destino en la ficha de socio por tipo de destinatario
+campo_por_tipo = {
+    "socio": socioid,
+    "tutor1": tutor1,
+    "tutor2": tutor2,
+}
+
+# Secreto para firmar los tokens de vinculación de Telegram.
+# Se lee de ~/.avast.ini [telegram] secret; si no existe se usa un valor por
+# defecto (debe coincidir entre el script de envío y el bot de Telegram).
+try:
+    telegram_secret = config["telegram"]["secret"]
+except Exception:
+    telegram_secret = "CAMBIA_ESTE_SECRETO_EN_AVAST_INI"
+
+# Caducidad por defecto de los enlaces de vinculación (días)
+telegram_token_dias = int(config.get("telegram", "token_dias", fallback="30"))
+
+# Prefijo del nombre del bot de Telegram usado en el enlace t.me/<BOT>?start=
+telegram_botname = config.get("telegram", "botname", fallback="redken_bot")
 
 # In-memory cache for JSON file loads and token requests
 _json_cache = {}
@@ -1244,22 +1269,49 @@ def enviacomunicado(token, data):
     return mutate("enviacomunicado", "comunicat", 0, payload, token)
 
 
-def getcomunicadotutor(associat):
+def getcomunicadotutor(associat, enlace=None):
     true = True
     null = ""
 
-    return {
-        "comunicat": json.dumps(
+    text = """Hola, [[persona_nombre]]:<br><br>¿Sabías que nos estamos comunicando y compartiendo actividades exclusivas a través de Telegram? Para asegurarnos de que tu familia no se pierda ninguna información importante, necesitamos un pequeño paso por tu parte.<br><br>Actualmente, el acceso a nuestros grupos oficiales está restringido a socios registrados. Al vincular tu cuenta de Telegram, podrás unirte no solo al canal general de familias, sino también a los grupos específicos de edades (+13, +15 y +18), donde se coordinan las actividades que más interesan a tus hijos.<br><br>¿Cómo hacerlo? En un solo paso: pulsa el botón inferior y luego pulsa "Iniciar" (Start) en Telegram. No tienes que copiar ni escribir ningún número: la vinculación se hace automáticamente y de forma segura."""
+
+    if enlace:
+        text += (
+            '<br><br>👉 <a href="%s">Vincular mi Telegram</a><br><br>Si el botón no funciona, copia y pega este enlace en tu navegador: %s'
+            % (
+                enlace,
+                enlace,
+            )
+        )
+    else:
+        text += "<br><br>Accede a tu ficha personal aquí: [[invitacion_enlace_preinscripcion]]<br>(Este enlace es seguro y personal, recuerda que caduca en [[invitacion_horas_validez]] horas)."
+
+    text += "<br><br>Una vez vinculado, te enviaremos automáticamente los enlaces para que te unas a los canales que corresponden a vuestra etapa.<br><br>¿Dudas? Si necesitas ayuda técnica, nuestro equipo de soporte está disponible en este grupo de Telegram: https://t.me/+9ou2gX99KLxjNWVk<br><br>¡Gracias por ayudarnos a mantener a toda la comunidad conectada!<br><br>Atentamente,<br>Administración - AVAST"
+
+    # Si disponemos del enlace firmado, añadimos un botón de acción directa.
+    botons = []
+    if enlace:
+        botons = [
             {
-                "idComunicat": 0,
-                "titol": "¡No te pierdas nada! Actualiza tu acceso a los canales exclusivos de AVAST",
-                "descripcioIntro": """Hola, [[persona_nombre]]:<br><br>¿Sabías que nos estamos comunicando y compartiendo actividades exclusivas a través de Telegram? Para asegurarnos de que tu familia no se pierda ninguna información importante, necesitamos un pequeño paso por tu parte.<br><br>Actualmente, el acceso a nuestros grupos oficiales está restringido a socios registrados. Al actualizar tu ficha con tu ID de Telegram, podrás unirte no solo al canal general de familias, sino también a los grupos específicos de edades (+13, +15 y +18), donde se coordinan las actividades que más interesan a tus hijos.<br><br>¿Cómo hacerlo en 2 minutos?<br>Es muy sencillo y solo tienes que hacerlo una vez. Nota: No es tu número de teléfono, es tu ID de usuario.<br><br>Consulta este sencillo tutorial para obtener tu ID.<br><br>Accede a tu ficha personal aquí: [[invitacion_enlace_preinscripcion]]<br>(Este enlace es seguro y personal, recuerda que caduca en [[invitacion_horas_validez]] horas).<br><br>Una vez completado, te enviaremos automáticamente los enlaces para que te unas a los canales que corresponden a vuestra etapa.<br><br>¿Dudas? Si te atascas o necesitas ayuda técnica, nuestro equipo de soporte está disponible en este grupo de Telegram: https://t.me/+9ou2gX99KLxjNWVk<br><br>¡Gracias por ayudarnos a mantener a toda la comunidad conectada!<br><br>Atentamente,<br>Administración - AVAST""",
-                "adjunts": [],
-                "estat": "COMESTESB",
-                "dataEnviamentProgramada": null,
-                "isLoaded": true,
+                "text": "Vincular mi Telegram",
+                "url": enlace,
             }
-        ),
+        ]
+
+    comunicat = {
+        "idComunicat": 0,
+        "titol": "¡No te pierdas nada! Actualiza tu acceso a los canales exclusivos de AVAST",
+        "descripcioIntro": text,
+        "adjunts": [],
+        "estat": "COMESTESB",
+        "dataEnviamentProgramada": null,
+        "isLoaded": true,
+    }
+    if botons:
+        comunicat["botons"] = botons
+
+    return {
+        "comunicat": json.dumps(comunicat),
         "configBase": json.dumps(
             {
                 "idConfiguracioComunicat": "4",
@@ -1275,7 +1327,7 @@ def getcomunicadotutor(associat):
                 "idsRebuts": [],
                 "idsInscripcions": [],
                 "idsReserves": [],
-                "setEstatReclamacioImpagats": 0,
+                "setEstatReclamacioImpagots": 0,
                 "idActivitat": null,
                 "idsValorsSeccioPersonalitzada": null,
                 "idEnquesta": null,
@@ -1307,22 +1359,48 @@ def getcomunicadotutor(associat):
     }
 
 
-def getcomunicadosocio(associat):
+def getcomunicadosocio(associat, enlace=None):
     true = True
     null = ""
 
-    return {
-        "comunicat": json.dumps(
+    text = """¡Hola, [[persona_nombre]]!<br><br>En AVAST queremos que estés al tanto de todas las salidas, actividades y planes que preparamos para tu grupo de edad (+[Edad del socio]). Sabemos que a veces la información que llega a tus padres se pierde o no te llega a tiempo, y queremos cambiar eso.<br><br>¿Quieres enterarte de todo antes que nadie?<br>Queremos que estés en el canal oficial de Telegram de tu grupo. Para poder darte acceso directo, solo tienes que vincular tu cuenta de Telegram con un toque.<br><br>¿Qué ganas tú con esto?<br>Acceso directo: Recibirás las convocatorias de salidas y eventos directamente en tu móvil.<br><br>Autonomía: Serás tú quien gestione tu participación en las actividades.<br><br>Futuro: Al tener tus datos actualizados (teléfono y Telegram), estarás listo para dar el salto al grupo de adultos y seguir disfrutando de la comunidad cuando crezcas.<br><br>¿Cómo hacerlo? En un solo paso: pulsa el botón inferior y luego pulsa "Iniciar" (Start) en Telegram. No tienes que copiar ni escribir ningún número: la vinculación se hace automáticamente y de forma segura."""
+
+    if enlace:
+        text += (
+            '<br><br>👉 <a href="%s">Vincular mi Telegram</a><br><br>Si el botón no funciona, copia y pega este enlace en tu navegador: %s'
+            % (
+                enlace,
+                enlace,
+            )
+        )
+    else:
+        text += "<br><br>Entra en este enlace y completa tu ficha: [[invitacion_enlace_preinscripcion]]<br><br>Nota: Solo tienes que hacerlo una vez."
+
+    text += "<br><br>Si tienes cualquier problema técnico o no encuentras tu ID, pregunta directamente en nuestro grupo de ayuda: https://t.me/+9ou2gX99KLxjNWVk<br><br>¡Nos vemos en el grupo!<br><br>El equipo de AVAST"
+
+    botons = []
+    if enlace:
+        botons = [
             {
-                "idComunicat": 0,
-                "titol": "¡Toma el control! Únete al grupo de AVAST para tu edad 🚀",
-                "descripcioIntro": """¡Hola, [[persona_nombre]]!<br><br>En AVAST queremos que estés al tanto de todas las salidas, actividades y planes que preparamos para tu grupo de edad (+[Edad del socio]). Sabemos que a veces la información que llega a tus padres se pierde o no te llega a tiempo, y queremos cambiar eso.<br><br>¿Quieres enterarte de todo antes que nadie?<br>Queremos que estés en el canal oficial de Telegram de tu grupo. Para poder darte acceso directo, necesitamos que registres tu propio ID de Telegram en nuestra ficha de socio.<br><br>¿Qué ganas tú con esto?<br>Acceso directo: Recibirás las convocatorias de salidas y eventos directamente en tu móvil.<br><br>Autonomía: Serás tú quien gestione tu participación en las actividades.<br><br>Futuro: Al tener tus datos actualizados (teléfono y Telegram), estarás listo para dar el salto al grupo de adultos y seguir disfrutando de la comunidad cuando crezcas.<br><br>¿Cómo hacerlo? (Es muy fácil)<br>Mira este tutorial rápido de 1 minuto para ver cuál es tu ID.<br><br>Entra en este enlace y completa tu ficha: [[invitacion_enlace_preinscripcion]]<br><br>Nota: Solo tienes que hacerlo una vez.<br><br>Si tienes cualquier problema técnico o no encuentras tu ID, pregunta directamente en nuestro grupo de ayuda: https://t.me/+9ou2gX99KLxjNWVk<br><br>¡Nos vemos en el grupo!<br><br>El equipo de AVAST""",
-                "adjunts": [],
-                "estat": "COMESTESB",
-                "dataEnviamentProgramada": null,
-                "isLoaded": true,
+                "text": "Vincular mi Telegram",
+                "url": enlace,
             }
-        ),
+        ]
+
+    comunicat = {
+        "idComunicat": 0,
+        "titol": "¡Toma el control! Únete al grupo de AVAST para tu edad 🚀",
+        "descripcioIntro": text,
+        "adjunts": [],
+        "estat": "COMESTESB",
+        "dataEnviamentProgramada": null,
+        "isLoaded": true,
+    }
+    if botons:
+        comunicat["botons"] = botons
+
+    return {
+        "comunicat": json.dumps(comunicat),
         "configBase": json.dumps(
             {
                 "idConfiguracioComunicat": "4",
@@ -1467,3 +1545,147 @@ def process_socios_parallel(socios, worker_func, max_workers=None):
         results = pool.map(worker_func, socios)
 
     return results
+
+
+# ---------------------------------------------------------------------------
+# Vinculación automática de Telegram (token firmado)
+# ---------------------------------------------------------------------------
+# El script de envío de correos genera un token firmado con HMAC que contiene
+# el idSocio y el tipo de destinatario (socio / tutor1 / tutor2). El bot de
+# Telegram verifica la firma y la caducidad, y actualiza el campo
+# correspondiente de la ficha del socio en PlayOff sin que el usuario tenga que
+# copiar/pegar ningún identificador manualmente.
+
+
+def base36_encode(numero: int) -> str:
+    """Codifica un entero en base36 (sin prefijo) para acortar el token."""
+    if numero < 0:
+        raise ValueError("base36 no admite negativos")
+    if numero == 0:
+        return "0"
+    caracteres = "0123456789abcdefghijklmnopqrstuvwxyz"
+    resultado = ""
+    while numero:
+        numero, resto = divmod(numero, 36)
+        resultado = caracteres[resto] + resultado
+    return resultado
+
+
+def base36_decode(texto: str) -> int:
+    """Decodifica una cadena base36 a entero."""
+    return int(texto, 36)
+
+
+# Códigos cortos de tipo de destinatario (clave para que el token quepa en el
+# límite de 64 caracteres del parámetro 'start' de los enlaces t.me).
+TIPO_A_CODIGO = {
+    "socio": "s",
+    "tutor1": "1",
+    "tutor2": "2",
+    "tutor": "u",
+}
+CODIGO_A_TIPO = {v: k for k, v in TIPO_A_CODIGO.items()}
+
+# La firma HMAC-SHA256 se trunca a 16 bytes (128 bits) para acortar el token.
+# Sigue siendo resistente a la falsificación para este caso de uso.
+_LON_FIRMA = 16
+
+
+def _firma_b32(secret: str, payload: bytes) -> str:
+    """Firma HMAC-SHA256 truncada y codificada en BASE32.
+
+    El alfabeto BASE32 (A-Z, 2-7) es seguro para el parámetro 'start' de
+    Telegram (no contiene '.', '_', '&' ni '|', que rompen o se ignoran en el
+    enlace profundo t.me).
+    """
+    digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).digest()
+    return base64.b32encode(digest[:_LON_FIRMA]).rstrip(b"=").decode("ascii").lower()
+
+
+def genera_token_telegram(
+    id_socio,
+    tipo="socio",
+    dias=None,
+    secret=None,
+):
+    """Genera un token firmado y compacto para vincular un Telegram ID.
+
+    Formato: ``<idSocio>-<codigo>-<expB36>-<firmaB32>`` unido con guiones.
+    Solo usa caracteres permitidos por Telegram en el parámetro 'start'
+    (A-Z a-z 0-9 _ -), de modo que el enlace profundo t.me dispara
+    automáticamente ``/start link_<TOKEN>`` al abrirse.
+
+    Args:
+        id_socio: idColegiat del socio en PlayOff.
+        tipo: "socio", "tutor1", "tutor2" o "tutor" (ambiguous).
+        dias: caducidad en días (por defecto telegram_token_dias).
+        secret: secreto HMAC (por defecto telegram_secret).
+
+    Returns:
+        str: token listo para usar en /start link_<TOKEN>.
+    """
+    if secret is None:
+        secret = telegram_secret
+    if dias is None:
+        dias = telegram_token_dias
+
+    codigo = TIPO_A_CODIGO.get(tipo, "s")
+    expira = int((datetime.now() + timedelta(days=dias)).timestamp())
+    expira_b36 = base36_encode(expira)
+    cuerpo = f"{int(id_socio)}-{codigo}-{expira_b36}".encode()
+    firma = _firma_b32(secret, cuerpo)
+    return f"{cuerpo.decode('ascii')}-{firma}"
+
+
+def verifica_token_telegram(token, secret=None):
+    """Verifica un token firmado y devuelve su contenido.
+
+    Args:
+        token: token devuelto por genera_token_telegram.
+        secret: secreto HMAC (por defecto telegram_secret).
+
+    Returns:
+        dict con claves "idSocio", "tipo" y "caduca" si es válido y no ha
+        caducado, o False en caso contrario (formato, firma inválida o
+        expirado).
+    """
+    if secret is None:
+        secret = telegram_secret
+    if not token or "-" not in token:
+        return False
+
+    try:
+        partes = token.split("-")
+        if len(partes) != 4:
+            return False
+        id_socio_s, codigo, expira_b36, firma = partes
+        payload = f"{id_socio_s}-{codigo}-{expira_b36}".encode()
+    except Exception:
+        return False
+
+    esperada = _firma_b32(secret, payload)
+    if not hmac.compare_digest(esperada, firma):
+        return False
+
+    try:
+        id_socio = int(id_socio_s)
+        tipo = CODIGO_A_TIPO.get(codigo, "socio")
+        expira = base36_decode(expira_b36)
+        caduca = datetime.fromtimestamp(expira)
+    except Exception:
+        return False
+
+    if caduca < datetime.now():
+        return False
+
+    return {
+        "idSocio": id_socio,
+        "tipo": tipo,
+        "caduca": caduca.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def enlace_vinculacion_telegram(id_socio, tipo="socio", dias=None, secret=None):
+    """Devuelve la URL del bot con el token de vinculación embebido."""
+    token = genera_token_telegram(id_socio, tipo=tipo, dias=dias, secret=secret)
+    return f"https://t.me/{telegram_botname}?start=link_{token}"

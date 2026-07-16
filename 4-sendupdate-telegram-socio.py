@@ -48,9 +48,20 @@ for arg in sys.argv[1:]:
         )
         continue
 
-    print(f"Enviando comunicado para idAssociat={associat}")
+    # Si el socio ya tiene vinculado su Telegram ID, no reenviamos.
+    camps = socio.get("campsDinamics", {}) or {}
+    if camps.get(common.socioid):
+        print(
+            f"Se omite idAssociat={associat}: ya tiene Telegram ID de socio vinculado"
+        )
+        continue
+
+    enlace = common.enlace_vinculacion_telegram(associat, tipo="socio")
+
+    print(f"Enviando comunicado de vinculación para idAssociat={associat}")
+    print(f"Enlace de vinculación: {enlace}")
     response = common.enviacomunicado(
-        token=token, data=common.getcomunicadosocio(associat)
+        token=token, data=common.getcomunicadosocio(associat, enlace=enlace)
     )
     print(response)
     print(response.text)

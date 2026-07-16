@@ -48,9 +48,23 @@ for arg in sys.argv[1:]:
         )
         continue
 
-    print(f"Enviando comunicado para idAssociat={associat}")
+    # Determinamos el tutor que falta por vincular (Tutor 1 o Tutor 2) a partir
+    # de los campos de Telegram ya informados en la ficha.
+    camps = socio.get("campsDinamics", {}) or {}
+    if not camps.get(common.tutor1):
+        tipo = "tutor1"
+    elif not camps.get(common.tutor2):
+        tipo = "tutor2"
+    else:
+        print(f"Se omite idAssociat={associat}: ambos tutores ya tienen Telegram ID")
+        continue
+
+    enlace = common.enlace_vinculacion_telegram(associat, tipo=tipo)
+
+    print(f"Enviando comunicado de vinculación para idAssociat={associat} ({tipo})")
+    print(f"Enlace de vinculación: {enlace}")
     response = common.enviacomunicado(
-        token=token, data=common.getcomunicadotutor(associat)
+        token=token, data=common.getcomunicadotutor(associat, enlace=enlace)
     )
     print(response)
     print(response.text)
