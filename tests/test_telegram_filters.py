@@ -121,6 +121,20 @@ class TelegramFilterTests(unittest.TestCase):
         self.assertIn("612345678", variants)
         self.assertIn("34612345678", variants)
 
+    def test_is_valid_telegram_id_rejects_malformed_and_overflow_values(self):
+        script = load_telegram_script_module()
+
+        self.assertTrue(script.is_valid_telegram_id("123456789"))
+        self.assertFalse(script.is_valid_telegram_id("0"))
+        self.assertFalse(script.is_valid_telegram_id("1"))
+        self.assertFalse(script.is_valid_telegram_id("+123"))
+        self.assertFalse(script.is_valid_telegram_id("-123"))
+        self.assertFalse(script.is_valid_telegram_id("123.45"))
+        self.assertFalse(script.is_valid_telegram_id("1e10"))
+        self.assertFalse(script.is_valid_telegram_id("123 456"))
+        self.assertFalse(script.is_valid_telegram_id("abc"))
+        self.assertFalse(script.is_valid_telegram_id("9223372036854775808"))
+
     def test_clean_single_telegram_field_clears_phone_number_values(self):
         calls = []
 

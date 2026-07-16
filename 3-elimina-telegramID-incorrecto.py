@@ -10,29 +10,38 @@ import sync_store
 
 # Pre-compile regex patterns (OPTIMIZATION - Phase 2D)
 _DIGITS_ONLY_PATTERN = re.compile(r"\D+")
+_DIGITS_ONLY_VALUE_PATTERN = re.compile(r"^[0-9]+$")
+_MAX_TELEGRAM_ID = 2**63 - 1
 
 
 def is_valid_telegram_id(value):
     """
-    Check if a value is a valid telegram ID (positive integer without signs) or empty/None (also valid)
+    Check if a value is a valid Telegram user ID.
+
+    Valid values are empty/None, or a strictly positive decimal integer that fits
+    within Telegram's signed 64-bit range and contains no separators, signs, or
+    scientific notation.
     """
     # Empty/None values are valid (user might not have provided telegram ID yet)
-    if not value:
+    if value is None:
         return True
 
-    # Convert to string to check for signs
-    value_str = str(value).strip()
-
-    # Reject if contains '+' or '-' signs
-    if "+" in value_str or "-" in value_str:
+    if isinstance(value, bool):
         return False
 
-    # Handle both string and integer inputs
+    value_str = str(value).strip()
+    if not value_str:
+        return True
+
+    if not _DIGITS_ONLY_VALUE_PATTERN.fullmatch(value_str):
+        return False
+
     try:
-        telegram_id = int(value_str)
-        return telegram_id > 0
+        telegram_id = int(value_str, 10)
     except (ValueError, TypeError):
         return False
+
+    return 2 <= telegram_id <= _MAX_TELEGRAM_ID
 
 
 def _only_digits(value):
