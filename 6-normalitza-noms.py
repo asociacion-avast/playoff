@@ -36,9 +36,13 @@ if any(
 ):
     common.writejson(filename="socios", data=socios)
 
-changes = []
+socio_changes = []
+tutor_changes = []
+
 for socio in socios:
     sid = socio.get("idColegiat")
+    if sid is None:
+        continue
     persona = socio.get("persona") or {}
 
     original_nom = persona.get("nom", "")
@@ -46,30 +50,10 @@ for socio in socios:
     normalized_nom = common.normalize_name(original_nom)
     normalized_cognoms = common.normalize_name(original_cognoms)
 
-    tutor_changes = {}
-    for tutor_key in ("tutor1", "tutor2"):
-        tutor = socio.get(tutor_key)
-        if not tutor:
-            continue
-        orig_tnom = tutor.get("nom", "")
-        orig_tcognoms = tutor.get("cognoms", "")
-        norm_tnom = common.normalize_name(orig_tnom)
-        norm_tcognoms = common.normalize_name(orig_tcognoms)
-        if orig_tnom != norm_tnom or orig_tcognoms != norm_tcognoms:
-            tutor_changes[tutor_key] = {
-                "idTutor": tutor.get("idTutor"),
-                "old_nom": orig_tnom,
-                "new_nom": norm_tnom,
-                "old_cognoms": orig_tcognoms,
-                "new_cognoms": norm_tcognoms,
-            }
-
-    if (
-        original_nom != normalized_nom
-        or original_cognoms != normalized_cognoms
-        or tutor_changes
-    ):
-        changes.append(
+    socio_modificado = False
+    if original_nom != normalized_nom or original_cognoms != normalized_cognoms:
+        socio_modificado = True
+        socio_changes.append(
             {
                 "idColegiat": sid,
                 "estat": socio.get("estat", ""),
@@ -80,40 +64,64 @@ for socio in socios:
                     "old_cognoms": original_cognoms,
                     "new_cognoms": normalized_cognoms,
                 },
-                "tutors": tutor_changes,
             }
         )
 
-if not changes:
+    for tutor_key in ("tutor1", "tutor2"):
+        tutor = socio.get(tutor_key)
+        if not tutor:
+            continue
+        orig_tnom = tutor.get("nom", "")
+        orig_tcognoms = tutor.get("cognoms", "")
+        norm_tnom = common.normalize_name(orig_tnom)
+        norm_tcognoms = common.normalize_name(orig_tcognoms)
+        if orig_tnom != norm_tnom or orig_tcognoms != norm_tcognoms:
+            tutor_changes.append(
+                {
+                    "idColegiat": sid,
+                    "tutor_key": tutor_key,
+                    "idTutor": tutor.get("idTutor"),
+                    "old_nom": orig_tnom,
+                    "new_nom": norm_tnom,
+                    "old_cognoms": orig_tcognoms,
+                    "new_cognoms": norm_tcognoms,
+                }
+            )
+
+if not socio_changes and not tutor_changes:
     print("No hay nombres que corregir.")
     raise SystemExit(0)
 
-print(f"Se encontraron {len(changes)} socios con nombres por corregir.")
-for change in changes[:20]:
-    tutor_info = ""
-    for tutor_key, tutor_change in change.get("tutors", {}).items():
-        tutor_info += f", {tutor_key}.nom: {tutor_change['old_nom']!r} -> {tutor_change['new_nom']!r}, cognoms: {tutor_change['old_cognoms']!r} -> {tutor_change['new_cognoms']!r}"
-    print(
-        f"  {change['idColegiat']} [{change['estat']}]: nom: {change['persona']['old_nom']!r} -> {change['persona']['new_nom']!r}, cognoms: {change['persona']['old_cognoms']!r} -> {change['persona']['new_cognoms']!r}{tutor_info}"
-    )
-    print(f"    URL: {common.sociobase}{change['idColegiat']}#tab=PERFIL")
+if socio_changes:
+    print(f"Se encontraron {len(socio_changes)} socios con nombres por corregir.")
+    for change in socio_changes[:20]:
+        print(
+            f"  {change['idColegiat']} [{change['estat']}]: nom: {change['persona']['old_nom']!r} -> {change['persona']['new_nom']!r}, cognoms: {change['persona']['old_cognoms']!r} -> {change['persona']['new_cognoms']!r}"
+        )
+        print(f"    URL: {common.sociobase}{change['idColegiat']}#tab=PERFIL")
 
-if len(changes) > 20:
-    print(f"  ... y {len(changes) - 20} más.")
+if tutor_changes:
+    print(f"Se encontraron {len(tutor_changes)} tutores con nombres por corregir.")
+    for change in tutor_changes[:20]:
+        print(
+            f"  {change['idColegiat']} [{change['tutor_key']}]: nom: {change['old_nom']!r} -> {change['new_nom']!r}, cognoms: {change['old_cognoms']!r} -> {change['new_cognoms']!r}"
+        )
+        print(f"    URL: {common.sociobase}{change['idColegiat']}#tab=PERFIL")
+
+if len(socio_changes) > 20:
+    print(f"  ... y {len(socio_changes) - 20} socios más.")
+if len(tutor_changes) > 20:
+    print(f"  ... y {len(tutor_changes) - 20} tutores más.")
 
 print("Procesando sincronización automáticamente...")
 
 synced = 0
 failed = 0
 skipped = 0
-for change in changes:
-    sid = change["idColegiat"]
-    socio = next((s for s in socios if str(s["idColegiat"]) == str(sid)), None)
-    if not socio:
-        skipped += 1
-        print(f"  OMITIDO: {sid} - no encontrado en socios.json")
-        continue
 
+
+def _update_socio(token, sid, socio, change):
+    global synced, failed
     estat = change.get("estat", "")
     idestat = change.get("idEstatColegiat")
     warning = ""
@@ -138,6 +146,7 @@ for change in changes:
         except (TypeError, ValueError):
             return None
 
+    persona = socio.get("persona") or {}
     payload = {
         "idColegiat": _to_int(sid),
         "idColegi": _to_int(socio.get("idColegi")),
@@ -193,44 +202,46 @@ for change in changes:
     else:
         synced += 1
         print(f"  OK: {sid} persona")
+    return token
 
-    for tutor_key, tutor_change in change.get("tutors", {}).items():
-        tutor = socio.get(tutor_key)
-        if not tutor:
-            continue
-        tutor_id = tutor.get("idTutor")
-        if not tutor_id:
-            continue
-        tutor["nom"] = tutor_change["new_nom"]
-        tutor["cognoms"] = tutor_change["new_cognoms"]
-        tutor_payload = {
-            "idTutor": int(tutor_id) if str(tutor_id).isdigit() else tutor_id,
-            "nom": tutor_change["new_nom"],
-            "cognoms": tutor_change["new_cognoms"],
-        }
+
+def _update_tutor(token, sid, socio, change):
+    global synced, failed
+    tutor_key = change["tutor_key"]
+    tutor = socio.get(tutor_key)
+    if not tutor:
+        return token
+    tutor_id = change.get("idTutor")
+    if not tutor_id:
+        return token
+
+    print(
+        f"\nTutor {tutor_key} del socio {sid}: {change['old_nom']!r} -> {change['new_nom']!r}, {change['old_cognoms']!r} -> {change['new_cognoms']!r}"
+    )
+    print(f"  URL: {common.sociobase}{sid}#tab=PERFIL")
+
+    tutor["nom"] = change["new_nom"]
+    tutor["cognoms"] = change["new_cognoms"]
+    tutor_payload = {
+        "idTutor": int(tutor_id) if str(tutor_id).isdigit() else tutor_id,
+        "nom": change["new_nom"],
+        "cognoms": change["new_cognoms"],
+    }
+    result = common.update_tutor(token, sid, tutor_id, tutor_payload)
+    if result is None:
+        failed += 1
+        print(f"  ERROR: {sid} {tutor_key} - sin respuesta")
+    elif hasattr(result, "status_code") and result.status_code == 401:
+        print(f"  Token expirado para {sid} {tutor_key}, renovando token...")
+        token = common.gettoken(
+            user=config["auth"]["RWusername"],
+            password=config["auth"]["RWpassword"],
+            force_refresh=True,
+        )
         result = common.update_tutor(token, sid, tutor_id, tutor_payload)
         if result is None:
             failed += 1
-            print(f"  ERROR: {sid} {tutor_key} - sin respuesta")
-        elif hasattr(result, "status_code") and result.status_code == 401:
-            print(f"  Token expirado para {sid} {tutor_key}, renovando token...")
-            token = common.gettoken(
-                user=config["auth"]["RWusername"],
-                password=config["auth"]["RWpassword"],
-                force_refresh=True,
-            )
-            result = common.update_tutor(token, sid, tutor_id, tutor_payload)
-            if result is None:
-                failed += 1
-                print(f"  ERROR: {sid} {tutor_key} - sin respuesta tras renovar token")
-            elif hasattr(result, "status_code") and result.status_code >= 400:
-                failed += 1
-                print(
-                    f"  ERROR: {sid} {tutor_key} - HTTP {result.status_code}: {result.text[:200]}"
-                )
-            else:
-                synced += 1
-                print(f"  OK: {sid} {tutor_key} (tras renovar token)")
+            print(f"  ERROR: {sid} {tutor_key} - sin respuesta tras renovar token")
         elif hasattr(result, "status_code") and result.status_code >= 400:
             failed += 1
             print(
@@ -238,7 +249,35 @@ for change in changes:
             )
         else:
             synced += 1
-            print(f"  OK: {sid} {tutor_key}")
+            print(f"  OK: {sid} {tutor_key} (tras renovar token)")
+    elif hasattr(result, "status_code") and result.status_code >= 400:
+        failed += 1
+        print(
+            f"  ERROR: {sid} {tutor_key} - HTTP {result.status_code}: {result.text[:200]}"
+        )
+    else:
+        synced += 1
+        print(f"  OK: {sid} {tutor_key}")
+    return token
+
+
+for change in socio_changes:
+    sid = change["idColegiat"]
+    socio = next((s for s in socios if str(s["idColegiat"]) == str(sid)), None)
+    if not socio:
+        skipped += 1
+        print(f"  OMITIDO: {sid} - no encontrado en socios.json")
+        continue
+    token = _update_socio(token, sid, socio, change)
+
+for change in tutor_changes:
+    sid = change["idColegiat"]
+    socio = next((s for s in socios if str(s["idColegiat"]) == str(sid)), None)
+    if not socio:
+        skipped += 1
+        print(f"  OMITIDO: {sid} - no encontrado en socios.json")
+        continue
+    token = _update_tutor(token, sid, socio, change)
 
 print(f"\nSincronizados: {synced}, Fallidos: {failed}, Saltados: {skipped}")
 

@@ -9,8 +9,33 @@ socios = common.readjson(filename="socios")
 rows = []
 seen = set()
 
+
+def _extraer_telefonos(socio):
+    telefon = socio.get("telefonPrincipal") or (socio.get("campsDinamics") or {}).get(
+        "0_15_20231012042734"
+    )
+    if telefon:
+        yield str(telefon)
+
+    for adreca in socio.get("adreces", []) or []:
+        if adreca.get("telefonPrincipal"):
+            yield str(adreca["telefonPrincipal"])
+        if adreca.get("telefonSecundari"):
+            yield str(adreca["telefonSecundari"])
+
+
+def _validar_telefon_mobil(raw):
+    if not raw:
+        return None
+    digits = "".join(ch for ch in str(raw) if ch.isdigit())
+    if len(digits) == 9 and digits[0] in ("6", "7"):
+        return f"+34{digits}"
+    if len(digits) == 11 and digits.startswith("34") and digits[2] in ("6", "7"):
+        return f"+{digits}"
+    return None
+
+
 for socio in socios:
-    sid = socio.get("idColegiat")
     persona = socio.get("persona") or {}
     nom = persona.get("nom", "")
     cognoms = persona.get("cognoms", "")
@@ -18,43 +43,39 @@ for socio in socios:
     if not nombre:
         continue
 
-    camps = socio.get("campsDinamics", {}) or {}
-    telefon = (
-        socio.get("telefonPrincipal")
-        or camps.get("0_15_20231012042734")
-        or camps.get("telefonPrincipal")
-    )
-    if telefon:
-        key = (nombre.lower(), str(telefon))
+    telefonos = []
+    for raw in _extraer_telefonos(socio):
+        valid = _validar_telefon_mobil(raw)
+        if valid:
+            telefonos.append(valid)
+
+    for telefon in telefonos:
+        key = (nombre.lower(), telefon)
         if key not in seen:
             seen.add(key)
-            rows.append([nombre, str(telefon)])
+            rows.append([nombre, telefon])
 
-    tutor1 = socio.get("tutor1")
-    if tutor1:
-        tnom = tutor1.get("nom", "")
-        tcognoms = tutor1.get("cognoms", "")
+    for tutor_key in ("tutor1", "tutor2"):
+        tutor = socio.get(tutor_key)
+        if not tutor:
+            continue
+        tnom = tutor.get("nom", "")
+        tcognoms = tutor.get("cognoms", "")
         tnombre = f"{tnom} {tcognoms}".strip()
-        if tnombre:
-            ttelefon = tutor1.get("telefon") or camps.get("0_15_20231012042734")
-            if ttelefon:
-                key = (tnombre.lower(), str(ttelefon))
-                if key not in seen:
-                    seen.add(key)
-                    rows.append([tnombre, str(ttelefon)])
+        if not tnombre:
+            continue
 
-    tutor2 = socio.get("tutor2")
-    if tutor2:
-        tnom = tutor2.get("nom", "")
-        tcognoms = tutor2.get("cognoms", "")
-        tnombre = f"{tnom} {tcognoms}".strip()
-        if tnombre:
-            ttelefon = tutor2.get("telefon") or camps.get("0_15_20231012042734")
-            if ttelefon:
-                key = (tnombre.lower(), str(ttelefon))
-                if key not in seen:
-                    seen.add(key)
-                    rows.append([tnombre, str(ttelefon)])
+        telefonos_tutor = []
+        for raw in _extraer_telefonos(tutor):
+            valid = _validar_telefon_mobil(raw)
+            if valid:
+                telefonos_tutor.append(valid)
+
+        for telefon in telefonos_tutor:
+            key = (tnombre.lower(), telefon)
+            if key not in seen:
+                seen.add(key)
+                rows.append([tnombre, telefon])
 
 output_path = "data/telefons_google.csv"
 with open(output_path, "w", newline="", encoding="utf-8") as f:
