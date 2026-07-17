@@ -166,6 +166,23 @@ for change in changes:
     if result is None:
         failed += 1
         print(f"  ERROR: {sid} persona - sin respuesta (posiblemente offline)")
+    elif hasattr(result, "status_code") and result.status_code == 401:
+        print(f"  Token expirado para {sid} persona, renovando token...")
+        token = common.gettoken(
+            user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
+        )
+        result = common.update_colegiat(token, sid, payload)
+        if result is None:
+            failed += 1
+            print(f"  ERROR: {sid} persona - sin respuesta tras renovar token")
+        elif hasattr(result, "status_code") and result.status_code >= 400:
+            failed += 1
+            print(
+                f"  ERROR: {sid} persona - HTTP {result.status_code}: {result.text[:200]}"
+            )
+        else:
+            synced += 1
+            print(f"  OK: {sid} persona (tras renovar token)")
     elif hasattr(result, "status_code") and result.status_code >= 400:
         failed += 1
         print(
@@ -193,6 +210,23 @@ for change in changes:
         if result is None:
             failed += 1
             print(f"  ERROR: {sid} {tutor_key} - sin respuesta")
+        elif hasattr(result, "status_code") and result.status_code == 401:
+            print(f"  Token expirado para {sid} {tutor_key}, renovando token...")
+            token = common.gettoken(
+                user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
+            )
+            result = common.update_tutor(token, sid, tutor_id, tutor_payload)
+            if result is None:
+                failed += 1
+                print(f"  ERROR: {sid} {tutor_key} - sin respuesta tras renovar token")
+            elif hasattr(result, "status_code") and result.status_code >= 400:
+                failed += 1
+                print(
+                    f"  ERROR: {sid} {tutor_key} - HTTP {result.status_code}: {result.text[:200]}"
+                )
+            else:
+                synced += 1
+                print(f"  OK: {sid} {tutor_key} (tras renovar token)")
         elif hasattr(result, "status_code") and result.status_code >= 400:
             failed += 1
             print(
