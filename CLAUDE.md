@@ -63,7 +63,8 @@ Custom fields in Playoff for Telegram IDs:
 - `socioid`: 0_16_20241120130245
 - `fechacambio`: 0_17_20250221121130 (date for auto-category changes)
 
-Scripts 4-\* handle Telegram ID self-service and validation.
+Scripts `4-*` handle Telegram ID self-service, validation, and communications.
+`4-telegram.py` unifies Telegram linking for members and tutors, including inherited guardian IDs and `enviacomunicado` updates.
 
 ### Offline-First Mutations
 
@@ -144,24 +145,24 @@ Scripts are numbered by phase:
 
 ```bash
 # Data download (run in order)
-./0-soci.py              # Download members
-./0-categorias.py        # Download categories
-./1-activi.py            # Download activities
-./1-socios-familias.py   # Update family relationships
-./2-sociosporactiv.py    # Download enrollments per activity
+./0-download.py              # Download members and/or categories
+./1-activi.py                # Download activities
+./1-socios-familias.py       # Update family relationships
+./2-sociosporactiv.py        # Download enrollments per activity
 
 # Analysis (read-only)
-./3-listado-socios-categoria.py   # List members by category
-./3-actividades-con-huecos.py     # Show activity vacancies
+./3-listado-socios.py        # List reports: actividad-familia, capfamilia, tutores
+./3-actividades-con-huecos.py # Show activity vacancies
 
 # Automated processing (mutations)
-./4-auto-categoria.py             # Auto-assign age/special categories
+./4-auto-categoria.py             # Auto-assign age/special categories. Includes name normalization and tutor handling
 ./4-auto-alta-socios.py           # Process pre-registrations → active
 ./4-auto-cambios-modalidad.py     # Process scheduled category changes
 
 # Administrative
 ./5-generar-horario.py            # Generate HTML schedule
 ./5-actualiza-wordpress.py        # Upload to WordPress
+./7-telefons-google.py            # Export members/tutors for Google Contacts import
 ```
 
 ### Testing
@@ -277,12 +278,16 @@ if socio.get("_valid_preinscripcion"):
 ## Codebase Conventions
 
 - All scripts are executable (`chmod +x`)
-- Scripts prefixed by phase number (0-5)
+- Scripts prefixed by phase number (0-7)
 - Use `common.readjson()` / `common.writejson()` for data directory I/O
 - Always check `if is_online()` before optional API calls
 - Member = socio/colegiat, Activity = activitat, Enrollment = inscripció
 - Date format: ISO 8601 where possible; API sometimes uses dd/mm/yyyy
 - Print progress with `flush=True` for long-running operations
+- `0-download.py` replaces separate `0-soci.py` / `0-categorias.py`
+- `3-listado-socios.py` replaces `3-listado-socios-actividad-familia.py`, `3-listado-socios-capfamilia.py`, `3-listado-socios-tutores.py`
+- `4-telegram.py` replaces `4-sendupdate-telegram-socio.py` and `4-sendupdate-telegram-tutor.py`
+- Name normalization logic moved from `6-normalitza-noms.py` into `4-auto-categoria.py`
 
 ## WordPress Integration
 
