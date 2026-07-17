@@ -31,6 +31,8 @@ socios_por_id = {
     if "idColegiat" in socio and socio.get("idColegiat") is not None
 }
 
+familias = common.readjson(filename="familias") or {"miembros": {}}
+
 for arg in sys.argv[1:]:
     try:
         associat = int(arg)
@@ -48,12 +50,20 @@ for arg in sys.argv[1:]:
         )
         continue
 
-    # Si el socio ya tiene vinculado su Telegram ID, no reenviamos.
     camps = socio.get("campsDinamics", {}) or {}
     if camps.get(common.socioid):
         print(
             f"Se omite idAssociat={associat}: ya tiene Telegram ID de socio vinculado"
         )
+        continue
+
+    copied = common.copy_missing_telegram_from_family(associat, socios, familias)
+    if copied:
+        common.writejson(filename="socios", data=socios)
+        for campo, valor, fid in copied:
+            nombre = common.nombre_campo_telegram(campo)
+            print(f"Copiado {nombre} del socio familiar {fid} al socio {associat}")
+            common.escribecampo(token, associat, campo, valor)
         continue
 
     enlace = common.enlace_vinculacion_telegram(associat, tipo="socio")

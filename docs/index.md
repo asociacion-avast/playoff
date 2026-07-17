@@ -69,6 +69,7 @@ Para los más complejos, existe un fichero adicional donde se explica la funcion
 | Script                                   | Función                                                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `3-actividades-con-huecos.py`            | Muestra las plazas libres en actividades                                                                |
+| `3-auditoria-integridad.py`              | Audita datos locales y detecta incoherencias sin realizar cambios                                       |
 | `3-elimina-inscripciones-anuladas.py`    | Elimina las inscripciones anuladas por socios                                                           |
 | `3-elimina-inscripciones-bajas.py`       | Elimina inscripciones de socios de baja en actividades o en la asociación                               |
 | `3-elimina-inscripciones-conflictos.py`  | Elimina inscripciones con conflicto de horas                                                            |

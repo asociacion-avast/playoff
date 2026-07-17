@@ -75,6 +75,19 @@ campo_por_tipo = {
     "tutor2": tutor2,
 }
 
+# Nombres legibles por código de campo
+campo_nombre = {
+    tutor1: "tutor1",
+    tutor2: "tutor2",
+    socioid: "socioid",
+}
+
+
+def nombre_campo_telegram(campo):
+    """Devuelve el nombre legible de un campo de Telegram."""
+    return campo_nombre.get(campo, campo)
+
+
 # Secreto para firmar los tokens de vinculación de Telegram.
 # Se lee de ~/.avast.ini [telegram] secret; si no existe se usa un valor por
 # defecto (debe coincidir entre el script de envío y el bot de Telegram).
@@ -460,6 +473,12 @@ def _execute_mutation(op, token, payload):
         return _delete_inscripcio_api(token, payload["inscripcion"])
     if op == "enviacomunicado":
         return _enviacomunicado_api(token, payload.get("data"))
+    if op == "update_colegiat":
+        return _update_colegiat_api(token, payload["socio_id"], payload["data"])
+    if op == "update_tutor":
+        return _update_tutor_api(
+            token, payload["socio_id"], payload["tutor_id"], payload["data"]
+        )
     return None
 
 
@@ -576,6 +595,42 @@ def escribecampo(token, socioid, campo, valor=""):
     """Escribe campo personalizado de socio."""
     payload = {"socioid": socioid, "campo": campo, "valor": valor}
     return mutate("escribecampo", "colegiat", socioid, payload, token)
+
+
+def _update_colegiat_api(token, socio_id, payload):
+    url = f"{apiurl}/colegiats"
+    data = {"idColegiat": socio_id}
+    data.update(payload)
+    auth_headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    return _http_session.put(
+        url, headers=auth_headers, data=json.dumps(data), timeout=30
+    )
+
+
+def update_colegiat(token, socio_id, payload):
+    """Actualiza datos del socio en PlayOff."""
+    mutation_payload = {"socio_id": socio_id, "data": payload}
+    return mutate("update_colegiat", "colegiat", socio_id, mutation_payload, token)
+
+
+def _update_tutor_api(token, socio_id, tutor_id, payload):
+    url = f"{apiurl}/colegiats/{socio_id}/tutors/{tutor_id}"
+    auth_headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    return _http_session.put(
+        url, headers=auth_headers, data=json.dumps(payload), timeout=30
+    )
+
+
+def update_tutor(token, socio_id, tutor_id, payload):
+    """Actualiza datos del tutor en PlayOff."""
+    mutation_payload = {"socio_id": socio_id, "tutor_id": tutor_id, "data": payload}
+    return mutate("update_tutor", "colegiat", socio_id, mutation_payload, token)
 
 
 def calcular_proximo_recibo(fecha):
@@ -1253,6 +1308,409 @@ def es_socio_anual_activo(socio):
     if not socio or not isinstance(socio, dict):
         return False
     return categorias["socioactivo"] in getcategoriassocio(socio)
+
+
+def is_personal_laboral(socio):
+    """Indica si el socio es personal laboral (no debe aparecer en familias)."""
+    if not socio or not isinstance(socio, dict):
+        return False
+    return (socio.get("estatColegiat") or {}).get("nom") == "ESTPERLAB"
+
+
+def _coincide_nombre(nombre1, nombre2):
+    """Compara dos nombres ignorando mayúsculas, minúsculas y acentos."""
+    if not nombre1 or not nombre2:
+        return False
+    return normalize_name(nombre1) == normalize_name(nombre2)
+
+
+def _nombre_completo(socio):
+    """Obtiene el nombre completo de un socio o de un tutor."""
+    if not socio or not isinstance(socio, dict):
+        return ""
+    if "persona" in socio:
+        persona = socio.get("persona") or {}
+        nom = persona.get("nom", "")
+        cognoms = persona.get("cognoms", "")
+    else:
+        nom = socio.get("nom", "")
+        cognoms = socio.get("cognoms", "")
+    return f"{nom} {cognoms}".strip()
+
+
+def copy_missing_telegram_from_family(socio_id, socios, familias):
+    """Copia campos de Telegram de familiares si faltan en el socio.
+
+    - Menores de edad: hereda tutor1 y tutor2 desde hermanos o familiares.
+    - Mayores de edad: hereda socioid desde tutor1 o tutor2 del familiar,
+      solo si el nombre del tutor coincide con el nombre del adulto.
+    Retorna una lista de (campo, valor, id_familiar) copiados.
+    """
+    socio = next((s for s in socios if str(s.get("idColegiat")) == str(socio_id)), None)
+    if not socio:
+        return []
+    camps = socio.get("campsDinamics", {}) or {}
+    missing = [campo for campo in (tutor1, tutor2, socioid) if not camps.get(campo)]
+    if not missing:
+        return []
+
+    persona = socio.get("persona") or {}
+    data_naixement = persona.get("dataNaixement")
+    adult = False
+    if data_naixement:
+        try:
+            born = dateutil.parser.parse(data_naixement)
+            adult = date.today().year - born.year >= 18
+        except Exception:
+            adult = False
+
+    family_ids = {
+        int(member)
+        for member in (familias.get("miembros") or {}).get(str(socio_id), [])
+        if member not in (None, "", str(socio_id))
+    }
+    copied = []
+    adulto_nombre = _nombre_completo(socio)
+    for fid in family_ids:
+        familiar = next(
+            (s for s in socios if str(s.get("idColegiat")) == str(fid)), None
+        )
+        if not familiar:
+            continue
+        familiar_camps = familiar.get("campsDinamics", {}) or {}
+        for campo in missing[:]:
+            if campo in (tutor1, tutor2) and adult:
+                continue
+            if campo == socioid and not adult:
+                continue
+            valor = None
+            if campo == socioid and adult:
+                tutor1_nombre = _nombre_completo(familiar.get("tutor1") or {})
+                tutor2_nombre = _nombre_completo(familiar.get("tutor2") or {})
+                if _coincide_nombre(
+                    adulto_nombre, tutor1_nombre
+                ) and familiar_camps.get(tutor1):
+                    valor = familiar_camps[tutor1]
+                elif _coincide_nombre(
+                    adulto_nombre, tutor2_nombre
+                ) and familiar_camps.get(tutor2):
+                    valor = familiar_camps[tutor2]
+            else:
+                valor = familiar_camps.get(campo)
+            if valor:
+                if campo == socioid and valor in (
+                    familiar_camps.get(tutor1),
+                    familiar_camps.get(tutor2),
+                ):
+                    if familiar_camps.get(socioid) == valor:
+                        continue
+                camps[campo] = valor
+                missing.remove(campo)
+                copied.append((campo, valor, fid))
+        if not missing:
+            break
+    if copied:
+        socio["campsDinamics"] = camps
+    return copied
+
+
+_PARTICLES = {
+    "de",
+    "del",
+    "la",
+    "las",
+    "el",
+    "los",
+    "y",
+    "i",
+    "van",
+    "von",
+    "de la",
+    "de los",
+    "de las",
+    "la",
+    "lo",
+    "a",
+    "da",
+    "do",
+    "dos",
+    "del",
+    "al",
+    "dels",
+    "d'",
+}
+
+_ACCENT_MAP = {
+    "Adria": "Adrià",
+    "Adrian": "Adrián",
+    "Agullo": "Agulló",
+    "Agustin": "Agustín",
+    "Alvarez": "Álvarez",
+    "Andres": "Andrés",
+    "Alvaro": "Álvaro",
+    "Angel": "Ángel",
+    "Angeles": "Ángeles",
+    "Arago": "Aragó",
+    "Asuncion": "Asunción",
+    "Bauza": "Bauzá",
+    "Beltran": "Beltrán",
+    "Benjamin": "Benjamín",
+    "Cardenas": "Cárdenas",
+    "Carlos Adrian": "Carlos Adrián",
+    "Carlos Andres": "Carlos Andrés",
+    "Carlos Angel": "Carlos Ángel",
+    "Carlos Hector": "Carlos Héctor",
+    "Carlos Joaquin": "Carlos Joaquín",
+    "Carlos Oscar": "Carlos Óscar",
+    "Carlos Ramon": "Carlos Ramón",
+    "Carlos Raul": "Carlos Raúl",
+    "Carlos Victor": "Carlos Víctor",
+    "Carrión": "Carrión",
+    "Catalan": "Catalán",
+    "Cesar": "César",
+    "Chulia": "Chulía",
+    "Concepcion": "Concepción",
+    "Cortes": "Cortés",
+    "Cristobal": "Cristóbal",
+    "Cristofol": "Cristòfol",
+    "Diaz": "Díaz",
+    "Dídac": "Dídac",
+    "Dominguez": "Domínguez",
+    "Exposito": "Expósito",
+    "Fernandez": "Fernández",
+    "Ferre": "Ferré",
+    "Francisco Adrian": "Francisco Adrián",
+    "Francisco Alberto": "Francisco Alberto",
+    "Francisco Andres": "Francisco Andrés",
+    "Francisco Angel": "Francisco Ángel",
+    "Francisco Antonio": "Francisco Antonio",
+    "Francisco Carlos": "Francisco Carlos",
+    "Francisco Enrique": "Francisco Enrique",
+    "Francisco Hector": "Francisco Héctor",
+    "Francisco Javier": "Francisco Javier",
+    "Francisco Joaquin": "Francisco Joaquín",
+    "Francisco Jose": "Francisco José",
+    "Francisco Luis": "Francisco Luis",
+    "Francisco Manuel": "Francisco Manuel",
+    "Francisco Nestor": "Francisco Néstor",
+    "Francisco Oscar": "Francisco Óscar",
+    "Francisco Pedro": "Francisco Pedro",
+    "Francisco Ramon": "Francisco Ramón",
+    "Francisco Raul": "Francisco Raúl",
+    "Francisco Vicente": "Francisco Vicente",
+    "Francisco Victor": "Francisco Víctor",
+    "Fuste": "Fusté",
+    "Garcia": "García",
+    "Gimenez": "Giménez",
+    "Gomez": "Gómez",
+    "Gonzalez": "González",
+    "Guifre": "Guifré",
+    "Guillen": "Guillén",
+    "Gutierrez": "Gutiérrez",
+    "Hector": "Héctor",
+    "Hernandez": "Hernández",
+    "Ibañez": "Ibáñez",
+    "Ines": "Inés",
+    "Iolanda": "Iolanda",
+    "Ivan": "Iván",
+    "Jesus": "Jesús",
+    "Jimenez": "Jiménez",
+    "Joaquin": "Joaquín",
+    "Jose Adrian": "José Adrián",
+    "Jose Andres": "José Andrés",
+    "Jose Angel": "José Ángel",
+    "Jose Antonio": "José Antonio",
+    "Jose Carlos": "José Carlos",
+    "Jose Enrique": "José Enrique",
+    "Jose Francisco": "José Francisco",
+    "Jose Hector": "José Héctor",
+    "Jose Joaquin": "José Joaquín",
+    "Jose Luis": "José Luis",
+    "Jose M.": "José M.",
+    "Jose Manuel": "José Manuel",
+    "Jose Maria": "José María",
+    "Jose Miguel": "José Miguel",
+    "Jose Nestor": "José Néstor",
+    "Jose Oscar": "José Óscar",
+    "Jose Ramon": "José Ramón",
+    "Jose Raul": "José Raúl",
+    "Jose Vicente": "José Vicente",
+    "Jose Victor": "José Víctor",
+    "Jose": "José",
+    "Juan Adrian": "Juan Adrián",
+    "Juan Andres": "Juan Andrés",
+    "Juan Angel": "Juan Ángel",
+    "Juan Hector": "Juan Héctor",
+    "Juan Javier": "Juan Javier",
+    "Juan Joaquin": "Juan Joaquín",
+    "Juan Jose": "Juan José",
+    "Juan Nestor": "Juan Néstor",
+    "Juan Oscar": "Juan Óscar",
+    "Juan Ramon": "Juan Ramón",
+    "Juan Raul": "Juan Raúl",
+    "Juan Victor": "Juan Víctor",
+    "Lazaro": "Lázaro",
+    "Lluis": "Lluís",
+    "Lluisa": "Lluïsa",
+    "Lopez": "López",
+    "Lucia": "Lucía",
+    "Luis Adrian": "Luis Adrián",
+    "Luis Andres": "Luis Andrés",
+    "Luis Angel": "Luis Ángel",
+    "Luis Antonio": "Luis Antonio",
+    "Luis Carlos": "Luis Carlos",
+    "Luis Enrique": "Luis Enrique",
+    "Luis Francisco": "Luis Francisco",
+    "Luis Hector": "Luis Héctor",
+    "Luis Javier": "Luis Javier",
+    "Luis Joaquin": "Luis Joaquín",
+    "Luis Manuel": "Luis Manuel",
+    "Luis Miguel": "Luis Miguel",
+    "Luis Nestor": "Luis Néstor",
+    "Luis Oscar": "Luis Óscar",
+    "Luis Pedro": "Luis Pedro",
+    "Luis Ramon": "Luis Ramón",
+    "Luis Raul": "Luis Raúl",
+    "Luis Vicente": "Luis Vicente",
+    "Luis Victor": "Luis Víctor",
+    "Lujan": "Luján",
+    "Macias": "Macías",
+    "Maria Angeles": "María Ángeles",
+    "Maria Antonia": "María Antonia",
+    "Maria Assumpcio": "María Asunción",
+    "Maria Asuncion": "María Asunción",
+    "Maria Carmen": "María Carmen",
+    "Maria Concepción": "María Concepción",
+    "Maria Cristina": "María Cristina",
+    "Maria de la Cruz": "María de la Cruz",
+    "Maria de los Angeles": "María de los Ángeles",
+    "Maria del Carmen": "María del Carmen",
+    "Maria del Mar": "María del Mar",
+    "Maria del Pilar": "María del Pilar",
+    "Maria Dolores": "María Dolores",
+    "Maria Gracia": "María Gracia",
+    "Maria Inmaculada": "María Inmaculada",
+    "Maria Isabel": "María Isabel",
+    "Maria Jesus": "María Jesús",
+    "Maria Jose": "María José",
+    "Maria Josefa": "María Josefa",
+    "Maria Lluisa": "María Lluisa",
+    "Maria Luisa": "María Luisa",
+    "Maria Luz": "María Luz",
+    "Maria Mercedes": "María Mercedes",
+    "Maria Montserrat": "María Montserrat",
+    "Maria Pilar": "María Pilar",
+    "Maria Rosa": "María Rosa",
+    "Maria Soledad": "María Soledad",
+    "Maria Teresa": "María Teresa",
+    "Maria Victoria": "María Victoria",
+    "Maria": "María",
+    "Marin": "Marín",
+    "Marmol": "Mármol",
+    "Marquez": "Márquez",
+    "Marti": "Martí",
+    "Martin": "Martín",
+    "Martinez": "Martínez",
+    "Mendez": "Méndez",
+    "Miguel Adrian": "Miguel Adrián",
+    "Miguel Alberto": "Miguel Alberto",
+    "Miguel Andres": "Miguel Andrés",
+    "Miguel Angel": "Miguel Ángel",
+    "Miguel Antonio": "Miguel Antonio",
+    "Miguel Carlos": "Miguel Carlos",
+    "Miguel Enrique": "Miguel Enrique",
+    "Miguel Francisco": "Miguel Francisco",
+    "Miguel Hector": "Miguel Héctor",
+    "Miguel Javier": "Miguel Javier",
+    "Miguel Joaquin": "Miguel Joaquín",
+    "Miguel Manuel": "Miguel Manuel",
+    "Miguel Nestor": "Miguel Néstor",
+    "Miguel Oscar": "Miguel Óscar",
+    "Miguel Pedro": "Miguel Pedro",
+    "Miguel Ramon": "Miguel Ramón",
+    "Miguel Raul": "Miguel Raúl",
+    "Miguel Vicente": "Miguel Vicente",
+    "Miguel Victor": "Miguel Víctor",
+    "Minguet": "Minguet",
+    "Miquel": "Miquel",
+    "Miralpeix": "Miralpeix",
+    "Mireia": "Mireia",
+    "Mocholi": "Mocholí",
+    "Molina": "Molina",
+    "Monica": "Mónica",
+    "Montoya": "Montoya",
+    "Montse": "Montse",
+    "Monzo": "Monzó",
+    "Moran": "Morán",
+    "Mondrago": "Mondragó",
+    "Leon": "León",
+    "Narcis": "Narcís",
+    "Nestor": "Néstor",
+    "Nuñez": "Núñez",
+    "Nuria": "Núria",
+    "Ortiz": "Ortíz",
+    "Oscar": "Òscar",
+    "Pallares": "Pallarès",
+    "Peiro": "Peiró",
+    "Perez": "Pérez",
+    "Ramon": "Ramón",
+    "Raul": "Raúl",
+    "Rene": "René",
+    "Rodriguez": "Rodríguez",
+    "Roldan": "Roldán",
+    "Ruben": "Rubén",
+    "Rubio": "Rubio",
+    "Saez": "Sáez",
+    "Sanchez": "Sánchez",
+    "Sanchis": "Sanchís",
+    "Sanroma": "Sanromá",
+    "Sarrion": "Sarrión",
+    "Sebastia": "Sebastià",
+    "Sebastian": "Sebastián",
+    "Segui": "Seguí",
+    "Simon": "Simón",
+    "Sofia": "Sofía",
+    "Suarez": "Suárez",
+    "Tarin": "Tarín",
+    "Tellez": "Téllez",
+    "Tomas": "Tomás",
+    "Tristan": "Tristán",
+    "Ubeda": "Úbeda",
+    "Angela": "Ángela",
+    "Monleon": "Monleón",
+    "Valentin": "Valentín",
+    "Gandia": "Gandía",
+    "Vazquez": "Vázquez",
+    "Victor": "Víctor",
+    "Catala": "Català",
+    "Castello": "Castelló",
+    "Carrion": "Carrión",
+    "Ramirez": "Ramírez",
+    "Villanueva": "Villanueva",
+    "Veronica": "Verónica",
+    "Cebrian": "Cebrián",
+}
+
+
+def _normalize_part(part):
+    part = part.lower()
+    return part if part in _PARTICLES else part.capitalize()
+
+
+def normalize_name(name):
+    """Normaliza un nombre propio con mayúsculas/minúsculas correctas y acentos."""
+    if not name or not isinstance(name, str):
+        return name
+    parts = name.split()
+    normalized_parts = []
+    for part in parts:
+        subparts = part.split("-")
+        normalized_subparts = []
+        for sub in subparts:
+            normalized = _normalize_part(sub)
+            normalized_subparts.append(_ACCENT_MAP.get(normalized, normalized))
+        normalized_parts.append("-".join(normalized_subparts))
+    return " ".join(normalized_parts)
 
 
 def _enviacomunicado_api(token, data):

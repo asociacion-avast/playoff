@@ -31,6 +31,9 @@ socios_por_id = {
     if "idColegiat" in socio and socio.get("idColegiat") is not None
 }
 
+familias = common.readjson(filename="familias") or {"miembros": {}}
+
+
 for arg in sys.argv[1:]:
     try:
         associat = int(arg)
@@ -48,8 +51,15 @@ for arg in sys.argv[1:]:
         )
         continue
 
-    # Determinamos el tutor que falta por vincular (Tutor 1 o Tutor 2) a partir
-    # de los campos de Telegram ya informados en la ficha.
+    copied = common.copy_missing_telegram_from_family(associat, socios, familias)
+    if copied:
+        common.writejson(filename="socios", data=socios)
+        for campo, valor, fid in copied:
+            nombre = common.nombre_campo_telegram(campo)
+            print(f"Copiado {nombre} del socio familiar {fid} al socio {associat}")
+            common.escribecampo(token, associat, campo, valor)
+        continue
+
     camps = socio.get("campsDinamics", {}) or {}
     if not camps.get(common.tutor1):
         tipo = "tutor1"

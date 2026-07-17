@@ -372,6 +372,32 @@ def patch_escribecampo(socio_id, campo, valor):
     save_entity("colegiat", socio_id, socio, dirty=True)
 
 
+def patch_update_colegiat(socio_id, data):
+    socio = read_entity("colegiat", socio_id)
+    if not socio:
+        return
+    persona = data.get("persona")
+    if isinstance(persona, dict):
+        socio.setdefault("persona", {}).update(persona)
+    for tutor_key in ("tutor1", "tutor2"):
+        tutor_data = data.get(tutor_key)
+        if isinstance(tutor_data, dict):
+            socio.setdefault(tutor_key, {}).update(tutor_data)
+    save_entity("colegiat", socio_id, socio, dirty=True)
+
+
+def patch_update_tutor(socio_id, tutor_id, data):
+    socio = read_entity("colegiat", socio_id)
+    if not socio:
+        return
+    for tutor_key in ("tutor1", "tutor2"):
+        tutor = socio.get(tutor_key)
+        if tutor and str(tutor.get("idTutor")) == str(tutor_id):
+            tutor.update(data)
+            save_entity("colegiat", socio_id, socio, dirty=True)
+            break
+
+
 def _patch_inscripcion_status(id_activitat, inscripcion_id, status):
     if not id_activitat:
         return
@@ -411,6 +437,10 @@ def apply_patch(op, entity, entity_id, payload):
         patch_delcategoria(entity_id, payload["categoria"])
     elif op == "escribecampo":
         patch_escribecampo(entity_id, payload["campo"], payload.get("valor", ""))
+    elif op == "update_colegiat":
+        patch_update_colegiat(entity_id, payload.get("data", {}))
+    elif op == "update_tutor":
+        patch_update_tutor(entity_id, payload["tutor_id"], payload.get("data", {}))
     elif op == "anula_inscripcio":
         _patch_inscripcion_status(
             payload.get("idActivitat"), payload["inscripcion"], "anulada"

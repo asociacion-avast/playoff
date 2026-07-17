@@ -122,6 +122,7 @@ else:
 # Leer datos
 socios = common.readjson("socios")
 categorias = common.readjson("categorias")
+familias = common.readjson("familias") or {"miembros": {}}
 today = datetime.date.today()
 fechadia = calendar.monthrange(today.year, today.month)[1]
 
@@ -130,6 +131,15 @@ fechadia = calendar.monthrange(today.year, today.month)[1]
 for socio in socios:
     # ID Socio
     socioid = int(socio["idColegiat"])
+
+    copied = common.copy_missing_telegram_from_family(socioid, socios, familias)
+    if copied:
+        common.writejson(filename="socios", data=socios)
+        for campo, valor, fid in copied:
+            nombre = common.nombre_campo_telegram(campo)
+            print(f"Copiado {nombre} del socio familiar {fid} al socio {socioid}")
+            common.escribecampo(token, socioid, campo, valor)
+
     categoriassocio = common.getcategoriassocio(socio=socio)
 
     if common.validasocio(
