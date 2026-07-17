@@ -45,8 +45,8 @@ for socio in socios:
         continue
     persona = socio.get("persona") or {}
 
-    original_nom = persona.get("nom", "")
-    original_cognoms = persona.get("cognoms", "")
+    original_nom = common.clean_spaces(persona.get("nom", ""))
+    original_cognoms = common.clean_spaces(persona.get("cognoms", ""))
     normalized_nom = common.normalize_name(original_nom)
     normalized_cognoms = common.normalize_name(original_cognoms)
 
@@ -71,8 +71,8 @@ for socio in socios:
         tutor = socio.get(tutor_key)
         if not tutor:
             continue
-        orig_tnom = tutor.get("nom", "")
-        orig_tcognoms = tutor.get("cognoms", "")
+        orig_tnom = common.clean_spaces(tutor.get("nom", ""))
+        orig_tcognoms = common.clean_spaces(tutor.get("cognoms", ""))
         norm_tnom = common.normalize_name(orig_tnom)
         norm_tcognoms = common.normalize_name(orig_tcognoms)
         if orig_tnom != norm_tnom or orig_tcognoms != norm_tcognoms:
@@ -164,8 +164,8 @@ def _update_socio(token, sid, socio, change):
         "observacions": socio.get("observacions", ""),
         "persona": {
             "idPersona": _to_int(persona.get("idPersona")),
-            "nom": change["persona"]["new_nom"],
-            "cognoms": change["persona"]["new_cognoms"],
+            "nom": common.clean_spaces(change["persona"]["new_nom"]),
+            "cognoms": common.clean_spaces(change["persona"]["new_cognoms"]),
         },
     }
     payload = {k: v for k, v in payload.items() if v is not None}
@@ -224,8 +224,8 @@ def _update_tutor(token, sid, socio, change):
     tutor["cognoms"] = change["new_cognoms"]
     tutor_payload = {
         "idTutor": int(tutor_id) if str(tutor_id).isdigit() else tutor_id,
-        "nom": change["new_nom"],
-        "cognoms": change["new_cognoms"],
+        "nom": common.clean_spaces(change["new_nom"]),
+        "cognoms": common.clean_spaces(change["new_cognoms"]),
     }
     result = common.update_tutor(token, sid, tutor_id, tutor_payload)
     if result is None:

@@ -1452,9 +1452,10 @@ _ACCENT_MAP = {
     "Agullo": "Agulló",
     "Agustin": "Agustín",
     "Alvarez": "Álvarez",
-    "Andres": "Andrés",
     "Alvaro": "Álvaro",
+    "Andres": "Andrés",
     "Angel": "Ángel",
+    "Angela": "Ángela",
     "Angeles": "Ángeles",
     "Arago": "Aragó",
     "Asuncion": "Asunción",
@@ -1471,8 +1472,12 @@ _ACCENT_MAP = {
     "Carlos Ramon": "Carlos Ramón",
     "Carlos Raul": "Carlos Raúl",
     "Carlos Victor": "Carlos Víctor",
+    "Carrion": "Carrión",
     "Carrión": "Carrión",
+    "Castello": "Castelló",
+    "Catala": "Català",
     "Catalan": "Catalán",
+    "Cebrian": "Cebrián",
     "Cesar": "César",
     "Chulia": "Chulía",
     "Concepcion": "Concepción",
@@ -1506,6 +1511,7 @@ _ACCENT_MAP = {
     "Francisco Vicente": "Francisco Vicente",
     "Francisco Victor": "Francisco Víctor",
     "Fuste": "Fusté",
+    "Gandia": "Gandía",
     "Garcia": "García",
     "Gimenez": "Giménez",
     "Gomez": "Gómez",
@@ -1556,6 +1562,7 @@ _ACCENT_MAP = {
     "Juan Raul": "Juan Raúl",
     "Juan Victor": "Juan Víctor",
     "Lazaro": "Lázaro",
+    "Leon": "León",
     "Lluis": "Lluís",
     "Lluisa": "Lluïsa",
     "Lopez": "López",
@@ -1643,13 +1650,13 @@ _ACCENT_MAP = {
     "Mireia": "Mireia",
     "Mocholi": "Mocholí",
     "Molina": "Molina",
+    "Mondrago": "Mondragó",
     "Monica": "Mónica",
+    "Monleon": "Monleón",
     "Montoya": "Montoya",
     "Montse": "Montse",
     "Monzo": "Monzó",
     "Moran": "Morán",
-    "Mondrago": "Mondragó",
-    "Leon": "León",
     "Narcis": "Narcís",
     "Nestor": "Néstor",
     "Nuñez": "Núñez",
@@ -1659,6 +1666,7 @@ _ACCENT_MAP = {
     "Pallares": "Pallarès",
     "Peiro": "Peiró",
     "Perez": "Pérez",
+    "Ramirez": "Ramírez",
     "Ramon": "Ramón",
     "Raul": "Raúl",
     "Rene": "René",
@@ -1682,19 +1690,11 @@ _ACCENT_MAP = {
     "Tomas": "Tomás",
     "Tristan": "Tristán",
     "Ubeda": "Úbeda",
-    "Angela": "Ángela",
-    "Monleon": "Monleón",
     "Valentin": "Valentín",
-    "Gandia": "Gandía",
     "Vazquez": "Vázquez",
-    "Victor": "Víctor",
-    "Catala": "Català",
-    "Castello": "Castelló",
-    "Carrion": "Carrión",
-    "Ramirez": "Ramírez",
-    "Villanueva": "Villanueva",
     "Veronica": "Verónica",
-    "Cebrian": "Cebrián",
+    "Victor": "Víctor",
+    "Villanueva": "Villanueva",
 }
 
 
@@ -1717,6 +1717,13 @@ def normalize_name(name):
             normalized_subparts.append(_ACCENT_MAP.get(normalized, normalized))
         normalized_parts.append("-".join(normalized_subparts))
     return " ".join(normalized_parts)
+
+
+def clean_spaces(value):
+    """Reemplaza múltiples espacios por uno solo y elimina espacios extremos."""
+    if not value or not isinstance(value, str):
+        return value
+    return " ".join(value.split())
 
 
 def _enviacomunicado_api(token, data):
