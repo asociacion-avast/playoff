@@ -460,3 +460,247 @@ for socio in socios:
                 )
 
                 response = common.delcategoria(token, socioid, modalitat)
+
+
+# Normalizar nombres y apellidos de socios y tutores
+socio_changes = []
+tutor_changes = []
+
+for socio in socios:
+    sid = socio.get("idColegiat")
+    if sid is None:
+        continue
+    persona = socio.get("persona") or {}
+
+    original_nom = common.clean_spaces(persona.get("nom", ""))
+    original_cognoms = common.clean_spaces(persona.get("cognoms", ""))
+    normalized_nom = common.normalize_name(original_nom)
+    normalized_cognoms = common.normalize_name(original_cognoms)
+
+    if original_nom != normalized_nom or original_cognoms != normalized_cognoms:
+        socio_changes.append(
+            {
+                "idColegiat": sid,
+                "estat": socio.get("estat", ""),
+                "idEstatColegiat": socio.get("idEstatColegiat"),
+                "persona": {
+                    "old_nom": original_nom,
+                    "new_nom": normalized_nom,
+                    "old_cognoms": original_cognoms,
+                    "new_cognoms": normalized_cognoms,
+                },
+            }
+        )
+
+    for tutor_key in ("tutor1", "tutor2"):
+        tutor = socio.get(tutor_key)
+        if not tutor:
+            continue
+        orig_tnom = common.clean_spaces(tutor.get("nom", ""))
+        orig_tcognoms = common.clean_spaces(tutor.get("cognoms", ""))
+        norm_tnom = common.normalize_name(orig_tnom)
+        norm_tcognoms = common.normalize_name(orig_tcognoms)
+        if orig_tnom != norm_tnom or orig_tcognoms != norm_tcognoms:
+            tutor_changes.append(
+                {
+                    "idColegiat": sid,
+                    "tutor_key": tutor_key,
+                    "idTutor": tutor.get("idTutor"),
+                    "old_nom": orig_tnom,
+                    "new_nom": norm_tnom,
+                    "old_cognoms": orig_tcognoms,
+                    "new_cognoms": norm_tcognoms,
+                }
+            )
+
+if not socio_changes and not tutor_changes:
+    print("No hay nombres que corregir.")
+    raise SystemExit(0)
+
+if socio_changes:
+    print(f"Se encontraron {len(socio_changes)} socios con nombres por corregir.")
+    for change in socio_changes[:20]:
+        print(
+            f"  {change['idColegiat']} [{change['estat']}]: nom: {change['persona']['old_nom']!r} -> {change['persona']['new_nom']!r}, cognoms: {change['persona']['old_cognoms']!r} -> {change['persona']['new_cognoms']!r}"
+        )
+        print(f"    URL: {common.sociobase}{change['idColegiat']}#tab=PERFIL")
+
+if tutor_changes:
+    print(f"Se encontraron {len(tutor_changes)} tutores con nombres por corregir.")
+    for change in tutor_changes[:20]:
+        print(
+            f"  {change['idColegiat']} [{change['tutor_key']}]: nom: {change['old_nom']!r} -> {change['new_nom']!r}, cognoms: {change['old_cognoms']!r} -> {change['new_cognoms']!r}"
+        )
+        print(f"    URL: {common.sociobase}{change['idColegiat']}#tab=PERFIL")
+
+if len(socio_changes) > 20:
+    print(f"  ... y {len(socio_changes) - 20} socios más.")
+if len(tutor_changes) > 20:
+    print(f"  ... y {len(tutor_changes) - 20} tutores más.")
+
+print("Procesando sincronización automáticamente...")
+
+synced = 0
+failed = 0
+skipped = 0
+
+
+def _to_int(value):
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+for change in socio_changes:
+    sid = change["idColegiat"]
+    socio = next((s for s in socios if str(s["idColegiat"]) == str(sid)), None)
+    if not socio:
+        skipped += 1
+        print(f"  OMITIDO: {sid} - no encontrado en socios.json")
+        continue
+
+    estat = change.get("estat", "")
+    idestat = change.get("idEstatColegiat")
+    warning = ""
+    if estat != "COLESTVAL" or str(idestat) != "1":
+        warning = " [SOCIO NO ACTIVO]"
+
+    print(
+        f"\nSocio {sid}{warning}: {change['persona']['old_nom']!r} -> {change['persona']['new_nom']!r}, {change['persona']['old_cognoms']!r} -> {change['persona']['new_cognoms']!r}"
+    )
+    print(f"  URL: {common.sociobase}{sid}#tab=PERFIL")
+    if warning:
+        print("  ATENCIÓN: este socio no está activo. Se actualizará igualmente.")
+
+    socio["persona"]["nom"] = change["persona"]["new_nom"]
+    socio["persona"]["cognoms"] = change["persona"]["new_cognoms"]
+
+    persona = socio.get("persona") or {}
+    payload = {
+        "idColegiat": _to_int(sid),
+        "idColegi": _to_int(socio.get("idColegi")),
+        "numColegiat": _to_int(socio.get("numColegiat")),
+        "idEstatColegiat": _to_int(socio.get("idEstatColegiat")),
+        "estat": socio.get("estat", ""),
+        "dataAlta": socio.get("dataAlta", ""),
+        "dataBaixa": socio.get("dataBaixa", ""),
+        "dataJubilacio": socio.get("dataJubilacio", ""),
+        "tipusBaixa": socio.get("tipusBaixa", ""),
+        "viaBaixa": socio.get("viaBaixa", ""),
+        "descripcioBaixa": socio.get("descripcioBaixa", ""),
+        "codiLlicencia": socio.get("codiLlicencia", ""),
+        "metodePagament": socio.get("metodePagament", ""),
+        "observacions": socio.get("observacions", ""),
+        "persona": {
+            "idPersona": _to_int(persona.get("idPersona")),
+            "nom": common.clean_spaces(change["persona"]["new_nom"]),
+            "cognoms": common.clean_spaces(change["persona"]["new_cognoms"]),
+        },
+    }
+    payload = {k: v for k, v in payload.items() if v is not None}
+    payload["persona"] = {k: v for k, v in payload["persona"].items() if v is not None}
+
+    result = common.update_colegiat(token, sid, payload)
+    if result is None:
+        failed += 1
+        print(f"  ERROR: {sid} persona - sin respuesta (posiblemente offline)")
+    elif hasattr(result, "status_code") and result.status_code == 401:
+        print(f"  Token expirado para {sid} persona, renovando token...")
+        token = common.gettoken(
+            user=config["auth"]["RWusername"],
+            password=config["auth"]["RWpassword"],
+            force_refresh=True,
+        )
+        result = common.update_colegiat(token, sid, payload)
+        if result is None:
+            failed += 1
+            print(f"  ERROR: {sid} persona - sin respuesta tras renovar token")
+        elif hasattr(result, "status_code") and result.status_code >= 400:
+            failed += 1
+            print(
+                f"  ERROR: {sid} persona - HTTP {result.status_code}: {result.text[:200]}"
+            )
+        else:
+            synced += 1
+            print(f"  OK: {sid} persona (tras renovar token)")
+    elif hasattr(result, "status_code") and result.status_code >= 400:
+        failed += 1
+        print(
+            f"  ERROR: {sid} persona - HTTP {result.status_code}: {result.text[:200]}"
+        )
+    else:
+        synced += 1
+        print(f"  OK: {sid} persona")
+
+for change in tutor_changes:
+    sid = change["idColegiat"]
+    socio = next((s for s in socios if str(s["idColegiat"]) == str(sid)), None)
+    if not socio:
+        skipped += 1
+        print(f"  OMITIDO: {sid} - no encontrado en socios.json")
+        continue
+
+    tutor_key = change["tutor_key"]
+    tutor = socio.get(tutor_key)
+    if not tutor:
+        skipped += 1
+        print(f"  OMITIDO: {sid} {tutor_key} - no encontrado en socio")
+        continue
+    tutor_id = change.get("idTutor")
+    if not tutor_id:
+        skipped += 1
+        print(f"  OMITIDO: {sid} {tutor_key} - sin idTutor")
+        continue
+
+    print(
+        f"\nTutor {tutor_key} del socio {sid}: {change['old_nom']!r} -> {change['new_nom']!r}, {change['old_cognoms']!r} -> {change['new_cognoms']!r}"
+    )
+    print(f"  URL: {common.sociobase}{sid}#tab=PERFIL")
+
+    tutor["nom"] = change["new_nom"]
+    tutor["cognoms"] = change["new_cognoms"]
+    tutor_payload = {
+        "idTutor": int(tutor_id) if str(tutor_id).isdigit() else tutor_id,
+        "nom": common.clean_spaces(change["new_nom"]),
+        "cognoms": common.clean_spaces(change["new_cognoms"]),
+    }
+    result = common.update_tutor(token, sid, tutor_id, tutor_payload)
+    if result is None:
+        failed += 1
+        print(f"  ERROR: {sid} {tutor_key} - sin respuesta")
+    elif hasattr(result, "status_code") and result.status_code == 401:
+        print(f"  Token expirado para {sid} {tutor_key}, renovando token...")
+        token = common.gettoken(
+            user=config["auth"]["RWusername"],
+            password=config["auth"]["RWpassword"],
+            force_refresh=True,
+        )
+        result = common.update_tutor(token, sid, tutor_id, tutor_payload)
+        if result is None:
+            failed += 1
+            print(f"  ERROR: {sid} {tutor_key} - sin respuesta tras renovar token")
+        elif hasattr(result, "status_code") and result.status_code >= 400:
+            failed += 1
+            print(
+                f"  ERROR: {sid} {tutor_key} - HTTP {result.status_code}: {result.text[:200]}"
+            )
+        else:
+            synced += 1
+            print(f"  OK: {sid} {tutor_key} (tras renovar token)")
+    elif hasattr(result, "status_code") and result.status_code >= 400:
+        failed += 1
+        print(
+            f"  ERROR: {sid} {tutor_key} - HTTP {result.status_code}: {result.text[:200]}"
+        )
+    else:
+        synced += 1
+        print(f"  OK: {sid} {tutor_key}")
+
+print(f"\nSincronizados: {synced}, Fallidos: {failed}, Saltados: {skipped}")
+
+if synced > 0:
+    print("Guardando socios.json actualizado")
+    common.writejson(filename="socios", data=socios)
