@@ -288,8 +288,14 @@ class BearerAuth(requests.auth.AuthBase):
         return r
 
 
-def gettoken(user=config["auth"]["username"], password=config["auth"]["password"]):
+def gettoken(
+    user=config["auth"]["username"],
+    password=config["auth"]["password"],
+    force_refresh=False,
+):
     cache_key = (user, password)
+    if force_refresh and cache_key in _token_cache:
+        del _token_cache[cache_key]
     if cache_key in _token_cache:
         return _token_cache[cache_key]
 

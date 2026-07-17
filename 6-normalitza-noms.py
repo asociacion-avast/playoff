@@ -169,7 +169,9 @@ for change in changes:
     elif hasattr(result, "status_code") and result.status_code == 401:
         print(f"  Token expirado para {sid} persona, renovando token...")
         token = common.gettoken(
-            user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
+            user=config["auth"]["RWusername"],
+            password=config["auth"]["RWpassword"],
+            force_refresh=True,
         )
         result = common.update_colegiat(token, sid, payload)
         if result is None:
@@ -213,7 +215,9 @@ for change in changes:
         elif hasattr(result, "status_code") and result.status_code == 401:
             print(f"  Token expirado para {sid} {tutor_key}, renovando token...")
             token = common.gettoken(
-                user=config["auth"]["RWusername"], password=config["auth"]["RWpassword"]
+                user=config["auth"]["RWusername"],
+                password=config["auth"]["RWpassword"],
+                force_refresh=True,
             )
             result = common.update_tutor(token, sid, tutor_id, tutor_payload)
             if result is None:
