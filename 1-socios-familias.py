@@ -12,35 +12,49 @@ config.read(os.path.expanduser("~/.avast.ini"))
 token = common.gettoken()
 
 
+def normalizar_familias(familias):
+    familias["capfamilias"] = [int(x) for x in familias.get("capfamilias", [])]
+    familias["procesados"] = [int(x) for x in familias.get("procesados", [])]
+    familias["miembros"] = {
+        int(k): [int(v) for v in lista]
+        for k, lista in familias.get("miembros", {}).items()
+    }
+
+
 print("Loading file from disk")
 socios = common.readjson(filename="socios")
 
 try:
     familias = common.readjson(filename="familias")
+    normalizar_familias(familias)
 except Exception:
     familias = {"capfamilias": [], "miembros": {}, "procesados": []}
 
 
 def cruzar_miembros(miembros):
-    # Rellenar de forma cruzada los miembros de la familia para completar los valores
-
-    # Paso 1: convertir todas las claves y valores a enteros (algunos son a veces cadenas)
     datos = {}
     for k, lista in miembros.items():
         k_int = int(k)
         valores_int = [int(x) for x in lista]
 
-        # incluirse a sí mismo si no está
         grupo = set(valores_int)
         grupo.add(k_int)
 
         for miembro in grupo:
             if miembro not in datos:
                 datos[miembro] = set()
-            datos[miembro].update(grupo - {miembro})  # todos menos él mismo
+            datos[miembro].update(grupo - {miembro})
 
-    # Paso 2: convertir los sets a listas ordenadas
     return {k: sorted(v) for k, v in datos.items()}
+
+
+def normalizar_familias(familias):
+    familias["capfamilias"] = [int(x) for x in familias.get("capfamilias", [])]
+    familias["procesados"] = [int(x) for x in familias.get("procesados", [])]
+    familias["miembros"] = {
+        int(k): [int(v) for v in lista]
+        for k, lista in familias.get("miembros", {}).items()
+    }
 
 
 def procesar_familia(socioid, family):
@@ -101,7 +115,6 @@ for socio in socios:
             familias["miembros"][socioid] = []
             familias["procesados"].append(socioid)
 
-            print(f"Actualizando familia del socio {socioid}")
             family = common.read_entity_familia(socioid, token)
             if family and family != []:
                 procesar_familia(socioid, family)
@@ -175,7 +188,7 @@ for socio_id, lista in familias["miembros"].items():
     socio_id_int = int(socio_id)
     for miembro in lista:
         miembro_int = int(miembro)
-        if socio_id_int not in familias["miembros"].get(str(miembro_int), []):
+        if socio_id_int not in familias["miembros"].get(miembro_int, []):
             inconsistentes.append((socio_id, miembro))
 
 if inconsistentes:
@@ -183,7 +196,7 @@ if inconsistentes:
         f"ADVERTENCIA: {len(inconsistentes)} relaciones familiares inconsistentes (no bidireccionales):"
     )
     for a, b in inconsistentes[:10]:
-        print(f"  {a} -> {b} pero {b} -> {familias['miembros'].get(str(b), [])}")
+        print(f"  {a} -> {b} pero {b} -> {familias['miembros'].get(b, [])}")
 
 # Save to disk
 common.writejson(filename="familias", data=familias)
