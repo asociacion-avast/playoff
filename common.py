@@ -1344,21 +1344,28 @@ def _nombre_completo(socio):
     return f"{nom} {cognoms}".strip()
 
 
+def _es_telegram_valido(valor):
+    if valor is None:
+        return False
+    if isinstance(valor, str):
+        return valor.strip() != "" and valor.strip().isdigit()
+    return False
+
+
 def copy_missing_telegram_from_family(socio_id, socios, familias):
     """Copia campos de Telegram de familiares si faltan en el socio.
 
     - Menores de edad: hereda tutor1 y tutor2 desde hermanos o familiares.
     - Mayores de edad: hereda socioid desde tutor1 o tutor2 del familiar,
       solo si el nombre del tutor coincide con el nombre del adulto.
+      Los menores del grupo familiar sí se consideran como fuente.
+    No limpia campos vacíos. Solo actúa si hay familiares y valores válidos.
     Retorna una lista de (campo, valor, id_familiar) copiados.
     """
     socio = next((s for s in socios if str(s.get("idColegiat")) == str(socio_id)), None)
     if not socio:
         return []
     camps = socio.get("campsDinamics", {}) or {}
-    missing = [campo for campo in (tutor1, tutor2, socioid) if not camps.get(campo)]
-    if not missing:
-        return []
 
     persona = socio.get("persona") or {}
     data_naixement = persona.get("dataNaixement")
@@ -1370,14 +1377,24 @@ def copy_missing_telegram_from_family(socio_id, socios, familias):
         except Exception:
             adult = False
 
-    family_ids = {
-        int(member)
-        for member in (familias.get("miembros") or {}).get(str(socio_id), [])
-        if member not in (None, "", str(socio_id))
-    }
+    miembros = familias.get("miembros") or {}
+    family_list = miembros.get(str(socio_id)) or miembros.get(int(socio_id)) or []
+    family_ids = {int(member) for member in family_list if member not in (None, "")}
+    family_ids.discard(int(socio_id))
+
+    missing = [
+        campo
+        for campo in (tutor1, tutor2, socioid)
+        if not _es_telegram_valido(camps.get(campo))
+    ]
+    if not family_ids or not missing:
+        return []
+
     copied = []
     adulto_nombre = _nombre_completo(socio)
     for fid in family_ids:
+        if fid == socio_id:
+            continue
         familiar = next(
             (s for s in socios if str(s.get("idColegiat")) == str(fid)), None
         )
@@ -1395,24 +1412,40 @@ def copy_missing_telegram_from_family(socio_id, socios, familias):
                 tutor2_nombre = _nombre_completo(familiar.get("tutor2") or {})
                 if _coincide_nombre(
                     adulto_nombre, tutor1_nombre
-                ) and familiar_camps.get(tutor1):
+                ) and _es_telegram_valido(familiar_camps.get(tutor1)):
                     valor = familiar_camps[tutor1]
                 elif _coincide_nombre(
                     adulto_nombre, tutor2_nombre
-                ) and familiar_camps.get(tutor2):
+                ) and _es_telegram_valido(familiar_camps.get(tutor2)):
                     valor = familiar_camps[tutor2]
             else:
                 valor = familiar_camps.get(campo)
-            if valor:
-                if campo == socioid and valor in (
-                    familiar_camps.get(tutor1),
-                    familiar_camps.get(tutor2),
-                ):
-                    if familiar_camps.get(socioid) == valor:
-                        continue
-                camps[campo] = valor
-                missing.remove(campo)
-                copied.append((campo, valor, fid))
+            if not _es_telegram_valido(valor):
+                continue
+            if campo == socioid and valor in (
+                familiar_camps.get(tutor1),
+                familiar_camps.get(tutor2),
+            ):
+                if _es_telegram_valido(familiar_camps.get(socioid)):
+                    continue
+            if campo == socioid and valor in (camps.get(tutor1), camps.get(tutor2)):
+                tutor_fields_to_clear = []
+                if camps.get(tutor1) == valor:
+                    tutor_fields_to_clear.append(tutor1)
+                if camps.get(tutor2) == valor:
+                    tutor_fields_to_clear.append(tutor2)
+                if not _es_telegram_valido(camps.get(socioid)):
+                    camps[socioid] = valor
+                    for tf in tutor_fields_to_clear:
+                        camps[tf] = ""
+                    missing.remove(socioid)
+                    copied.append((socioid, valor, fid))
+                    for tf in tutor_fields_to_clear:
+                        copied.append((tf, "", fid))
+                continue
+            camps[campo] = valor
+            missing.remove(campo)
+            copied.append((campo, valor, fid))
         if not missing:
             break
     if copied:

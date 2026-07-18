@@ -123,6 +123,14 @@ else:
 socios = common.readjson("socios")
 categorias = common.readjson("categorias")
 familias = common.readjson("familias") or {"miembros": {}}
+if "miembros" in familias:
+    familias["miembros"] = {
+        int(k): [int(v) for v in lst] for k, lst in familias["miembros"].items()
+    }
+if "capfamilias" in familias:
+    familias["capfamilias"] = [int(x) for x in familias["capfamilias"]]
+if "procesados" in familias:
+    familias["procesados"] = [int(x) for x in familias["procesados"]]
 today = datetime.date.today()
 fechadia = calendar.monthrange(today.year, today.month)[1]
 
