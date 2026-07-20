@@ -674,6 +674,11 @@ for change in tutor_changes:
         "idTutor": int(tutor_id) if str(tutor_id).isdigit() else tutor_id,
         "nom": common.clean_spaces(change["new_nom"]),
         "cognoms": common.clean_spaces(change["new_cognoms"]),
+        "residencia": tutor.get("residencia", ""),
+        "nif": tutor.get("nif", ""),
+        "dataNaixement": tutor.get("dataNaixement", ""),
+        "relacio": tutor.get("relacio", ""),
+        "adreces": tutor.get("adreces", []),
     }
     result = common.update_tutor(token, sid, tutor_id, tutor_payload)
     if result is None:
