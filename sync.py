@@ -301,7 +301,7 @@ def cmd_download(_args):
     """Download fresh data from Playoff API."""
     print("Downloading fresh data from Playoff API...\n")
 
-    scripts = ["./0-soci.py", "./0-categorias.py", "./1-activi.py"]
+    scripts = ["./0-download.py", "./1-activi.py"]
 
     for script in scripts:
         if not os.path.exists(script):
