@@ -212,6 +212,23 @@ for socio in socios:
         else:
             year, month, day = False, False, False
 
+        if year:
+            if today.day >= 25:
+                if today.month == 12:
+                    corte_year = today.year + 1
+                    corte_month = 1
+                else:
+                    corte_year = today.year
+                    corte_month = today.month + 1
+            else:
+                corte_year = today.year
+                corte_month = today.month
+
+            corte_fechadia = calendar.monthrange(corte_year, corte_month)[1]
+            edad = corte_year - year - ((corte_month, corte_fechadia) < (month, day))
+        else:
+            corte_year = corte_month = corte_fechadia = edad = None
+
         for modalitat in socio["colegiatHasModalitats"]:
             idcategoria = int(modalitat["idModalitat"])
             agrupacionom = modalitat["modalitat"]["agrupacio"]["nom"].lower()
@@ -264,8 +281,20 @@ for socio in socios:
                 targetcategorias.append(common.categorias["sinactividades"])
                 removecategorias.append(common.categorias["actividades"])
 
-        # Carnet tutores (después de determinar si es adulto)
-        if not adulto:
+        # Carnet tutores (después de determinar si es adulto por modalidad o edad)
+        es_adulto = adulto or (year and edad >= 18)
+        if es_adulto:
+            carnetsocio = []
+            removecategorias.extend(
+                (
+                    common.categorias["sinuncarnetfamiliar"],
+                    common.categorias["sindoscarnetfamiliar"],
+                    common.categorias["carnettutorduplicado"],
+                )
+            )
+        else:
+            carnetsocio = []
+
             carnetsocio.extend(
                 socio[tutor]["residencia"]
                 for tutor in ["tutor1", "tutor2"]
@@ -284,12 +313,10 @@ for socio in socios:
                 targetcategorias.append(common.categorias["carnettutorduplicado"])
             else:
                 removecategorias.append(common.categorias["carnettutorduplicado"])
-        else:
-            removecategorias.append(common.categorias["carnettutorduplicado"])
 
-        # Los adultos no necesitan tener tutores
+        # Los adultos (por modalidad o edad) no necesitan tener tutores
         if common.categorias["carnetpendiente"] not in categoriassocio:
-            if not adulto:
+            if not es_adulto:
                 if not carnetsocio:
                     targetcategorias.append(common.categorias["sindoscarnetfamiliar"])
                     removecategorias.append(common.categorias["sinuncarnetfamiliar"])
@@ -329,26 +356,8 @@ for socio in socios:
         ):
             targetcategorias.append(common.categorias["sincarnetyactividades"])
 
-        # Determinar mes de corte
-        if today.day >= 25:
-            # Pasamos al mes siguiente
-            if today.month == 12:
-                corte_year = today.year + 1
-                corte_month = 1
-            else:
-                corte_year = today.year
-                corte_month = today.month + 1
-        else:
-            corte_year = today.year
-            corte_month = today.month
-
-        # Último día del mes de corte
-        corte_fechadia = calendar.monthrange(corte_year, corte_month)[1]
-
-        # Calcular edad
-        if year:
-            edad = corte_year - year - ((corte_month, corte_fechadia) < (month, day))
-
+        # Calcular edad (ya calculada antes del bucle de modalidades)
+        if year and edad:
             # Add target category for +13/+15
             if edad in range(13, 15):
                 # AVAST+13
