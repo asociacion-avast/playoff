@@ -139,6 +139,7 @@ fechadia = calendar.monthrange(today.year, today.month)[1]
 for socio in socios:
     # ID Socio
     socioid = int(socio["idColegiat"])
+    carnetsocio = []
 
     copied = common.copy_missing_telegram_from_family(socioid, socios, familias)
     if copied:
@@ -198,40 +199,6 @@ for socio in socios:
 
             else:
                 removecategorias.append(common.categorias["carnetincorrecto"])
-
-        # Carnet tutores
-        carnetsocio = []
-
-        carnetsocio.extend(
-            socio[tutor]["residencia"]
-            for tutor in ["tutor1", "tutor2"]
-            if (
-                tutor in socio
-                and socio[tutor] is not None
-                and socio[tutor]["residencia"] != ""
-                and socio[tutor]["residencia"] != "-"
-                and "ANULADO".lower() not in socio[tutor]["residencia"].lower()
-                and "ANUAL".lower() not in socio[tutor]["residencia"].lower()
-                and socio[tutor]["residencia"] != "null"
-            )
-        )
-        # Detectar si el carnet de tutor está indicado para ambos tutores
-        if len(carnetsocio) > len(sorted(set(carnetsocio))):
-            targetcategorias.append(common.categorias["carnettutorduplicado"])
-        else:
-            removecategorias.append(common.categorias["carnettutorduplicado"])
-
-        # Probar código postal
-        # try:
-        #     cp = int(socio["persona"]["adreces"][0]["municipi"]["codipostal"])
-        # except Exception:
-        #     cp = 0
-
-        # Asociar categoria DANA o no
-        # if cp in codigos_postales_dana:
-        #     targetcategorias.append(common.categorias["dana"])
-        # else:
-        #     removecategorias.append(common.categorias["dana"])
 
         # Find our born year
         try:
@@ -297,6 +264,29 @@ for socio in socios:
                 targetcategorias.append(common.categorias["sinactividades"])
                 removecategorias.append(common.categorias["actividades"])
 
+        # Carnet tutores (después de determinar si es adulto)
+        if not adulto:
+            carnetsocio.extend(
+                socio[tutor]["residencia"]
+                for tutor in ["tutor1", "tutor2"]
+                if (
+                    tutor in socio
+                    and socio[tutor] is not None
+                    and socio[tutor]["residencia"] != ""
+                    and socio[tutor]["residencia"] != "-"
+                    and "ANULADO".lower() not in socio[tutor]["residencia"].lower()
+                    and "ANUAL".lower() not in socio[tutor]["residencia"].lower()
+                    and socio[tutor]["residencia"] != "null"
+                )
+            )
+            # Detectar si el carnet de tutor está indicado para ambos tutores
+            if len(carnetsocio) > len(sorted(set(carnetsocio))):
+                targetcategorias.append(common.categorias["carnettutorduplicado"])
+            else:
+                removecategorias.append(common.categorias["carnettutorduplicado"])
+        else:
+            removecategorias.append(common.categorias["carnettutorduplicado"])
+
         # Los adultos no necesitan tener tutores
         if common.categorias["carnetpendiente"] not in categoriassocio:
             if not adulto:
@@ -356,30 +346,33 @@ for socio in socios:
         corte_fechadia = calendar.monthrange(corte_year, corte_month)[1]
 
         # Calcular edad
-        edad = corte_year - year - ((corte_month, corte_fechadia) < (month, day))
+        if year:
+            edad = corte_year - year - ((corte_month, corte_fechadia) < (month, day))
 
-        # Add target category for +13/+15
-        if edad in range(13, 15):
-            # AVAST+13
-            targetcategorias.append(common.categorias["avast13"])
+            # Add target category for +13/+15
+            if edad in range(13, 15):
+                # AVAST+13
+                targetcategorias.append(common.categorias["avast13"])
 
-        if edad in range(15, 18):
-            # AVAST+15
-            targetcategorias.append(common.categorias["avast15"])
+            if edad in range(15, 18):
+                # AVAST+15
+                targetcategorias.append(common.categorias["avast15"])
 
-        if edad in range(18, 25):
-            # AVAST+18
-            targetcategorias.append(common.categorias["avast18"])
+            if edad in range(18, 25):
+                # AVAST+18
+                targetcategorias.append(common.categorias["avast18"])
 
-        # El socio no debe estar en grupos A+13 o A+15 o A+18
-        for i in [
-            common.categorias["avast13"],
-            common.categorias["avast15"],
-            common.categorias["avast18"],
-        ]:
-            if i in categoriassocio and i not in targetcategorias:
-                print(f"ERROR: Borrando categoria {i} del socio {socioid}")
-                common.delcategoria(token, socioid, i)
+            # El socio no debe estar en grupos A+13 o A+15 o A+18
+            for i in [
+                common.categorias["avast13"],
+                common.categorias["avast15"],
+                common.categorias["avast18"],
+            ]:
+                if i in categoriassocio and i not in targetcategorias:
+                    print(f"ERROR: Borrando categoria {i} del socio {socioid}")
+                    common.delcategoria(token, socioid, i)
+        else:
+            edad = False
 
         # Socios con impago anual, dar de baja de categorías
         if common.categorias["impagoanual"] in categoriassocio:
