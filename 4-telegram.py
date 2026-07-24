@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
 import configparser
+import datetime
 import os
 import sys
+
+import dateutil.parser
 
 import common
 
@@ -45,11 +48,35 @@ for arg in sys.argv[1:]:
 
     camps = socio.get("campsDinamics", {}) or {}
 
+    adulto = False
+    for modalitat in socio.get("colegiatHasModalitats", []):
+        agrupacionom = (
+            modalitat.get("modalitat", {}).get("agrupacio", {}).get("nom", "").lower()
+        )
+        if "socio adulto" in agrupacionom:
+            adulto = True
+            break
+
+    if not adulto:
+        try:
+            fecha = dateutil.parser.parse(
+                socio.get("persona", {}).get("dataNaixement", "")
+            )
+            year = fecha.year
+            today = datetime.date.today()
+            corte_year = today.year + (1 if today.month >= 2 and today.day >= 20 else 0)
+            edad = corte_year - year
+            if edad >= 18:
+                adulto = True
+        except Exception:
+            pass
+
     missing_tutor = []
-    if not camps.get(common.tutor1):
-        missing_tutor.append("tutor1")
-    if not camps.get(common.tutor2):
-        missing_tutor.append("tutor2")
+    if not adulto:
+        if not camps.get(common.tutor1):
+            missing_tutor.append("tutor1")
+        if not camps.get(common.tutor2):
+            missing_tutor.append("tutor2")
 
     missing_socio = not camps.get(common.socioid)
 

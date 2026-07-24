@@ -1443,6 +1443,8 @@ def copy_missing_telegram_from_family(socio_id, socios, familias):
                     for tf in tutor_fields_to_clear:
                         copied.append((tf, "", fid))
                 continue
+            if valor == camps.get(campo):
+                continue
             camps[campo] = valor
             missing.remove(campo)
             copied.append((campo, valor, fid))

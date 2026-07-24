@@ -4,10 +4,12 @@ import calendar
 import configparser
 import datetime
 import os
+import re
 
 import dateutil.parser
 
 import common
+import sync_store
 
 config = configparser.ConfigParser()
 config.read(os.path.expanduser("~/.avast.ini"))
@@ -18,6 +20,8 @@ token = common.gettoken(
 )
 
 headers = {"Authorization": f"Bearer {token}"}
+
+outbox_entries_global = sync_store.read_outbox()
 
 # Definiciones
 
@@ -111,6 +115,269 @@ codigos_postales_dana = {
 }
 
 
+_DIGITS_ONLY_PATTERN = re.compile(r"\D+")
+_DIGITS_ONLY_VALUE_PATTERN = re.compile(r"^[0-9]+$")
+_MAX_TELEGRAM_ID = 2**63 - 1
+
+
+def _only_digits(value):
+    return _DIGITS_ONLY_PATTERN.sub("", str(value or ""))
+
+
+def _es_telegram_valido(valor):
+    if valor is None:
+        return True
+    if isinstance(valor, bool):
+        return False
+    value_str = str(valor).strip()
+    if not value_str:
+        return True
+    if not _DIGITS_ONLY_VALUE_PATTERN.fullmatch(value_str):
+        return False
+    if len(value_str) > 1 and value_str.startswith("0"):
+        return False
+    try:
+        telegram_id = int(value_str, 10)
+    except (ValueError, TypeError):
+        return False
+    return 2 <= telegram_id <= _MAX_TELEGRAM_ID
+
+
+def _register_phone_variants(variants, phone_value, prefix_value=None):
+    phone_digits = _only_digits(phone_value)
+    if not phone_digits:
+        return
+    prefix_digits = _only_digits(prefix_value)
+    variants.add(phone_digits)
+    if prefix_digits:
+        variants.add(prefix_digits + phone_digits)
+    if prefix_digits and phone_digits.startswith(prefix_digits):
+        local = phone_digits[len(prefix_digits) :]
+        if local:
+            variants.add(local)
+    if len(phone_digits) > 9:
+        variants.add(phone_digits[-9:])
+
+
+def socio_phone_digit_variants(socio):
+    variants = set()
+    persona = socio.get("persona") or {}
+    for phone_key, prefix_key in (
+        ("telefonPrincipal", "prefixTelefonPrincipal"),
+        ("telefonSecundari", "prefixTelefonSecundari"),
+        ("telefon", "prefixTelefon"),
+        ("mobil", "prefixMobil"),
+    ):
+        _register_phone_variants(
+            variants, persona.get(phone_key), persona.get(prefix_key)
+        )
+    adreces = persona.get("adreces") or []
+    if not isinstance(adreces, list):
+        return variants
+    for addr in adreces:
+        if not isinstance(addr, dict):
+            continue
+        for phone_key, prefix_key in (
+            ("telefonPrincipal", "prefixTelefonPrincipal"),
+            ("telefonSecundari", "prefixTelefonSecundari"),
+            ("telefon", "prefixTelefon"),
+            ("mobil", "prefixMobil"),
+        ):
+            _register_phone_variants(
+                variants, addr.get(phone_key), addr.get(prefix_key)
+            )
+    return variants
+
+
+def _clear_telegram_field(
+    token, socio, field_id, field_name, field_value, reason, cleared_field_ids
+):
+    if field_id in cleared_field_ids:
+        return 0
+    idcolegiat = socio["idColegiat"]
+    cached_socio = common.read_entity_colegiat(idcolegiat)
+    if cached_socio:
+        cached_value = cached_socio.get("campsDinamics", {}).get(field_id)
+        if not cached_value or cached_value == "":
+            cleared_field_ids.add(field_id)
+            socio["campsDinamics"][field_id] = ""
+            return 0
+    already_queued = any(
+        e.get("op") == "escribecampo"
+        and str(e.get("entity_id")) == str(idcolegiat)
+        and e.get("payload", {}).get("campo") == field_id
+        and e.get("payload", {}).get("valor", "X") == ""
+        and e.get("status") in ["pending", "synced"]
+        for e in outbox_entries_global
+    )
+    if already_queued:
+        cleared_field_ids.add(field_id)
+        return 0
+    print(f"    {field_name}: Clearing field - {reason} ({field_value})")
+    response = common.escribecampo(token, idcolegiat, field_id, "")
+    print(f"    Response: {response}")
+    cleared_field_ids.add(field_id)
+    socio["campsDinamics"][field_id] = ""
+    return 1
+
+
+def _clean_single_telegram_field(
+    socio,
+    token,
+    field_id,
+    field_name,
+    field_value,
+    numcolegiat,
+    phone_variants,
+    cleared_field_ids,
+):
+    if not field_value:
+        return 0
+    if str(numcolegiat) == str(field_value):
+        return _clear_telegram_field(
+            token,
+            socio,
+            field_id,
+            field_name,
+            field_value,
+            "telegram ID equals member number",
+            cleared_field_ids,
+        )
+    field_digits = _only_digits(field_value)
+    if field_digits and field_digits in phone_variants:
+        return _clear_telegram_field(
+            token,
+            socio,
+            field_id,
+            field_name,
+            field_value,
+            "telegram value matches socio phone number",
+            cleared_field_ids,
+        )
+    if not _es_telegram_valido(field_value):
+        return _clear_telegram_field(
+            token,
+            socio,
+            field_id,
+            field_name,
+            field_value,
+            "invalid telegram ID",
+            cleared_field_ids,
+        )
+    return 0
+
+
+def _dedupe_telegram_values(socio, token, values, cleared_field_ids):
+    if not values:
+        return 0
+    idcolegiat = socio["idColegiat"]
+    cleaned_count = 0
+    cached_socio = common.read_entity_colegiat(idcolegiat)
+    cached_campos = cached_socio.get("campsDinamics", {}) if cached_socio else {}
+    if values["tutor1"] == values["tutor2"] and values["tutor1"] != "":
+        if not cached_campos.get(common.tutor2, "X") == "":
+            if (
+                _clear_telegram_field(
+                    token,
+                    socio,
+                    common.tutor2,
+                    "TUTOR2",
+                    values["tutor2"],
+                    "duplicate of TUTOR1",
+                    cleared_field_ids,
+                )
+                == 1
+            ):
+                cleaned_count += 1
+    if (values["tutor1"] == values["socioid"] and values["tutor1"] != "") or (
+        values["tutor2"] == values["socioid"] and values["tutor2"] != ""
+    ):
+        if not cached_campos.get(common.socioid, "X") == "":
+            if (
+                _clear_telegram_field(
+                    token,
+                    socio,
+                    common.socioid,
+                    "SOCIO_ID",
+                    values["socioid"],
+                    "duplicate of tutor field",
+                    cleared_field_ids,
+                )
+                == 1
+            ):
+                cleaned_count += 1
+    return cleaned_count
+
+
+def _limpiar_telegram_socio(socio, token):
+    numcolegiat = socio["numColegiat"]
+    cleared_field_ids = set()
+    phone_variants = socio_phone_digit_variants(socio)
+    if not isinstance(socio.get("campsDinamics"), dict):
+        return 0
+    values = {"tutor1": "", "tutor2": "", "socioid": ""}
+    for field_id in common.telegramfields:
+        if field_id in socio["campsDinamics"]:
+            field_name = {
+                "tutor1": "TUTOR1",
+                "tutor2": "TUTOR2",
+                "socioid": "SOCIO_ID",
+            }.get(field_id, f"UNKNOWN_{field_id}")
+            field_value = socio["campsDinamics"][field_id]
+            if field_id == common.tutor1:
+                values["tutor1"] = field_value
+            elif field_id == common.tutor2:
+                values["tutor2"] = field_value
+            elif field_id == common.socioid:
+                values["socioid"] = field_value
+            _clean_single_telegram_field(
+                socio,
+                token,
+                field_id,
+                field_name,
+                field_value,
+                numcolegiat,
+                phone_variants,
+                cleared_field_ids,
+            )
+    return _dedupe_telegram_values(socio, token, values, cleared_field_ids)
+
+
+def _limpiar_tutor_en_campo_socio(socio, token):
+    if not isinstance(socio.get("campsDinamics"), dict):
+        return 0
+    mysocio = socio["campsDinamics"].get(common.socioid)
+    ids_a_limpiar = [
+        socio["idColegiat"]
+        for field in [common.tutor1, common.tutor2]
+        if field in socio["campsDinamics"] and mysocio == socio["campsDinamics"][field]
+    ]
+    if not ids_a_limpiar:
+        return 0
+    cleaned = 0
+    for idcolegiat in sorted(set(ids_a_limpiar)):
+        cached_socio = common.read_entity_colegiat(idcolegiat)
+        if cached_socio:
+            cached_value = cached_socio.get("campsDinamics", {}).get(common.socioid)
+            if not cached_value or cached_value == "":
+                continue
+        already_queued = any(
+            e.get("op") == "escribecampo"
+            and str(e.get("entity_id")) == str(idcolegiat)
+            and e.get("payload", {}).get("campo") == common.socioid
+            and e.get("payload", {}).get("valor", "X") == ""
+            and e.get("status") in ["pending", "synced"]
+            for e in outbox_entries_global
+        )
+        if already_queued:
+            print("    SOCIO_ID: Already queued for clearing (skipping)")
+            continue
+        response = common.escribecampo(token, idcolegiat, common.socioid, "")
+        print(response)
+        cleaned += 1
+    return cleaned
+
+
 today = datetime.date.today()
 
 # La cuota anual es el 20 de Febrero
@@ -148,6 +415,13 @@ for socio in socios:
             nombre = common.nombre_campo_telegram(campo)
             print(f"Copiado {nombre} del socio familiar {fid} al socio {socioid}")
             common.escribecampo(token, socioid, campo, valor)
+
+    if isinstance(socio.get("campsDinamics"), dict) and any(
+        field in socio["campsDinamics"] for field in common.telegramfields
+    ):
+        _limpiar_telegram_socio(socio, token)
+
+    _limpiar_tutor_en_campo_socio(socio, token)
 
     categoriassocio = common.getcategoriassocio(socio=socio)
 
