@@ -10,12 +10,12 @@ import numpy as np
 import pandas as pd
 
 # Definición de los colores según el rango de edad
-# Se han añadido colores para los nuevos grupos: 'TUTORES' y 'ADULTOS AVAST'
 COLORES = {
-    (2017, 2020): "#FCF37C",
-    (2014, 2016): "#FCBB8B",
-    (2011, 2013): "#81D3C9",
-    (2003, 2010): "#EFC1FD",
+    (2006, 2011): "#D7BDE2",
+    (2012, 2014): "#A9DFBF",
+    (2015, 2017): "#F5CBA7",
+    (2018, 2019): "#FCF37C",
+    (2020, 2021): "#AED6F1",
     ("TUTORES", "TUTORES"): "#87CEEB",
     ("ADULTOS AVAST", "ADULTOS AVAST"): "#D3D3D3",
 }
@@ -149,12 +149,13 @@ def generar_html_tabla(
             <label for="filtroAnio">Filtrar por grupo: </label>
             <select id="filtroAnio">
             <option value="">-- Mostrar todos --</option>
-            <option value="2003-2010">2003-2010</option>
-            <option value="2011-2013">2011-2013</option>
-            <option value="2014-2016">2014-2016</option>
-            <option value="2017-2020">2017-2020</option>
+            <option value="2006-2011">2006-2011</option>
+            <option value="2012-2014">2012-2014</option>
+            <option value="2015-2017">2015-2017</option>
+            <option value="2018-2019">2018-2019</option>
+            <option value="2020-2021">2020-2021</option>
             <option value="TUTORES">TUTORES</option>
-            <option value="ADULTOS">ADULTOS</option>
+            <option value="ADULTOS AVAST">ADULTOS AVAST</option>
             </select>
     <label for="filtroTexto" style="margin-left:1em;">Filtrar por texto: </label>
     <input type="text" id="filtroTexto" placeholder="Buscar..." style="width: 180px;" />
@@ -257,7 +258,7 @@ def generar_horario_para_anio(
     """
     Genera una tabla de horario en formato HTML para un año de nacimiento específico.
     """
-    # Se filtra por año de nacimiento O por los nuevos grupos (TUTORES, ADULTOS AVAST)
+    # Se filtra por año de nacimiento o por grupos especiales (TUTORES, ADULTOS AVAST)
     if isinstance(anio_nacimiento, str):
         # Lógica para filtrar solo por el grupo de edad string (ej. 'TUTORES' o 'ADULTOS AVAST')
         df_filtrado = df[
