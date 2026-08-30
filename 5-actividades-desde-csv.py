@@ -80,9 +80,9 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "tipusControlEdat": "CENAIXEMENT",
                 "tipus": "TAIND",
                 "llocActivitat": f"Aula: {aula_nom}, Planta: {piso}, Edificio: {edificio_nom}",
-                "dataLimit": "2025-10-31 23:59:59",
-                "dataInici": "2025-07-01 00:00:00",
-                "dataFi": "2025-10-31 23:59:59",
+                "dataLimit": "2026-10-31 23:59:59",
+                "dataInici": "2026-07-01 00:00:00",
+                "dataFi": "2026-10-31 23:59:59",
                 "isVisibleCampsPersonalitzatsPersona": "1",
                 "isDescripcioPublica": True,
                 "isPermetreInscripcionsTotesModalitats": 0,
@@ -108,8 +108,8 @@ with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 "descripcio": descripcio,
                 "aula": aula_nom,
                 "edificio": edificio_nom,
-                "dataHoraActivitat": f"2025-09-13 {horain}:00",
-                "dataHoraFiActivitat": "2026-06-20",
+                "dataHoraActivitat": f"2026-09-13 {horain}:00",
+                "dataHoraFiActivitat": "2027-06-20",
                 "campsDinamics": [
                     {
                         "nom": "profesor1",
