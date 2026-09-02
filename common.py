@@ -320,6 +320,24 @@ def writejson(filename, data):
     return True
 
 
+def readcsv(filename, delimiter=";", **kwargs):
+    """
+    Lee un CSV probando primero UTF-8 (con o sin BOM) y cayendo a latin1 si falla.
+    Devuelve un objeto file-like abierto en modo texto.
+    """
+    for encoding in ("utf-8-sig", "utf-8", "latin1"):
+        try:
+            f = open(filename, "r", encoding=encoding, newline="", **kwargs)
+            f.read(1)
+            f.seek(0)
+            return f
+        except UnicodeDecodeError:
+            continue
+    f = open(filename, "r", encoding="latin1", newline="", **kwargs)
+    f.seek(0)
+    return f
+
+
 def readjson(filename, refresh=False):
     if refresh and filename in _json_cache:
         del _json_cache[filename]

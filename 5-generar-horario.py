@@ -502,9 +502,26 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             "MATERIALES",
         ]
 
+        # Detección de codificación automática (UTF-8 con/sin BOM, latin1)
+        with open(csv_path, "rb") as f:
+            raw = f.read()
+        detected_encoding = "utf-8"
+        try:
+            raw.decode("utf-8-sig")
+            detected_encoding = "utf-8-sig"
+        except UnicodeDecodeError:
+            try:
+                raw.decode("utf-8")
+                detected_encoding = "utf-8"
+            except UnicodeDecodeError:
+                detected_encoding = "latin1"
+
         # Eliminamos el reemplazo de saltos de línea al leer el CSV para mantenerlos
         df = pd.read_csv(
-            csv_path, delimiter=";", encoding="latin1", keep_default_na=False
+            csv_path,
+            delimiter=";",
+            encoding=detected_encoding,
+            keep_default_na=False,
         )
 
         if not all(col in df.columns for col in required_cols):
