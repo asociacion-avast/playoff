@@ -49,7 +49,12 @@ def guardar_html_para_wordpress(html_completo, output_path):
 
 
 def generar_html_tabla(
-    df, horarios_fijos, anio_nacimiento, anio_academico, svg_content
+    df,
+    horarios_fijos,
+    anio_nacimiento,
+    anio_academico,
+    svg_content,
+    mostrar_filtro=True,
 ):
     """
     Genera el HTML de la tabla de horario a partir de un DataFrame procesado,
@@ -133,7 +138,10 @@ def generar_html_tabla(
     </tbody>
     </table>
     """
-    # Añadimos el script de filtrado al final del cuerpo HTML
+    # Añadimos el script de filtrado al final del cuerpo HTML sólo si la tabla no está pre-filtrada
+    if not mostrar_filtro:
+        return html_output + "</body></html>"
+
     html_output += """
     <script>
     (function() {
@@ -438,7 +446,12 @@ def generar_horario_para_anio(
     )
 
     html_output = generar_html_tabla(
-        df_with_rowspan, horarios_fijos, anio_nacimiento, anio_academico, svg_content
+        df_with_rowspan,
+        horarios_fijos,
+        anio_nacimiento,
+        anio_academico,
+        svg_content,
+        mostrar_filtro=False,
     )
     output_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
