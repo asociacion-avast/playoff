@@ -322,10 +322,10 @@ def writejson(filename, data):
 
 def readcsv(filename, delimiter=";", **kwargs):
     """
-    Lee un CSV probando primero UTF-8 (con o sin BOM) y cayendo a latin1 si falla.
+    Lee un CSV probando primero UTF-8 (con o sin BOM) y cayendo a cp1252 si falla.
     Devuelve un objeto file-like abierto en modo texto.
     """
-    for encoding in ("utf-8-sig", "utf-8", "latin1"):
+    for encoding in ("utf-8-sig", "utf-8", "cp1252"):
         try:
             f = open(filename, "r", encoding=encoding, newline="", **kwargs)
             f.read(1)
@@ -333,7 +333,7 @@ def readcsv(filename, delimiter=";", **kwargs):
             return f
         except UnicodeDecodeError:
             continue
-    f = open(filename, "r", encoding="latin1", newline="", **kwargs)
+    f = open(filename, "r", encoding="cp1252", newline="", **kwargs)
     f.seek(0)
     return f
 

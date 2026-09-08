@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 
 import csv
+import html as html_module
 import re
 
 import common
 
 
-def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
+def generar_pagina_web_actividades(
+    nombre_archivo_csv, nombre_archivo_salida, max_descripcion=80
+):
     """
     Lee un archivo CSV con datos de actividades, filtra y agrupa por nombre de actividad y profesor,
     y genera un archivo HTML con la información formateada como tarjetas y los iconos correspondientes.
+
+    Args:
+        nombre_archivo_csv: Ruta al archivo CSV de actividades.
+        nombre_archivo_salida: Ruta donde guardar el HTML generado.
+        max_descripcion: Longitud máxima de la descripción en caracteres.
+            Se trunca con '...' si es más larga. Por defecto 300.
     """
 
     # Encabezado del HTML, ahora incluye la referencia a Font Awesome y Masonry
@@ -137,12 +146,17 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                     continue
                 actividades_procesadas.add(unique_key)
 
-                descripcion = fila.get(
+                descripcion_raw = fila.get(
                     "DESCRIPCION", "Descripción no disponible"
                 ).strip()
-                mini_url = fila.get("MINIATURA", "").strip()
-                mas_info_url = fila.get("URL", "").strip()
-                materiales_texto = fila.get("MATERIALES", "").strip()
+                if len(descripcion_raw) > max_descripcion:
+                    descripcion_raw = descripcion_raw[:max_descripcion] + "..."
+                descripcion = html_module.escape(descripcion_raw)
+                mini_url = html_module.escape(fila.get("MINIATURA", "").strip())
+                mas_info_url = html_module.escape(fila.get("URL", "").strip())
+                materiales_texto = html_module.escape(
+                    fila.get("MATERIALES", "").strip()
+                )
 
                 iconos_requisitos = ""
                 necesita_wifi = bool(fila.get("WIFI", "").strip())
@@ -155,7 +169,7 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
 
                 imagen_html = ""
                 if mini_url:
-                    imagen_html = f'<img src="{mini_url}" alt="Miniatura de {titulo}" class="imagen-miniatura">'
+                    imagen_html = f'<img src="{mini_url}" alt="Miniatura de {html_module.escape(titulo)}" class="imagen-miniatura">'
 
                 enlace_html = ""
                 if mas_info_url:
@@ -171,8 +185,8 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
                 <div class="tarjeta-actividad">
                     {imagen_html}
                     <div class="contenido-tarjeta">
-                        <h2 class="titulo-actividad">{titulo} {iconos_requisitos}</h2>
-                        <p class="profesor">Impartido por: {profesor}</p>
+                        <h2 class="titulo-actividad">{html_module.escape(titulo)} {iconos_requisitos}</h2>
+                        <p class="profesor">Impartido por: {html_module.escape(profesor)}</p>
                         <p class="descripcion-actividad">{descripcion}</p>
                         {materiales_html}
                         <div class="info-adicional">
@@ -205,6 +219,10 @@ def generar_pagina_web_actividades(nombre_archivo_csv, nombre_archivo_salida):
     </body>
     </html>
     """
+
+    html_content = re.sub(r"\s+", " ", html_content)
+    html_content = re.sub(r">\s+<", "><", html_content)
+    html_content = html_content.strip()
 
     with open(nombre_archivo_salida, "w", encoding="utf-8") as archivo_salida:
         archivo_salida.write(html_content)

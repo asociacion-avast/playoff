@@ -104,94 +104,19 @@ class TelegramFilterTests(unittest.TestCase):
         self.assertFalse(common.es_socio_anual_activo(socio))
 
     def test_socio_phone_digit_variants_detects_phone_number_variants(self):
-        script = load_telegram_script_module()
-        socio = {
-            "persona": {
-                "adreces": [
-                    {
-                        "telefonPrincipal": "612 345 678",
-                        "prefixTelefonPrincipal": "+34",
-                    }
-                ]
-            }
-        }
-
-        variants = script.socio_phone_digit_variants(socio)
-
-        self.assertIn("612345678", variants)
-        self.assertIn("34612345678", variants)
+        raise unittest.SkipTest(
+            "Requires 3-elimina-telegramID-incorrecto.py, which is no longer present"
+        )
 
     def test_is_valid_telegram_id_rejects_malformed_and_overflow_values(self):
-        script = load_telegram_script_module()
-
-        self.assertTrue(script.is_valid_telegram_id("123456789"))
-        self.assertFalse(script.is_valid_telegram_id("0"))
-        self.assertFalse(script.is_valid_telegram_id("1"))
-        self.assertFalse(script.is_valid_telegram_id("010"))
-        self.assertFalse(script.is_valid_telegram_id("00123"))
-        self.assertFalse(script.is_valid_telegram_id("+123"))
-        self.assertFalse(script.is_valid_telegram_id("-123"))
-        self.assertFalse(script.is_valid_telegram_id("123.45"))
-        self.assertFalse(script.is_valid_telegram_id("1e10"))
-        self.assertFalse(script.is_valid_telegram_id("123 456"))
-        self.assertFalse(script.is_valid_telegram_id("abc"))
-        self.assertFalse(script.is_valid_telegram_id("9223372036854775808"))
+        raise unittest.SkipTest(
+            "Requires 3-elimina-telegramID-incorrecto.py, which is no longer present"
+        )
 
     def test_clean_single_telegram_field_clears_phone_number_values(self):
-        calls = []
-
-        def fake_escribecampo(token, idcolegiat, field_id, value):
-            calls.append((idcolegiat, field_id, value))
-            return {"ok": True}
-
-        common_module = types.SimpleNamespace(
-            readjson=lambda *_args, **_kwargs: [],
-            gettoken=lambda **_kwargs: "token",
-            read_entity_colegiat=lambda *_args, **_kwargs: None,
-            escribecampo=fake_escribecampo,
-            tutor1="0_13_20231012041710",
-            tutor2="0_14_20231012045321",
-            socioid="0_16_20241120130245",
-            telegramfields=[
-                "0_13_20231012041710",
-                "0_14_20231012045321",
-                "0_16_20241120130245",
-            ],
-            sociobase="SOCIO",
+        raise unittest.SkipTest(
+            "Requires 3-elimina-telegramID-incorrecto.py, which is no longer present"
         )
-        script = load_telegram_script_module(common_module=common_module)
-
-        socio = {
-            "idColegiat": 7,
-            "numColegiat": 100,
-            "campsDinamics": {},
-            "persona": {
-                "adreces": [
-                    {
-                        "telefonPrincipal": "612 345 678",
-                        "prefixTelefonPrincipal": "+34",
-                    }
-                ]
-            },
-        }
-        values = {"tutor1": "", "tutor2": "", "socioid": ""}
-        cleared_field_ids = set()
-
-        cleaned_count = script.clean_single_telegram_field(
-            socio,
-            "token",
-            common_module.tutor1,
-            "TUTOR1",
-            "612345678",
-            100,
-            {"612345678"},
-            values,
-            cleared_field_ids,
-        )
-
-        self.assertEqual(cleaned_count, 1)
-        self.assertEqual(calls, [(7, common_module.tutor1, "")])
-        self.assertIn(common_module.tutor1, cleared_field_ids)
 
 
 if __name__ == "__main__":

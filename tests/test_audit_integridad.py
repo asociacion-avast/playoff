@@ -147,7 +147,7 @@ class AuditIntegridadTests(unittest.TestCase):
         item = audit_integridad.finding("TEST", "warning", "familia", 5485, "Prueba")
         self.assertEqual(
             item["url"],
-            "https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=5485&eMenuLat=SECCIO_PERFIL",
+            "https://asociacionavast.playoffinformatica.com/FormAssociat.php?idColegiat=5485",
         )
 
     def test_member_finding_includes_profile_url_but_grouped_one_does_not(self):

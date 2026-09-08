@@ -2,6 +2,7 @@
 
 import configparser
 import csv
+import html as html_module
 import os
 import pprint
 import random
@@ -70,11 +71,12 @@ with common.readcsv(csv_path, delimiter=";") as csvfile:
             if row.get("DISPOSITIVO", "").strip():
                 descripcio += "\n<p>Esta actividad requiere que el participante traiga su propio dispositivo (portátil, tablet, etc.).</p>"
             if row.get("DESCRIPCION", "").strip():
-                descripcio += f"\n<p>{row['DESCRIPCION'].replace(chr(10), ' ').replace(chr(13), ' ').strip()}</p>"
+                descripcio += f"\n<p>{html_module.escape(row['DESCRIPCION'].replace(chr(10), ' ').replace(chr(13), ' ').strip())}</p>"
             if row.get("MATERIALES", "").strip():
-                descripcio += f"\n<p>Materiales necesarios: {row['MATERIALES'].replace(chr(10), ' ').replace(chr(13), ' ').strip()}</p>"
+                descripcio += f"\n<p>Materiales necesarios: {html_module.escape(row['MATERIALES'].replace(chr(10), ' ').replace(chr(13), ' ').strip())}</p>"
             if row.get("URL", "").strip():
-                descripcio += f"\n<p>Más información en <a href='{row['URL'].strip()}'>{row['URL'].strip()}</a></p>"
+                url_limpia = row["URL"].strip()
+                descripcio += f"\n<p>Más información en <a href='{html_module.escape(url_limpia)}'>{html_module.escape(url_limpia)}</a></p>"
 
             override = {
                 "estat": "ACTIESTPRIV",

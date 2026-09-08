@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import html as html_module
 import os
 import re
 import urllib.request
@@ -28,16 +29,36 @@ COLOR_UBICACION_FONDO = "#9cc9d6"
 
 def guardar_html_para_wordpress(html_completo, output_path):
     """
-    Extrae solo el contenido del body del HTML completo (excluyendo el logo) para que sea compatible
-    con bloques de HTML personalizado en WordPress.
+    Extrae solo el contenido del body del HTML completo (excluyendo logo, estilos y script de filtro)
+    para que sea compatible con bloques de HTML personalizado en WordPress.
+    El resultado es más compacto y evita errores de post_content demasiado largo.
     """
-    # Buscamos el contenido a partir del primer div de título
+    # Buscamos el contenido a partir del primer div de título (acepta comillas sencillas o dobles)
+    # El patrón exige el cierre del tag > para evitar coincidir con CSS
     match = re.search(
-        r"<div class='academic-year-header'.*</body>", html_completo, re.DOTALL
+        r"<div class=['\"]academic-year-header['\"]>.*?</table>\s*(?:</div>)?\s*(?:<script>.*?</script>\s*)*</body>",
+        html_completo,
+        re.DOTALL,
     )
     if match:
         body_content = match.group(0).strip().replace("</body>", "")
-        with open(output_path, "w") as f:
+        # Eliminar el script de filtro si está presente (ya no es útil en WordPress)
+        body_content = re.sub(
+            r"<script>.*?</script>", "", body_content, flags=re.DOTALL
+        )
+        # Eliminar estilos inline de spans de profesor (font-size: small) para reducir tamaño
+        body_content = re.sub(
+            r"<span\s+style='font-size:\s*small;'>([^<]*)</span>", r"\1", body_content
+        )
+        # Eliminar estilos inline de iconos
+        body_content = re.sub(
+            r"<i\s+class='[^']*'\s+style='[^']*'[^>]*>\s*</i>", "", body_content
+        )
+        # Eliminar estilos inline innecesarios y repeatedly repeated whitespace
+        body_content = re.sub(r"\s+", " ", body_content)
+        body_content = re.sub(r">\s+<", "><", body_content)
+        body_content = body_content.strip()
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(body_content)
         print(
             f"🎉 Código para WordPress generado y guardado en '{os.path.basename(output_path)}'."
@@ -95,7 +116,7 @@ def generar_html_tabla(
     </div>
     """
     # Muestra el año académico en todos los casos
-    html_output += f"<div class='academic-year-header'>Horario de Actividades Curso Académico {anio_academico}</div>"
+    html_output += f"<div class='academic-year-header'>Horario de Actividades - Curso Académico {anio_academico}</div>"
 
     # Omite el texto 'Para el grupo...' solo si se está generando el horario general
     if anio_nacimiento is not None:
@@ -112,7 +133,7 @@ def generar_html_tabla(
     <table>
     <thead>
         <tr>
-            <th colspan='1'>UBICACIÓN</th>
+            <th>UBICACIÓN</th>
             """
     for header in horarios_fijos.keys():
         html_output += f"<th>{header}</th>"
@@ -124,14 +145,11 @@ def generar_html_tabla(
 
     for index, row in df.iterrows():
         html_output += "<tr>"
-
         # Celda única para la ubicación
         html_output += f"<td class='location-cell'>{row['UBICACION_COMBINADA']}</td>"
-
         # Celdas de horario
         for col in horarios_fijos.keys():
             html_output += f"<td class='actividad-cell'>{row[col]}</td>"
-
         html_output += "</tr>"
 
     html_output += """
@@ -354,7 +372,7 @@ def generar_horario_para_anio(
                     overlap_end = min(rango_fin_def, int(anos_fin_act))
                     if overlap_start <= overlap_end:
                         rangos_ajustados_html.append(
-                            f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
+                            f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{overlap_start}-{overlap_end}</span>"
                         )
                 except ValueError:
                     continue  # Si no son números, pasamos al siguiente rango
@@ -362,7 +380,7 @@ def generar_horario_para_anio(
                 # Lógica para rangos de texto (TUTORES, ADULTOS AVAST)
                 if anos_inicio_act == rango_inicio_def:
                     rangos_ajustados_html.append(
-                        f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{rango_inicio_def}</span>"
+                        f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{rango_inicio_def}</span>"
                     )
 
         iconos_html = ""
@@ -373,7 +391,7 @@ def generar_horario_para_anio(
 
         etiquetas_html = ""
         if iconos_html or rangos_ajustados_html:
-            etiquetas_html = "<br>" + iconos_html + "".join(rangos_ajustados_html)
+            etiquetas_html = "<br>" + iconos_html + "&nbsp;".join(rangos_ajustados_html)
 
         profesor_html = ""
         if row["profesores"]:
@@ -383,7 +401,7 @@ def generar_horario_para_anio(
 
         descripcion_html = ""
         if row["DESCRIPCION"]:
-            descripcion_html = f"title='{row['DESCRIPCION']}'"
+            descripcion_html = f"title='{html_module.escape(row['DESCRIPCION'])}'"
 
         # Reemplazar saltos de línea del CSV con <br> para HTML
         actividad_con_saltos = row["ACTIVIDAD"].replace("\n", "<br>").replace("\r", "")
@@ -515,7 +533,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             "MATERIALES",
         ]
 
-        # Detección de codificación automática (UTF-8 con/sin BOM, latin1)
+        # Detección de codificación automática (UTF-8 con/sin BOM, cp1252)
         with open(csv_path, "rb") as f:
             raw = f.read()
         detected_encoding = "utf-8"
@@ -527,7 +545,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 raw.decode("utf-8")
                 detected_encoding = "utf-8"
             except UnicodeDecodeError:
-                detected_encoding = "latin1"
+                detected_encoding = "cp1252"
 
         # Eliminamos el reemplazo de saltos de línea al leer el CSV para mantenerlos
         df = pd.read_csv(
@@ -676,14 +694,14 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                             overlap_end = min(rango_fin_def, int(anos_fin_act))
                             if overlap_start <= overlap_end:
                                 rangos_ajustados_html.append(
-                                    f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{overlap_start}-{overlap_end}</span>"
+                                    f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{overlap_start}-{overlap_end}</span>"
                                 )
                         except ValueError:
                             continue
                     else:
                         if anos_inicio_act == rango_inicio_def:
                             rangos_ajustados_html.append(
-                                f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 2px;'>{rango_inicio_def}</span>"
+                                f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{rango_inicio_def}</span>"
                             )
 
                 iconos_html = ""
@@ -695,7 +713,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 etiquetas_html = ""
                 if iconos_html or rangos_ajustados_html:
                     etiquetas_html = (
-                        "<br>" + iconos_html + "".join(rangos_ajustados_html)
+                        "<br>" + iconos_html + "&nbsp;".join(rangos_ajustados_html)
                     )
 
                 profesor_html = ""
@@ -704,7 +722,9 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
 
                 descripcion_html = ""
                 if row["DESCRIPCION"]:
-                    descripcion_html = f"title='{row['DESCRIPCION']}'"
+                    descripcion_html = (
+                        f"title='{html_module.escape(row['DESCRIPCION'])}'"
+                    )
 
                 # Reemplazar saltos de línea del CSV con <br> para HTML
                 actividad_con_saltos = (
@@ -788,7 +808,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
             )
             output_filename = os.path.join(script_dir, "horario.html")
 
-            with open(output_filename, "w") as f:
+            with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(html_output)
             print("🎉 Tabla de horario completa generada y guardada en 'horario.html'")
 
@@ -841,7 +861,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                 svg_content=logo_svg_content,
             )
             if html_output:
-                with open(filename, "w") as f:
+                with open(filename, "w", encoding="utf-8") as f:
                     f.write(html_output)
                 print(
                     f"🎉 Tabla de horario generada y guardada en '{os.path.basename(filename)}'"
@@ -890,7 +910,7 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                     svg_content=logo_svg_content,
                 )
                 if html_output:
-                    with open(filename, "w") as f:
+                    with open(filename, "w", encoding="utf-8") as f:
                         f.write(html_output)
                     print(
                         f"  ✅ '{os.path.basename(filename)}' generado correctamente."
