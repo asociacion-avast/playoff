@@ -28,11 +28,12 @@ print("Haciendo llamada API")
 csv_path = os.path.join(os.path.dirname(__file__), "actividades.csv")
 hora_slot_map = {
     "9:00": "8",
+    "09:00": "8",
     "10:05": "9",
     "11:30": "7",
     "12:35": "10",
 }
-with open(csv_path, newline="", encoding="utf-8") as csvfile:
+with common.readcsv(csv_path, delimiter=";") as csvfile:
     reader = csv.DictReader(csvfile, delimiter=";")
     for row in reader:
         print(row)
