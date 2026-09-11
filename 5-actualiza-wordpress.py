@@ -3,8 +3,34 @@
 import base64
 import json
 import os
+import re
 
 import requests
+
+
+def procesar_html_para_wordpress(contenido_html):
+    patron_estilos = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
+    estilos = patron_estilos.findall(contenido_html)
+    css = "\n".join(estilos)
+    css = f"<style>\n{css}\n</style>" if css else ""
+
+    contenido = re.sub(r"<!DOCTYPE[^>]*>", "", contenido_html, flags=re.IGNORECASE)
+    contenido = re.sub(r"</?html[^>]*>", "", contenido, flags=re.IGNORECASE)
+    contenido = re.sub(
+        r"<head[^>]*>.*?</head>", "", contenido, flags=re.DOTALL | re.IGNORECASE
+    )
+    contenido = re.sub(r"<link[^>]*>", "", contenido, flags=re.IGNORECASE)
+    contenido = re.sub(
+        r"<script[^>]*>.*?</script>", "", contenido, flags=re.DOTALL | re.IGNORECASE
+    )
+    contenido = re.sub(r"</?body[^>]*>", "", contenido, flags=re.IGNORECASE)
+    contenido = re.sub(r"^\s+|\s+$", "", contenido, flags=re.MULTILINE)
+    contenido = re.sub(r"\n{3,}", "\n\n", contenido)
+
+    contenido = re.sub(r"🛜", "[WiFi]", contenido)
+    contenido = re.sub(r"🖥", "[PC]", contenido)
+
+    return css + "\n" + contenido
 
 
 def actualizar_contenido_wordpress(
@@ -28,8 +54,9 @@ def actualizar_contenido_wordpress(
         with open(ruta_archivo_html, encoding="utf-8") as f:
             contenido_html = f.read()
 
+        contenido_procesado = procesar_html_para_wordpress(contenido_html)
         nuevo_contenido_completo = (
-            f"{texto_introduccion}<br><br>{contenido_html}<br><br>{texto_final}"
+            f"{texto_introduccion}<br><br>{contenido_procesado}<br><br>{texto_final}"
         )
 
         credenciales = f"{usuario}:{contrasena_app}"
