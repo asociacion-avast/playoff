@@ -427,6 +427,29 @@ def parse_date(value):
         return None
 
 
+def actividad_en_any_actual(actividad):
+    """Check if an activity belongs to the current academic year (Sept 1 to June 30).
+
+    The academic year runs from September of year N to June of year N+1.
+    - Sep-Dec: current academic year is {year}-{year+1}
+    - Jan-Jun: current academic year is {year-1}-{year}
+    - Jul-Aug: no current academic year (summer break)
+    """
+    fecha = parse_date(actividad.get("dataHoraActivitat"))
+    if fecha is None:
+        return False
+    today = date.today()
+    if today.month >= 9:
+        start = date(today.year, 9, 1)
+        end = date(today.year + 1, 6, 30)
+    elif today.month <= 6:
+        start = date(today.year - 1, 9, 1)
+        end = date(today.year, 6, 30)
+    else:
+        return False
+    return start <= fecha.date() <= end
+
+
 def safe_int(value, default=0):
     """Convert a value to int if possible, otherwise return default."""
     try:

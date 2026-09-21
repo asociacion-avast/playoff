@@ -19,6 +19,16 @@ actividades = common.readjson(filename="actividades")
 
 print("Procesando actividades...")
 
+# Read outbox once before processing (OPTIMIZATION)
+# Must be before the first loop so already-anulled inscriptions are excluded
+# from duplicate detection
+outbox_entries = sync_store.read_outbox()
+outbox_anuladas = {
+    str(e["payload"]["inscripcion"])
+    for e in outbox_entries
+    if e.get("op") == "anula_inscripcio" and e.get("status") in ["pending", "synced"]
+}
+
 usuariosyactividad = {}
 actividadyusuarios = {}
 usuariosyhorarios = {}
@@ -33,7 +43,11 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     horario = common.actividad_horario(actividad)
 
-    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
+    if (
+        horario in {7, 8, 9, 10, 19, 20, 21, 22}
+        and actividad.get("estat") == "ACTIESTVIG"
+        and common.actividad_en_any_actual(actividad)
+    ):
         inscritos = common.read_inscripciones_actividad(token_ro, myid)
         actividadyusuarios[myid] = []
 
@@ -47,11 +61,16 @@ for actividad in actividades:
             if ahora - fecha <= datetime.timedelta(hours=1, minutes=30):
                 continue
 
+            inscripcion = inscrito["idInscripcio"]
+
+            # Skip if already anulled in outbox (está en proceso de anulación)
+            if str(inscripcion) in outbox_anuladas:
+                continue
+
             if inscrito["estat"] != "INSCRESTNOVA":
                 continue
 
             actividadyusuarios[myid].append(colegiat)
-            inscripcion = inscrito["idInscripcio"]
             inscripcion_actividad[inscripcion] = myid
 
             usuariosyactividad.setdefault(colegiat, []).append(myid)
@@ -67,14 +86,6 @@ token = common.gettoken(
 )
 
 inscripcionesanuladas = []
-
-# Read outbox once before processing (OPTIMIZATION)
-outbox_entries = sync_store.read_outbox()
-outbox_anuladas = {
-    str(e["payload"]["inscripcion"])
-    for e in outbox_entries
-    if e.get("op") == "anula_inscripcio" and e.get("status") in ["pending", "synced"]
-}
 
 # Collect all inscriptions to check and group by activity (OPTIMIZATION)
 inscripciones_por_actividad = defaultdict(list)
@@ -148,7 +159,11 @@ for actividad in actividades:
     nombre = actividad["nom"]
     horario = common.actividad_horario(actividad)
 
-    if horario in {7, 8, 9, 10, 19, 20, 21, 22}:
+    if (
+        horario in {7, 8, 9, 10, 19, 20, 21, 22}
+        and actividad.get("estat") == "ACTIESTVIG"
+        and common.actividad_en_any_actual(actividad)
+    ):
         inscritos = common.read_inscripciones_actividad(token_ro, myid)
 
         for inscrito in inscritos:

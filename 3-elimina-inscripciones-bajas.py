@@ -41,7 +41,7 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     horario = common.actividad_horario(actividad)
 
-    if horario in {7, 8, 9, 10}:
+    if horario in {7, 8, 9, 10} and common.actividad_en_any_actual(actividad):
         # Read inscriptions for this activity ONCE
         inscritos = common.readjson(filename=f"{myid}")
 

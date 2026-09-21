@@ -3,7 +3,7 @@ name: libres
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:  # <-- Esto permite ejecutarla a mano desde la interfaz web de GitHub
 
 concurrency:

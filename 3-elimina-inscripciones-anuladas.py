@@ -28,7 +28,7 @@ for actividad in actividades:
     myid = actividad["idActivitat"]
     horario = common.actividad_horario(actividad)
 
-    if horario in {7, 8, 9, 10}:
+    if horario in {7, 8, 9, 10} and common.actividad_en_any_actual(actividad):
         inscritos = common.read_inscripciones_actividad(token_ro, myid)
 
         for inscrito in inscritos:
