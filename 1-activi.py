@@ -48,7 +48,7 @@ result = requests.get(
     activar, auth=common.BearerAuth(token), headers=common.headers, timeout=15
 )
 
-actividades = actividades_en_periodo(result.json())
+actividades = result.json()
 
 print("Saving file to disk")
 common.writejson(filename="actividades", data=actividades)
