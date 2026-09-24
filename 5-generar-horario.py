@@ -32,6 +32,7 @@ def guardar_html_para_wordpress(html_completo, output_path):
     Extrae solo el contenido del body del HTML completo (excluyendo logo, estilos y script de filtro)
     para que sea compatible con bloques de HTML personalizado en WordPress.
     El resultado es más compacto y evita errores de post_content demasiado largo.
+    Incluye estilos responsivos para que sea visible en dispositivos móviles.
     """
     # Buscamos el contenido a partir del primer div de título (acepta comillas sencillas o dobles)
     # El patrón exige el cierre del tag > para evitar coincidir con CSS
@@ -46,9 +47,9 @@ def guardar_html_para_wordpress(html_completo, output_path):
         body_content = re.sub(
             r"<script>.*?</script>", "", body_content, flags=re.DOTALL
         )
-        # Eliminar estilos inline de spans de profesor (font-size: small) para reducir tamaño
+        # Reemplazar estilos inline de spans de profesor (font-size: small) por un tamaño reducido
         body_content = re.sub(
-            r"<span\s+style='font-size:\s*small;'>([^<]*)</span>", r"\1", body_content
+            r"<span\s+style='font-size:\s*small;'>([^<]*)</span>", r"<span style='font-size: 0.85em;'>\1</span>", body_content
         )
         # Eliminar estilos inline de iconos
         body_content = re.sub(
@@ -58,6 +59,44 @@ def guardar_html_para_wordpress(html_completo, output_path):
         body_content = re.sub(r"\s+", " ", body_content)
         body_content = re.sub(r">\s+<", "><", body_content)
         body_content = body_content.strip()
+
+        # Añadir estilos CSS responsivos embebidos para WordPress
+        responsive_css = """
+        <style>
+        /* Responsive: tabla scrolleable horizontalmente en móviles */
+        .horario-responsive-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .horario-responsive-wrapper table {
+            min-width: 800px;
+            border-collapse: collapse;
+        }
+        @media (max-width: 768px) {
+            body { font-size: 0.75em; margin: 0; padding: 10px; }
+            th, td { padding: 4px; font-size: 0.8em; }
+            .academic-year-header { font-size: 1.2em; }
+            .anio-header { font-size: 1em; }
+        }
+        </style>
+        """
+        # Envolver la tabla en un contenedor con scroll horizontal
+        body_content = re.sub(
+            r"<table>",
+            '<div class="horario-responsive-wrapper"><table>',
+            body_content,
+            count=1,
+        )
+        body_content = re.sub(
+            r"</table>\s*(?:</div>)?\s*$",
+            "</table></div>",
+            body_content,
+            count=1,
+        )
+
+        body_content = responsive_css + "\n" + body_content
+
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(body_content)
         print(
@@ -90,21 +129,28 @@ def generar_html_tabla(
         <title>Horario de Actividades</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-            body {{ font-family: sans-serif; }}
-            table {{ border-collapse: collapse; width: 100%; }}
-            th, td {{ border: 1px solid black; padding: 8px; text-align: center; vertical-align: middle; }}
-            th {{ background-color: {COLOR_AZUL_OSCURO}; color: white; }}
-            .location-cell {{ font-weight: bold; background-color: {COLOR_UBICACION_FONDO}; color: {COLOR_AZUL_OSCURO}; padding: 10px; }}
-            .actividad-cell {{ word-wrap: break-word; }}
+            body {{ font-family: sans-serif; font-size: 0.85em; margin: 0; padding: 10px; }}
+            table {{ border-collapse: collapse; width: 100%; min-width: 800px; display: block; overflow-x: auto; }}
+            th, td {{ border: 1px solid black; padding: 6px; text-align: center; vertical-align: middle; font-size: 0.9em; }}
+            th {{ background-color: {COLOR_AZUL_OSCURO}; color: white; font-size: 0.95em; white-space: nowrap; }}
+            .location-cell {{ font-weight: bold; background-color: {COLOR_UBICACION_FONDO}; color: {COLOR_AZUL_OSCURO}; padding: 8px; font-size: 0.95em; white-space: nowrap; }}
+            .actividad-cell {{ word-wrap: break-word; max-width: 150px; }}
             .actividad-cell span {{ white-space: nowrap; }}
-            .location-header {{ font-size: 0.9em; font-weight: normal; }}
-            .anio-header {{ font-size: 1.5em; text-align: center; margin-bottom: 20px; }}
-            .academic-year-header {{ font-size: 1.8em; font-weight: bold; text-align: center; margin-bottom: 10px; color: {COLOR_AZUL_OSCURO}; }}
-            .logo-header {{ text-align: center; margin-bottom: 10px; }}
-            .logo-header svg {{ max-width: 15%; height: auto; }}
+            .location-header {{ font-size: 0.85em; font-weight: normal; }}
+            .anio-header {{ font-size: 1.2em; text-align: center; margin-bottom: 15px; }}
+            .academic-year-header {{ font-size: 1.5em; font-weight: bold; text-align: center; margin-bottom: 8px; color: {COLOR_AZUL_OSCURO}; }}
+            .logo-header {{ text-align: center; margin-bottom: 8px; }}
+            .logo-header svg {{ max-width: 12%; height: auto; }}
             /* Estilo para los rangos de edad para que el texto sea legible sobre el fondo */
             .actividad-cell span[style*="background-color"] {{
                 color: black !important;
+            }}
+            /* Responsive: scrolling horizontal en móviles */
+            @media (max-width: 768px) {{
+                body {{ font-size: 0.75em; }}
+                th, td {{ padding: 4px; font-size: 0.8em; }}
+                .academic-year-header {{ font-size: 1.2em; }}
+                .anio-header {{ font-size: 1em; }}
             }}
         </style>
     </head>
@@ -372,15 +418,15 @@ def generar_horario_para_anio(
                     overlap_end = min(rango_fin_def, int(anos_fin_act))
                     if overlap_start <= overlap_end:
                         rangos_ajustados_html.append(
-                            f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{overlap_start}-{overlap_end}</span>"
+                            f"<span style='background-color: {color}; color: black; padding: 1px 3px; border-radius: 3px; font-weight: bold; margin-right: 3px; border: 1px solid rgba(0,0,0,0.1); font-size: 0.85em;'>{overlap_start}-{overlap_end}</span>"
                         )
                 except ValueError:
                     continue  # Si no son números, pasamos al siguiente rango
             else:
                 # Lógica para rangos de texto (TUTORES, ADULTOS AVAST)
                 if anos_inicio_act == rango_inicio_def:
-                    rangos_ajustados_html.append(
-                        f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{rango_inicio_def}</span>"
+                        rangos_ajustados_html.append(
+                                f"<span style='background-color: {color}; color: white; padding: 1px 3px; border-radius: 3px; font-weight: bold; margin-right: 3px; border: 1px solid rgba(0,0,0,0.1); font-size: 0.85em;'>{rangoInicio_def}</span>"
                     )
 
         iconos_html = ""
@@ -694,14 +740,14 @@ def generar_horario_final(csv_path, anio_nacimiento=None, anio_fin=None):
                             overlap_end = min(rango_fin_def, int(anos_fin_act))
                             if overlap_start <= overlap_end:
                                 rangos_ajustados_html.append(
-                                    f"<span style='background-color: {color}; color: black; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{overlap_start}-{overlap_end}</span>"
-                                )
+                                f"<span style='background-color: {color}; color: black; padding: 1px 3px; border-radius: 3px; font-weight: bold; margin-right: 3px; border: 1px solid rgba(0,0,0,0.1); font-size: 0.85em;'>{overlap_start}-{overlap_end}</span>"
+                            )
                         except ValueError:
                             continue
                     else:
                         if anos_inicio_act == rango_inicio_def:
                             rangos_ajustados_html.append(
-                                f"<span style='background-color: {color}; color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; border: 1px solid rgba(0,0,0,0.1);'>{rango_inicio_def}</span>"
+                                f"<span style='background-color: {color}; color: white; padding: 1px 3px; border-radius: 3px; font-weight: bold; margin-right: 3px; font-size: 0.85em; border: 1px solid rgba(0,0,0,0.1);'>{rango_inicio_def}</span>"
                             )
 
                 iconos_html = ""
