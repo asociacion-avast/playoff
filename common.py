@@ -149,6 +149,7 @@ categorias = {
     "socioactivo": 82,
     "sociohermanoactividades": 13,
     "sociosinactividades": 1,
+    "wifiupv": 150,
 }
 
 diccionario = {
@@ -220,6 +221,7 @@ diccionario = {
     94: "Informe revisado",
     97: "Socio sin carnet",
     98: "Carnets veteranos",
+    150: "Clave wifi",
 }
 
 
@@ -448,6 +450,54 @@ def actividad_en_any_actual(actividad):
     else:
         return False
     return start <= fecha.date() <= end
+
+
+def actividades_con_wifi(filename="actividades.csv"):
+    """Ids de actividades marcadas con wifi en el CSV de actividades."""
+    idsactividad = set()
+
+    try:
+        f = readcsv(filename)
+    except FileNotFoundError:
+        print(f"AVISO: No se encuentra {filename}")
+        return idsactividad
+
+    with f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split(";")
+            if len(parts) < 5:
+                continue
+            idactividad = safe_int(parts[1])
+            if idactividad > 0 and parts[4].strip().upper() == "X":
+                idsactividad.add(idactividad)
+
+    return idsactividad
+
+
+def inscritos_con_wifi(actividades=None, estados=("INSCRESTNOVA",)):
+    """Ids de socios inscritos en actividades que necesitan wifi."""
+    if actividades is None:
+        actividades = readjson("actividades")
+
+    idswifi = actividades_con_wifi()
+    idsactividad = {safe_int(actividad.get("idActivitat")) for actividad in actividades}
+
+    idscolegiat = set()
+    for idactividad in sorted(idswifi & idsactividad):
+        try:
+            inscritos = readjson(f"{idactividad}")
+        except FileNotFoundError:
+            print(f"AVISO: Sin datos de inscripciones de la actividad {idactividad}")
+            continue
+
+        for inscrito in inscritos:
+            if inscrito.get("estat") in estados:
+                idscolegiat.add(safe_int(inscrito["colegiat"]["idColegiat"]))
+
+    return idscolegiat
 
 
 def safe_int(value, default=0):

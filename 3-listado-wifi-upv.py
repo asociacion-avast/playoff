@@ -10,21 +10,7 @@ socios = common.readjson(filename="socios")
 
 # Importa del fichero 'actividades.csv' las actividades que se realizan con wifi
 
-conclavewifi = []
-
-with common.readcsv("actividades.csv") as f:
-    for line in f:
-        if line.strip() and not line.startswith("#"):
-            parts = line.strip().split(";")
-            if len(parts) >= 7:
-                try:
-                    idactividad = int(parts[1])
-                except:
-                    idactividad = 0
-
-                if parts[4].upper() == "X":
-                    if idactividad > 0:
-                        conclavewifi.append(int(parts[1]))
+conclavewifi = sorted(common.actividades_con_wifi())
 
 print("Actividades con wifi en politécnica:", conclavewifi)
 

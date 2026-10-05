@@ -35,6 +35,7 @@ _cat_notienecarnet = common.categorias["notienecarnet"]
 _cat_carnetincorrecto = common.categorias["carnetincorrecto"]
 _cat_carnettutorduplicado = common.categorias["carnettutorduplicado"]
 _cat_dana = common.categorias["dana"]
+_cat_wifiupv = common.categorias["wifiupv"]
 
 codigos_postales_dana = {
     46000,
@@ -398,6 +399,11 @@ if "capfamilias" in familias:
     familias["capfamilias"] = [int(x) for x in familias["capfamilias"]]
 if "procesados" in familias:
     familias["procesados"] = [int(x) for x in familias["procesados"]]
+
+# Socios inscritos en actividades que necesitan wifi en la UPV
+_socios_wifi = common.inscritos_con_wifi()
+print(f"Socios inscritos en actividades con wifi: {len(_socios_wifi)}")
+
 today = datetime.date.today()
 fechadia = calendar.monthrange(today.year, today.month)[1]
 
@@ -745,6 +751,28 @@ for socio in socios:
 
                 response = common.delcategoria(token, socioid, modalitat)
 
+        # Clave wifi para los inscritos en actividades que necesitan wifi en la UPV
+        if socioid in _socios_wifi:
+            if _cat_wifiupv not in categoriassocio:
+                print(
+                    "WIFI",
+                    f"{common.sociobase}{socioid}#tab=CATEGORIES",
+                    common.traduce(_cat_wifiupv),
+                )
+                common.addcategoria(token, socioid, _cat_wifiupv)
+        elif _cat_wifiupv in categoriassocio:
+            print(
+                "RFF",
+                f"{common.sociobase}{socioid}#tab=CATEGORIES",
+                common.traduce(_cat_wifiupv),
+            )
+            common.delcategoria(token, socioid, _cat_wifiupv)
+    elif socioid in _socios_wifi:
+        estatcolegiat = socio.get("estatColegiat") or {}
+        print(
+            f"AVISO: Socio {socioid} inscrito en actividades con wifi, "
+            f"pero no está de alta ({socio.get('estat')}/{estatcolegiat.get('nom')})"
+        )
 
 # Normalizar nombres y apellidos de socios y tutores
 socio_changes = []
