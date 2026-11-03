@@ -1584,6 +1584,7 @@ _ACCENT_MAP = {
     "Alvaro": "Álvaro",
     "Andres": "Andrés",
     "Angel": "Ángel",
+    "Poveda": "Póveda",
     "Angela": "Ángela",
     "Angeles": "Ángeles",
     "Arago": "Aragó",
